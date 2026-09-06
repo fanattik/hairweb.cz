@@ -81,6 +81,14 @@ export function Footer() {
                 Cookies
               </Link>
             </li>
+            <li>
+              <Link
+                href="/obchodni-podminky"
+                className="transition hover:text-copper"
+              >
+                Obchodní podmínky
+              </Link>
+            </li>
           </ul>
         </div>
       </div>
