@@ -1,24 +1,27 @@
 import type { Metadata } from "next";
 import { Fraunces, Manrope } from "next/font/google";
 import { AnalyticsScripts } from "@/components/AnalyticsScripts";
-import { AttributionCapture } from "@/components/AttributionCapture";
+import { ClientBootstrap } from "@/components/ClientBootstrap";
 import { site } from "@/lib/site";
 import "./globals.css";
 
 const fraunces = Fraunces({
   variable: "--font-fraunces",
   subsets: ["latin", "latin-ext"],
-  weight: ["400", "600", "700"],
+  weight: ["400"],
   display: "swap",
   adjustFontFallback: true,
+  preload: true,
 });
 
 const manrope = Manrope({
   variable: "--font-manrope",
   subsets: ["latin", "latin-ext"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "600"],
   display: "swap",
   adjustFontFallback: true,
+  // Body font can swap — don't compete with LCP image preload.
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -88,9 +91,18 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="cs"
       className={`${fraunces.variable} ${manrope.variable} h-full antialiased`}
     >
+      <head>
+        <link
+          rel="preload"
+          as="image"
+          href="/hero/color-studio-desktop.webp"
+          type="image/webp"
+          fetchPriority="high"
+        />
+      </head>
       <body className="min-h-full flex flex-col bg-mist text-ink">
         <AnalyticsScripts />
-        <AttributionCapture />
+        <ClientBootstrap />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

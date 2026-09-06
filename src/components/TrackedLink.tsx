@@ -1,7 +1,5 @@
-"use client";
-
 import type { ReactNode } from "react";
-import { trackEvent, type AnalyticsEvent } from "@/lib/analytics";
+import type { AnalyticsEvent } from "@/lib/analytics";
 
 type TrackedLinkProps = {
   href: string;
@@ -23,7 +21,7 @@ export function TrackedLink({
       href={href}
       className={className}
       aria-label={ariaLabel}
-      onClick={() => trackEvent(event)}
+      data-track={event}
     >
       {children}
     </a>

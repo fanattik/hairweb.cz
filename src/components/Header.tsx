@@ -3,20 +3,10 @@
 import { useEffect, useState } from "react";
 import { CtaButton } from "@/components/CtaButton";
 import { HairwebLogo } from "@/components/HairwebLogo";
-import { trackEvent } from "@/lib/analytics";
-import { setSourceDetail } from "@/lib/attribution";
 import { navLinks } from "@/lib/site";
 
 export function Header() {
   const [open, setOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
@@ -26,13 +16,7 @@ export function Header() {
   }, [open]);
 
   return (
-    <header
-      className={`sticky top-0 z-40 border-b transition ${
-        scrolled || open
-          ? "border-line bg-foam"
-          : "border-transparent bg-foam/95"
-      }`}
-    >
+    <header className="sticky top-0 z-40 border-b border-line bg-foam">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3.5 sm:px-8">
         <a
           href="#top"
@@ -62,10 +46,9 @@ export function Header() {
             href="#poptavka"
             variant="primary"
             className="hidden min-h-10 px-4 py-2.5 sm:inline-flex"
-            onClick={() => {
-              setSourceDetail("header");
-              trackEvent("hero_cta_click", { location: "header" });
-            }}
+            data-track="hero_cta_click"
+            data-source="header"
+            data-track-payload='{"location":"header"}'
           >
             Chci nový web
           </CtaButton>
@@ -109,13 +92,20 @@ export function Header() {
         <nav
           className="mx-auto flex max-w-6xl flex-col gap-1 px-5 py-4 sm:px-8"
           aria-label="Mobilní"
+          onClick={(event) => {
+            if (
+              event.target instanceof Element &&
+              event.target.closest("a")
+            ) {
+              setOpen(false);
+            }
+          }}
         >
           {navLinks.map((link) => (
             <a
               key={link.href}
               href={link.href}
               className="py-3 text-base text-ink"
-              onClick={() => setOpen(false)}
             >
               {link.label}
             </a>
@@ -123,11 +113,9 @@ export function Header() {
           <CtaButton
             href="#poptavka"
             className="mt-3 w-full"
-            onClick={() => {
-              setOpen(false);
-              setSourceDetail("header");
-              trackEvent("hero_cta_click", { location: "mobile_nav" });
-            }}
+            data-track="hero_cta_click"
+            data-source="header"
+            data-track-payload='{"location":"mobile_nav"}'
           >
             Chci nový web
           </CtaButton>

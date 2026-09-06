@@ -1,9 +1,7 @@
-"use client";
-
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { CtaButton } from "@/components/CtaButton";
-import { trackEvent, type AnalyticsEvent } from "@/lib/analytics";
-import { setSourceDetail, type SourceDetail } from "@/lib/attribution";
+import type { AnalyticsEvent } from "@/lib/analytics";
+import type { SourceDetail } from "@/lib/attribution";
 
 type TrackedCtaProps = {
   href: string;
@@ -24,15 +22,19 @@ export function TrackedCta({
   eventPayload,
   sourceDetail,
 }: TrackedCtaProps) {
+  const payload =
+    eventPayload && Object.keys(eventPayload).length > 0
+      ? JSON.stringify(eventPayload)
+      : undefined;
+
   return (
     <CtaButton
       href={href}
       variant={variant}
       className={className}
-      onClick={() => {
-        if (sourceDetail) setSourceDetail(sourceDetail);
-        trackEvent(event, eventPayload);
-      }}
+      data-track={event}
+      data-source={sourceDetail}
+      data-track-payload={payload}
     >
       {children}
     </CtaButton>

@@ -77,15 +77,16 @@ export function HeroSection() {
             className="relative z-10"
             aspectClass="aspect-[1024/728]"
           >
-            <Image
+            {/* Static WebP + preload in layout — skips /_next/image on LCP */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src={COLOR_STUDIO.desktop}
               alt="Ukázkový koncept Color Studio — desktop"
-              fill
-              priority
+              width={1024}
+              height={728}
               fetchPriority="high"
-              className="object-cover object-top"
-              sizes="(max-width: 640px) 352px, (max-width: 1024px) 448px, 620px"
-              quality={75}
+              decoding="async"
+              className="absolute inset-0 h-full w-full object-cover object-top"
             />
           </BrowserMockup>
 
@@ -97,8 +98,8 @@ export function HeroSection() {
                 fill
                 loading="lazy"
                 className="object-cover object-top"
-                sizes="190px"
-                quality={70}
+                sizes="140px"
+                quality={60}
               />
             </PhoneMockup>
           </div>

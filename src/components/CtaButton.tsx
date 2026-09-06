@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { ComponentPropsWithoutRef, ReactNode } from "react";
+import type { ReactNode } from "react";
 
 type CtaVariant = "primary" | "secondary" | "dark" | "light";
 
@@ -18,7 +18,9 @@ type CtaButtonProps = {
   children: ReactNode;
   variant?: CtaVariant;
   className?: string;
-  onClick?: ComponentPropsWithoutRef<"a">["onClick"];
+  "data-track"?: string;
+  "data-source"?: string;
+  "data-track-payload"?: string;
 };
 
 export function CtaButton({
@@ -26,20 +28,27 @@ export function CtaButton({
   children,
   variant = "primary",
   className = "",
-  onClick,
+  "data-track": dataTrack,
+  "data-source": dataSource,
+  "data-track-payload": dataTrackPayload,
 }: CtaButtonProps) {
   const classes = `inline-flex min-h-11 items-center justify-center px-6 py-3 text-sm font-medium tracking-wide transition duration-200 ${variants[variant]} ${className}`;
+  const tracking = {
+    "data-track": dataTrack,
+    "data-source": dataSource,
+    "data-track-payload": dataTrackPayload,
+  };
 
   if (href.startsWith("/") || href.startsWith("http") || href.startsWith("mailto:")) {
     return (
-      <Link href={href} className={classes} onClick={onClick}>
+      <Link href={href} className={classes} {...tracking}>
         {children}
       </Link>
     );
   }
 
   return (
-    <a href={href} className={classes} onClick={onClick}>
+    <a href={href} className={classes} {...tracking}>
       {children}
     </a>
   );

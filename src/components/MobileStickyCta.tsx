@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { trackEvent } from "@/lib/analytics";
-import { setSourceDetail } from "@/lib/attribution";
 
 /**
  * Fixed bottom CTA on mobile. Overlay only — body padding is reserved via CSS
@@ -46,10 +44,8 @@ export function MobileStickyCta() {
         href="#poptavka"
         tabIndex={visible ? 0 : -1}
         className="flex min-h-12 w-full items-center justify-center bg-copper text-sm font-medium text-foam transition hover:bg-copper-deep"
-        onClick={() => {
-          setSourceDetail("mobile_sticky");
-          trackEvent("mobile_cta_click");
-        }}
+        data-track="mobile_cta_click"
+        data-source="mobile_sticky"
       >
         Chci nezávazný návrh
       </a>
