@@ -1,11 +1,8 @@
-"use client";
-
 import Image from "next/image";
 import { BrowserMockup } from "@/components/BrowserMockup";
-import { CtaButton } from "@/components/CtaButton";
 import { Reveal } from "@/components/Reveal";
-import { trackEvent } from "@/lib/analytics";
-import { setSourceDetail } from "@/lib/attribution";
+import { TrackedCta } from "@/components/TrackedCta";
+import { TrackedLink } from "@/components/TrackedLink";
 
 const concepts = [
   {
@@ -15,7 +12,7 @@ const concepts = [
     url: "studionora.cz",
     demoHref: "/demo/hair-studio",
     event: "demo_hair_click" as const,
-    image: "/demos/hair-studio/hero.png",
+    image: "/portfolio/hair-studio.webp",
     tone: "dark" as const,
     accent: "bg-ink text-foam",
   },
@@ -26,7 +23,7 @@ const concepts = [
     url: "kamiya.barber",
     demoHref: "/demo/barber",
     event: "demo_barber_click" as const,
-    image: "/demos/barber/hero.png",
+    image: "/portfolio/barber.webp",
     tone: "dark" as const,
     accent: "bg-copper text-foam",
   },
@@ -37,7 +34,7 @@ const concepts = [
     url: "color.studio",
     demoHref: "/demo/color-studio",
     event: "demo_color_click" as const,
-    image: "/demos/color-studio/hero.jpeg",
+    image: "/portfolio/color-studio.webp",
     tone: "light" as const,
     accent: "bg-copper text-foam",
   },
@@ -65,10 +62,10 @@ export function PortfolioSection() {
           {concepts.map((concept, index) => (
             <Reveal key={concept.id} delay={(index % 3) as 0 | 1 | 2}>
               <article className="group">
-                <a
+                <TrackedLink
                   href={concept.demoHref}
+                  event={concept.event}
                   className="block"
-                  onClick={() => trackEvent(concept.event)}
                   aria-label={`Prohlédnout ukázku ${concept.name}`}
                 >
                   <BrowserMockup
@@ -81,6 +78,8 @@ export function PortfolioSection() {
                         src={concept.image}
                         alt={`Ukázkový koncept ${concept.name}`}
                         fill
+                        loading="lazy"
+                        quality={70}
                         className="object-cover transition duration-700 group-hover:scale-[1.03]"
                         sizes="(max-width: 768px) 100vw, 33vw"
                       />
@@ -103,44 +102,41 @@ export function PortfolioSection() {
                       </div>
                     </div>
                   </BrowserMockup>
-                </a>
-                <div className="mt-4 flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="font-[family-name:var(--font-fraunces)] text-lg text-ink">
-                      {concept.name}
-                    </h3>
-                    <p className="mt-1 text-sm text-ink-soft">{concept.style}</p>
-                    <p className="mt-1.5 text-[11px] uppercase tracking-[0.14em] text-copper/80">
-                      Ukázkový koncept
-                    </p>
-                  </div>
+                </TrackedLink>
+                <div className="mt-4">
+                  <h3 className="font-[family-name:var(--font-fraunces)] text-lg text-ink">
+                    {concept.name}
+                  </h3>
+                  <p className="mt-1 text-sm text-ink-soft">{concept.style}</p>
+                  <p className="mt-1.5 text-[11px] uppercase tracking-[0.14em] text-copper/80">
+                    Ukázkový koncept
+                  </p>
                 </div>
-                <a
+                <TrackedLink
                   href={concept.demoHref}
+                  event={concept.event}
                   className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-ink transition hover:text-copper"
-                  onClick={() => trackEvent(concept.event)}
                 >
                   Prohlédnout ukázku
                   <span className="cta-arrow" aria-hidden>
                     →
                   </span>
-                </a>
+                </TrackedLink>
               </article>
             </Reveal>
           ))}
         </div>
 
         <Reveal className="mt-10">
-          <CtaButton
+          <TrackedCta
             href="#poptavka"
             variant="secondary"
-            onClick={() => {
-              setSourceDetail("portfolio");
-              trackEvent("hero_cta_click", { location: "portfolio" });
-            }}
+            event="hero_cta_click"
+            eventPayload={{ location: "portfolio" }}
+            sourceDetail="portfolio"
           >
             Chci nezávazný návrh
-          </CtaButton>
+          </TrackedCta>
         </Reveal>
       </div>
     </section>

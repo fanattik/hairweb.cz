@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import { trackEvent } from "@/lib/analytics";
 import { setSourceDetail } from "@/lib/attribution";
 
+/**
+ * Fixed bottom CTA on mobile. Overlay only — body padding is reserved via CSS
+ * to avoid CLS when the bar appears.
+ */
 export function MobileStickyCta() {
   const [visible, setVisible] = useState(false);
 
@@ -19,9 +23,7 @@ export function MobileStickyCta() {
         formRect.top < window.innerHeight * 0.85 &&
         formRect.bottom > window.innerHeight * 0.2;
 
-      const next = !menuOpen && heroBottom < 0 && !formInView;
-      setVisible(next);
-      document.body.classList.toggle("has-mobile-cta", next);
+      setVisible(!menuOpen && heroBottom < 0 && !formInView);
     };
 
     onScroll();
@@ -30,16 +32,19 @@ export function MobileStickyCta() {
     return () => {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
-      document.body.classList.remove("has-mobile-cta");
     };
   }, []);
 
-  if (!visible) return null;
-
   return (
-    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-foam/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-md md:hidden">
+    <div
+      className={`fixed inset-x-0 bottom-0 z-30 border-t border-line bg-foam p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] transition-transform duration-200 md:hidden ${
+        visible ? "translate-y-0" : "translate-y-full pointer-events-none"
+      }`}
+      aria-hidden={!visible}
+    >
       <a
         href="#poptavka"
+        tabIndex={visible ? 0 : -1}
         className="flex min-h-12 w-full items-center justify-center bg-copper text-sm font-medium text-foam transition hover:bg-copper-deep"
         onClick={() => {
           setSourceDetail("mobile_sticky");

@@ -46,7 +46,8 @@ body {
 }
 
 @media (max-width: 767px) {
-  body.has-mobile-cta {
+  /* Reserve space for sticky mobile CTA to avoid CLS */
+  body {
     padding-bottom: 4.75rem;
   }
 }

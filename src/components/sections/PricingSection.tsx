@@ -1,9 +1,5 @@
-"use client";
-
-import { CtaButton } from "@/components/CtaButton";
 import { Reveal } from "@/components/Reveal";
-import { trackEvent } from "@/lib/analytics";
-import { setSourceDetail } from "@/lib/attribution";
+import { TrackedCta } from "@/components/TrackedCta";
 
 const plans = [
   {
@@ -27,6 +23,7 @@ const plans = [
     cta: "Chci START",
     event: "pricing_start_click" as const,
     href: "/?plan=start#poptavka",
+    sourceDetail: "pricing_start" as const,
   },
   {
     id: "pro",
@@ -51,6 +48,7 @@ const plans = [
     cta: "Chci PRO",
     event: "pricing_pro_click" as const,
     href: "/?plan=pro#poptavka",
+    sourceDetail: "pricing_pro" as const,
   },
 ] as const;
 
@@ -130,19 +128,15 @@ export function PricingSection() {
                   ))}
                 </ul>
 
-                <CtaButton
+                <TrackedCta
                   href={plan.href}
                   variant={plan.recommended ? "primary" : "dark"}
                   className="mt-8 w-full sm:w-auto"
-                  onClick={() => {
-                    setSourceDetail(
-                      plan.id === "pro" ? "pricing_pro" : "pricing_start",
-                    );
-                    trackEvent(plan.event);
-                  }}
+                  event={plan.event}
+                  sourceDetail={plan.sourceDetail}
                 >
                   {plan.cta}
-                </CtaButton>
+                </TrackedCta>
               </article>
             </Reveal>
           ))}

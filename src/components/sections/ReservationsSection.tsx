@@ -1,8 +1,5 @@
-"use client";
-
-import { useEffect, useRef } from "react";
 import { Reveal } from "@/components/Reveal";
-import { trackEvent } from "@/lib/analytics";
+import { SectionViewTracker } from "@/components/SectionViewTracker";
 
 const flow = [
   { label: "Web", detail: "Klient přijde" },
@@ -12,34 +9,12 @@ const flow = [
 ] as const;
 
 export function ReservationsSection() {
-  const ref = useRef<HTMLElement | null>(null);
-  const tracked = useRef(false);
-
-  useEffect(() => {
-    const node = ref.current;
-    if (!node) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !tracked.current) {
-          tracked.current = true;
-          trackEvent("reservation_section_view");
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.4 },
-    );
-
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-
   return (
     <section
-      ref={ref}
       id="rezervace"
       className="scroll-mt-24 bg-ink px-5 py-16 text-foam sm:px-8 sm:py-20 lg:py-24"
     >
+      <SectionViewTracker event="reservation_section_view" threshold={0.4} />
       <div className="mx-auto max-w-6xl">
         <Reveal>
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-copper">

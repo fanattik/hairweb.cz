@@ -1,10 +1,6 @@
-"use client";
-
 import Image from "next/image";
 import { BrowserMockup, PhoneMockup } from "@/components/BrowserMockup";
-import { CtaButton } from "@/components/CtaButton";
-import { trackEvent } from "@/lib/analytics";
-import { setSourceDetail } from "@/lib/attribution";
+import { TrackedCta } from "@/components/TrackedCta";
 
 const trustItems = [
   "Nezávazný návrh",
@@ -15,8 +11,8 @@ const trustItems = [
 
 const COLOR_STUDIO = {
   url: "color.studio",
-  desktop: "/hero/color-studio-desktop.png",
-  mobile: "/hero/color-studio-mobile.png",
+  desktop: "/hero/color-studio-desktop.webp",
+  mobile: "/hero/color-studio-mobile.webp",
 } as const;
 
 export function HeroSection() {
@@ -32,38 +28,38 @@ export function HeroSection() {
 
       <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-5 pb-24 pt-16 sm:gap-12 sm:px-8 sm:pb-28 sm:pt-20 lg:grid-cols-[0.92fr_1.08fr] lg:gap-6 lg:pb-32 lg:pt-24 xl:gap-4">
         <div className="relative z-10">
-          <p className="animate-fade-rise text-xs font-semibold uppercase tracking-[0.22em] text-copper">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-copper">
             Weby pro kadeřnictví &amp; barbershopy
           </p>
-          <h1 className="animate-fade-rise-delay-1 mt-4 max-w-xl font-[family-name:var(--font-fraunces)] text-[2.25rem] leading-[1.08] tracking-tight text-ink sm:text-5xl lg:text-[3.2rem]">
+          <h1 className="mt-4 max-w-xl font-[family-name:var(--font-fraunces)] text-[2.25rem] leading-[1.08] tracking-tight text-ink sm:text-5xl lg:text-[3.2rem]">
             Web, který promění návštěvníky v rezervace.
           </h1>
-          <p className="animate-fade-rise-delay-2 mt-5 max-w-lg text-base leading-relaxed text-ink-soft sm:text-lg">
+          <p className="mt-5 max-w-lg text-base leading-relaxed text-ink-soft sm:text-lg">
             Moderní webové stránky vytvořené speciálně pro kadeřnictví, hair
             salony a barbershopy. Prezentujte svou práci profesionálně a
             usnadněte klientům cestu k rezervaci.
           </p>
 
-          <div className="animate-fade-rise-delay-3 mt-7 flex flex-wrap gap-3">
-            <CtaButton
+          <div className="mt-7 flex flex-wrap gap-3">
+            <TrackedCta
               href="#poptavka"
-              onClick={() => {
-                setSourceDetail("hero");
-                trackEvent("hero_cta_click", { location: "hero_primary" });
-              }}
+              event="hero_cta_click"
+              eventPayload={{ location: "hero_primary" }}
+              sourceDetail="hero"
             >
               Chci nezávazný návrh
-            </CtaButton>
-            <CtaButton
+            </TrackedCta>
+            <TrackedCta
               href="#ukazky"
               variant="secondary"
-              onClick={() => trackEvent("portfolio_click", { location: "hero" })}
+              event="portfolio_click"
+              eventPayload={{ location: "hero" }}
             >
               Prohlédnout ukázky
-            </CtaButton>
+            </TrackedCta>
           </div>
 
-          <ul className="animate-fade-rise-delay-3 mt-7 flex flex-wrap gap-x-5 gap-y-2 text-sm text-ink-soft">
+          <ul className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-sm text-ink-soft">
             {trustItems.map((item) => (
               <li key={item} className="flex items-center gap-2">
                 <span className="text-copper" aria-hidden>
@@ -75,7 +71,7 @@ export function HeroSection() {
           </ul>
         </div>
 
-        <div className="animate-mockup-enter relative mx-auto w-full max-w-[22rem] pb-14 sm:max-w-md lg:max-w-none lg:origin-left lg:scale-[1.12] lg:pb-10 xl:scale-[1.22] xl:translate-x-4">
+        <div className="relative mx-auto w-full max-w-[22rem] pb-14 sm:max-w-md lg:max-w-none lg:origin-left lg:scale-[1.12] lg:pb-10 xl:scale-[1.22] xl:translate-x-4">
           <BrowserMockup
             url={COLOR_STUDIO.url}
             className="relative z-10"
@@ -86,8 +82,10 @@ export function HeroSection() {
               alt="Ukázkový koncept Color Studio — desktop"
               fill
               priority
-              className="animate-soft-zoom object-cover object-top"
-              sizes="(max-width: 1024px) 90vw, 620px"
+              fetchPriority="high"
+              className="object-cover object-top"
+              sizes="(max-width: 640px) 352px, (max-width: 1024px) 448px, 620px"
+              quality={75}
             />
           </BrowserMockup>
 
@@ -97,9 +95,10 @@ export function HeroSection() {
                 src={COLOR_STUDIO.mobile}
                 alt="Ukázkový koncept Color Studio — mobil"
                 fill
-                priority
+                loading="lazy"
                 className="object-cover object-top"
                 sizes="190px"
+                quality={70}
               />
             </PhoneMockup>
           </div>

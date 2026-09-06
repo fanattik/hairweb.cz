@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { BrowserMockup } from "@/components/BrowserMockup";
 import { Reveal } from "@/components/Reveal";
@@ -47,12 +48,12 @@ function AfterPreview() {
         </span>
       </div>
       <div className="relative mx-5 aspect-[16/8] overflow-hidden bg-stone sm:mx-6">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage:
-              "url(https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1100&q=75)",
-          }}
+        <Image
+          src="/images/before-after-salon.webp"
+          alt=""
+          fill
+          sizes="(max-width: 1024px) 90vw, 480px"
+          className="object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-ink/55 to-transparent" />
         <p className="absolute bottom-4 left-4 font-[family-name:var(--font-fraunces)] text-lg text-foam sm:text-xl">

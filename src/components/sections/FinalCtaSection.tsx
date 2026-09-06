@@ -1,9 +1,5 @@
-"use client";
-
-import { CtaButton } from "@/components/CtaButton";
 import { Reveal } from "@/components/Reveal";
-import { trackEvent } from "@/lib/analytics";
-import { setSourceDetail } from "@/lib/attribution";
+import { TrackedCta } from "@/components/TrackedCta";
 
 export function FinalCtaSection() {
   return (
@@ -18,15 +14,13 @@ export function FinalCtaSection() {
             navrhnu, jakým směrem bych vaši online prezentaci posunul.
           </p>
           <div className="mt-8 flex justify-center">
-            <CtaButton
+            <TrackedCta
               href="#poptavka"
-              onClick={() => {
-                setSourceDetail("final_cta");
-                trackEvent("final_cta_click");
-              }}
+              event="final_cta_click"
+              sourceDetail="final_cta"
             >
               Chci nezávazný návrh
-            </CtaButton>
+            </TrackedCta>
           </div>
           <p className="mt-4 text-sm text-foam/55">
             Bez závazků. Bez obchodního nátlaku.

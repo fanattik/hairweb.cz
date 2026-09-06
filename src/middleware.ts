@@ -5,9 +5,7 @@ export async function middleware(request: NextRequest) {
   return updateSession(request);
 }
 
+/** Auth session refresh only needed for admin — keep public pages off the critical path. */
 export const config = {
-  matcher: [
-    "/admin/:path*",
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
+  matcher: ["/admin/:path*"],
 };

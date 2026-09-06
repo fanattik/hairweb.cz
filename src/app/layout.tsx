@@ -8,13 +8,17 @@ import "./globals.css";
 const fraunces = Fraunces({
   variable: "--font-fraunces",
   subsets: ["latin", "latin-ext"],
+  weight: ["400", "600", "700"],
   display: "swap",
+  adjustFontFallback: true,
 });
 
 const manrope = Manrope({
   variable: "--font-manrope",
   subsets: ["latin", "latin-ext"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
+  adjustFontFallback: true,
 });
 
 export const metadata: Metadata = {

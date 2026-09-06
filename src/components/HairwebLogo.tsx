@@ -18,7 +18,7 @@ export function HairwebLogo({
 }: HairwebLogoProps) {
   const width = Math.round(height * ASPECT);
   const src =
-    variant === "light" ? "/logo-hairweb-light.png" : "/logo-hairweb.png";
+    variant === "light" ? "/logo-hairweb-light.webp" : "/logo-hairweb.webp";
 
   return (
     <Image
@@ -27,6 +27,7 @@ export function HairwebLogo({
       width={width}
       height={height}
       priority={priority}
+      sizes={`${width}px`}
       className={`w-auto ${className}`.trim()}
       style={{ height, width: "auto" }}
     />

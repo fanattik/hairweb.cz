@@ -12,7 +12,7 @@ export function AboutSection() {
           <div className="relative aspect-[4/5] overflow-hidden bg-stone">
             {/* TODO: Replace with final portrait photo */}
             <Image
-              src="/images/lukas.jpg"
+              src="/images/lukas.webp"
               alt="Lukáš — zakladatel Hairweb.cz"
               fill
               className="object-cover object-[center_20%] transition duration-700 hover:scale-[1.02]"
