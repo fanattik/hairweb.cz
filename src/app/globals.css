@@ -1,0 +1,199 @@
+@import "tailwindcss";
+
+:root {
+  --ink: #1a1714;
+  --ink-soft: #4a4540;
+  --stone: #e8ebea;
+  --stone-deep: #d2d8d6;
+  --mist: #f4f5f3;
+  --copper: #9a5b3c;
+  --copper-deep: #7a4530;
+  --foam: #fafbfa;
+  --line: rgba(26, 23, 20, 0.1);
+  --background: var(--mist);
+  --foreground: var(--ink);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-stone: var(--stone);
+  --color-stone-deep: var(--stone-deep);
+  --color-mist: var(--mist);
+  --color-copper: var(--copper);
+  --color-copper-deep: var(--copper-deep);
+  --color-foam: var(--foam);
+  --color-line: var(--line);
+  --font-sans: var(--font-manrope);
+  --font-display: var(--font-fraunces);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-manrope), system-ui, sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+@media (max-width: 767px) {
+  body.has-mobile-cta {
+    padding-bottom: 4.75rem;
+  }
+}
+
+::selection {
+  background: color-mix(in srgb, var(--copper) 28%, white);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--copper);
+  outline-offset: 3px;
+}
+
+@keyframes fade-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.85rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mockup-enter {
+  from {
+    opacity: 0;
+    transform: translateY(1.25rem) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes soft-zoom {
+  from {
+    transform: scale(1.05);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes cs-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cs-fade-up {
+  animation: cs-fade-up 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.cs-fade-up-delay {
+  animation: cs-fade-up 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+}
+
+.animate-fade-rise {
+  animation: fade-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-fade-rise-delay-1 {
+  animation: fade-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
+}
+
+.animate-fade-rise-delay-2 {
+  animation: fade-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.16s both;
+}
+
+.animate-fade-rise-delay-3 {
+  animation: fade-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.24s both;
+}
+
+.animate-mockup-enter {
+  animation: mockup-enter 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.18s both;
+}
+
+.animate-soft-zoom {
+  animation: soft-zoom 1.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(1rem);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-delay-1 {
+  transition-delay: 0.06s;
+}
+
+.reveal-delay-2 {
+  transition-delay: 0.12s;
+}
+
+.reveal-delay-3 {
+  transition-delay: 0.18s;
+}
+
+.cta-arrow {
+  display: inline-block;
+  transition: transform 0.25s ease;
+}
+
+a:hover .cta-arrow,
+button:hover .cta-arrow {
+  transform: translateX(3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-fade-rise,
+  .animate-fade-rise-delay-1,
+  .animate-fade-rise-delay-2,
+  .animate-fade-rise-delay-3,
+  .animate-mockup-enter,
+  .animate-soft-zoom,
+  .cs-fade-up,
+  .cs-fade-up-delay {
+    animation: none;
+  }
+
+  .reveal,
+  .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .cta-arrow {
+    transition: none;
+  }
+}

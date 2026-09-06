@@ -1,0 +1,38 @@
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Kolik web stojí?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "START od 9 900 Kč, PRO od 14 900 Kč — jednorázově. Finální cena závisí na rozsahu projektu."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Jak dlouho vytvoření webu trvá?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "U většiny projektů počítejte s jednotkami týdnů od schválení směru. Rychlost ovlivní dostupnost podkladů a zpětné vazby."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Musím měnit rezervační systém?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Ne. Hairweb se napojí nebo odkáže na systém, který už používáte."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Co znamená nezávazný návrh?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Pošlete web nebo Instagram. Podívám se na prezentaci a navrhnu směr — bez závazku pokračovat."
+      }
+    }
+  ]
+}
