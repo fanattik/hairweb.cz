@@ -1,4 +1,5 @@
 import { generateText, Output } from "ai";
+import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 import type { PageSignals } from "@/lib/web-audit/fetch-page";
 import type { LighthouseSnapshot } from "@/lib/web-audit/pagespeed";
@@ -24,14 +25,30 @@ export const webAiAuditSchema = z.object({
 
 export type WebAiAuditResult = z.infer<typeof webAiAuditSchema>;
 
-export function isAiAuditConfigured() {
-  // Local: AI_GATEWAY_API_KEY. On Vercel: OIDC is automatic for AI Gateway.
+function hasOpenAiKey() {
+  return Boolean(process.env.OPENAI_API_KEY?.trim());
+}
+
+function hasAiGateway() {
   return Boolean(
     process.env.AI_GATEWAY_API_KEY?.trim() ||
       process.env.VERCEL_OIDC_TOKEN?.trim() ||
       process.env.VERCEL === "1" ||
       process.env.VERCEL_ENV,
   );
+}
+
+/** Prefer direct OpenAI; Gateway only as optional fallback. */
+export function isAiAuditConfigured() {
+  return hasOpenAiKey() || hasAiGateway();
+}
+
+function resolveAuditModel() {
+  if (hasOpenAiKey()) {
+    // Direct OpenAI API — bypasses Vercel AI Gateway billing/card gate.
+    return openai(process.env.OPENAI_WEB_AUDIT_MODEL?.trim() || "gpt-5.4");
+  }
+  return process.env.AI_GATEWAY_WEB_AUDIT_MODEL?.trim() || "openai/gpt-5.4";
 }
 
 function heuristicAiAudit(
@@ -111,22 +128,11 @@ function heuristicAiAudit(
   };
 }
 
-export async function runAiWebAudit(input: {
+function buildAuditPrompt(input: {
   signals: PageSignals;
   lighthouse: LighthouseSnapshot;
-}): Promise<{ result: WebAiAuditResult; source: "ai" | "heuristic" }> {
-  if (!isAiAuditConfigured()) {
-    return {
-      result: heuristicAiAudit(input.signals, input.lighthouse),
-      source: "heuristic",
-    };
-  }
-
-  try {
-    const { output } = await generateText({
-      model: "openai/gpt-5.4",
-      output: Output.object({ schema: webAiAuditSchema }),
-      prompt: `Jsi senior web auditor pro kadeřnické a barbershop weby v ČR (Hairweb.cz).
+}) {
+  return `Jsi senior web auditor pro kadeřnické a barbershop weby v ČR (Hairweb.cz).
 Ohodnoť web podle daných limitů skóre a vrať strukturovaný JSON.
 Piš website_audit a opportunity_note česky, konkrétně, bez omáčky.
 
@@ -164,13 +170,38 @@ ${JSON.stringify(
   },
   null,
   2,
-)}`,
+)}`;
+}
+
+export async function runAiWebAudit(input: {
+  signals: PageSignals;
+  lighthouse: LighthouseSnapshot;
+}): Promise<{
+  result: WebAiAuditResult;
+  source: "ai" | "heuristic";
+  error?: string;
+}> {
+  if (!isAiAuditConfigured()) {
+    return {
+      result: heuristicAiAudit(input.signals, input.lighthouse),
+      source: "heuristic",
+      error:
+        "Chybí OPENAI_API_KEY. Přidej ho do .env.local / Vercel env (Direct OpenAI).",
+    };
+  }
+
+  try {
+    const { output } = await generateText({
+      model: resolveAuditModel(),
+      output: Output.object({ schema: webAiAuditSchema }),
+      prompt: buildAuditPrompt(input),
     });
 
     if (!output) {
       return {
         result: heuristicAiAudit(input.signals, input.lighthouse),
         source: "heuristic",
+        error: "AI vrátila prázdný structured output.",
       };
     }
 
@@ -180,6 +211,33 @@ ${JSON.stringify(
     return {
       result: heuristicAiAudit(input.signals, input.lighthouse),
       source: "heuristic",
+      error: explainAiError(error),
     };
   }
+}
+
+function explainAiError(error: unknown): string {
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : "Neznámá AI chyba";
+
+  if (/credit card|customer_verification_required/i.test(message)) {
+    return (
+      "Vercel AI Gateway vyžaduje kartu. Přidej OPENAI_API_KEY " +
+      "(platform.openai.com) do Vercel env — audit pak jde přímo přes OpenAI."
+    );
+  }
+  if (/incorrect api key|invalid_api_key|401/i.test(message)) {
+    return "OPENAI_API_KEY je neplatný. Zkontroluj klíč v Vercel env / .env.local.";
+  }
+  if (/insufficient_quota|billing|429/i.test(message)) {
+    return "OpenAI účet nemá kredit / rate limit. Doplň billing na platform.openai.com.";
+  }
+  if (/quota_for_entity_exceeded|402/i.test(message)) {
+    return "AI Gateway kredit / budget je vyčerpaný. Použij OPENAI_API_KEY nebo doplň kredity.";
+  }
+  return message.slice(0, 400);
 }

@@ -46,7 +46,7 @@ export async function runWebAudit(rawUrl: string): Promise<WebAuditResult> {
     warnings.push(`PageSpeed: ${lighthouse.error}`);
   }
 
-  const { result: ai, source: aiSource } = await runAiWebAudit({
+  const { result: ai, source: aiSource, error: aiError } = await runAiWebAudit({
     signals,
     lighthouse,
   });
@@ -86,9 +86,11 @@ export async function runWebAudit(rawUrl: string): Promise<WebAuditResult> {
 
   if (aiSource === "heuristic") {
     warnings.push(
-      isAiAuditConfigured()
-        ? "AI audit spadl na heuristiky — zkontroluj AI Gateway."
-        : "AI Gateway není nastavená — použity heuristiky. Přidej AI_GATEWAY_API_KEY (nebo nasaď na Vercel s OIDC).",
+      aiError
+        ? `AI audit → heuristiky: ${aiError}`
+        : isAiAuditConfigured()
+          ? "AI audit spadl na heuristiky — zkontroluj AI Gateway."
+          : "AI Gateway není nastavená — použity heuristiky. Přidej AI_GATEWAY_API_KEY (nebo nasaď na Vercel s OIDC).",
     );
   }
 
