@@ -243,8 +243,8 @@ export function LeadOutreachPanel({ lead }: { lead: Lead }) {
             })}
           </select>
           <span className="text-xs text-ink-soft">
-            Tip: jednostránka → START, SEO / vícestránka → PRO. Mail se drží
-            konkrétního problému leadu.
+            Mail je v přirozeném stylu (cena + rozsah), bez odrážek balíčku.
+            Jednostránka → 9 900 Kč, SEO/vícestránka → 14 900 Kč.
           </span>
         </label>
 

@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
-  HAIRWEB_PACKAGES,
   buildOutreachDraft,
+  distinctiveHighlights,
   inferWebsiteShape,
   suggestHairwebPackage,
   suggestOutreachTemplate,
@@ -16,7 +16,7 @@ function baseLead(overrides: Partial<Lead> = {}): Lead {
     updated_at: new Date().toISOString(),
     type: "outbound",
     name: "Hair Lab",
-    salon_name: "Hair Lab Praha",
+    salon_name: "Václav Pražák Hair Design",
     email: "a@b.cz",
     phone: null,
     website: "—",
@@ -133,7 +133,7 @@ describe("outreach templates", () => {
     assert.equal(suggestOutreachTemplate(baseLead()), "no_website");
   });
 
-  it("treats existing salon sites as one-pager by default (even with team section)", () => {
+  it("keeps one-pager redesign on START even with team + many reviews", () => {
     const lead = baseLead({
       has_website: true,
       website: "https://example.cz",
@@ -146,57 +146,47 @@ describe("outreach templates", () => {
     assert.equal(suggestHairwebPackage(lead, "redesign"), "start");
   });
 
-  it("suggests PRO only for multi-page / local SEO need", () => {
-    assert.equal(suggestHairwebPackage(baseLead(), "local_seo"), "pro");
-    assert.equal(
-      suggestHairwebPackage(
-        baseLead({
-          has_website: true,
-          website: "https://example.cz",
-          website_audit: "Vícestránkový web se slabou strukturou pro SEO.",
-        }),
-        "redesign",
-      ),
-      "pro",
+  it("extracts distinctive highlights like K-SCAN", () => {
+    const highlights = distinctiveHighlights(
+      baseLead({
+        website_audit:
+          "Salon nabízí široký rozsah služeb a technologii K-SCAN pro diagnostiku vlasů.",
+      }),
     );
-    assert.equal(
-      suggestHairwebPackage(baseLead({ business_size: "large" }), "no_website"),
-      "pro",
-    );
+    assert.ok(highlights.some((h) => /k-scan/i.test(h)));
   });
 
-  it("builds redesign mail around concrete problems + START for one-pager", () => {
+  it("builds redesign mail in the Hairweb prose style", () => {
     const draft = buildOutreachDraft(
       baseLead({
         has_website: true,
         website: "https://example.cz",
         website_has_prices: true,
         website_has_gallery: true,
-        website_mobile_problem: true,
-        website_outdated: true,
+        website_has_team: true,
+        website_audit:
+          "Zaujal rozsah služeb a technologie K-SCAN. Web působí zastarale.",
         contact_person: null,
       }),
       "redesign",
     );
-    assert.equal(draft.packageId, "start");
-    assert.match(draft.subject, /jednostránkového/);
-    assert.match(draft.body, /mobilu/);
-    assert.match(draft.body, /zastarale/);
-    assert.match(draft.body, /9 900 Kč/);
-    assert.match(draft.body, /ne komplikovat zbytečně na více stránek/);
-    assert.match(draft.body, /„ANO“/);
-    assert.match(draft.body, /Lukáš Ptáčník/);
-  });
 
-  it("builds PRO mail with full feature list when forced", () => {
-    const draft = buildOutreachDraft(baseLead(), "no_website", "pro");
-    assert.equal(draft.packageId, "pro");
-    assert.match(draft.body, /balíček PRO/);
-    for (const feature of HAIRWEB_PACKAGES.pro.features) {
-      assert.match(
-        draft.body,
-        new RegExp(feature.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
-      );
-    }
+    assert.equal(draft.packageId, "start");
+    assert.match(draft.body, /^Dobrý den,/m);
+    assert.match(draft.body, /narazil jsem na web Vašeho salonu Václav Pražák Hair Design/);
+    assert.match(draft.body, /K-SCAN/);
+    assert.match(
+      draft.body,
+      /současný web už vizuálně úplně neodpovídá úrovni salonu/,
+    );
+    assert.match(draft.body, /velmi dobrý základ/);
+    assert.match(draft.body, /kompletní redesign současného webu za 9 900 Kč/);
+    assert.match(draft.body, /Součástí by byl nový individuální vzhled/);
+    assert.match(draft.body, /responzivní zpracování/);
+    assert.doesNotMatch(draft.body, /balíček START/);
+    assert.doesNotMatch(draft.body, /^– /m);
+    assert.match(draft.body, /„na papíře“/);
+    assert.match(draft.body, /odpovědět „ANO“/);
+    assert.match(draft.body, /Weby pro kadeřnictví, barber shopy a vlasová studia/);
   });
 });

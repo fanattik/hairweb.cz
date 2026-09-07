@@ -85,15 +85,6 @@ export const OUTREACH_PRICE_PRO = HAIRWEB_PACKAGES.pro.price;
 
 export type WebsiteShape = "none" | "one_pager" | "multi_page" | "unknown";
 
-function greetingName(lead: Pick<Lead, "contact_person" | "salon_name" | "name">) {
-  const person = lead.contact_person?.trim();
-  if (person) {
-    const first = person.split(/\s+/)[0];
-    return first || person;
-  }
-  return null;
-}
-
 function salonLabel(lead: Pick<Lead, "salon_name" | "name">) {
   return lead.salon_name?.trim() || lead.name.trim() || "váš salon";
 }
@@ -114,17 +105,23 @@ function ratingLine(
 }
 
 function signature() {
-  return ["S pozdravem", "Lukáš Ptáčník", "HAIRWEB.cz"].join("\n");
+  return [
+    "S pozdravem",
+    "",
+    "Lukáš Ptáčník",
+    "HAIRWEB.cz",
+    "Weby pro kadeřnictví, barber shopy a vlasová studia",
+  ].join("\n");
 }
 
-function open(lead: Pick<Lead, "contact_person" | "salon_name" | "name">) {
-  const name = greetingName(lead);
-  if (name) return `Dobrý den ${name},`;
+function open() {
   return "Dobrý den,";
 }
 
 function hasOwnWebsite(lead: Lead): boolean {
-  return lead.has_website !== false && Boolean(lead.website && lead.website !== "—");
+  return (
+    lead.has_website !== false && Boolean(lead.website && lead.website !== "—")
+  );
 }
 
 function textBlob(lead: Lead): string {
@@ -163,8 +160,6 @@ export function inferWebsiteShape(lead: Lead): WebsiteShape {
     return "multi_page";
   }
 
-  // Audit crawl is homepage-only; team/gallery/prices usually = one-pager sections.
-  // Multi-page only when SEO/structure need is explicit or lead already tagged PRO.
   if (
     lead.package === "pro" ||
     lead.suggested_service?.toLowerCase().includes("pro") ||
@@ -176,79 +171,95 @@ export function inferWebsiteShape(lead: Lead): WebsiteShape {
   return "one_pager";
 }
 
-/** Concrete problems for this lead — used in mail copy (never invent). */
+/** Concrete problems for this lead — used in mail copy / AI (never invent). */
 export function customerProblems(lead: Lead): string[] {
   const problems: string[] = [];
   const shape = inferWebsiteShape(lead);
 
   if (shape === "none") {
-    problems.push("chybí vlastní web (salon je vidět spíš jinde než na Googlu)");
+    problems.push("chybí vlastní web");
   }
   if (lead.website_outdated) {
-    problems.push("web působí zastarale a neodpovídá úrovni služeb");
+    problems.push("web působí zastarale");
   }
   if (lead.website_mobile_problem) {
-    problems.push("na mobilu se web špatně používá / prohlíží");
+    problems.push("slabší mobilní verze");
   }
   if (lead.website_clear_booking_cta === false) {
-    problems.push("z webu není jasné, jak se rychle objednat");
+    problems.push("nejasné objednání z webu");
   }
   if (lead.website_has_prices === false) {
-    problems.push("chybí přehledný ceník služeb");
+    problems.push("chybí přehledný ceník");
   }
   if (lead.website_has_gallery === false && hasOwnWebsite(lead)) {
-    problems.push("galerie / ukázky práce nejsou dostatečně vidět");
+    problems.push("galerie není dostatečně vidět");
   }
   if (
     lead.website_seo_score != null &&
     lead.website_seo_score < 50 &&
     hasOwnWebsite(lead)
   ) {
-    problems.push("slabší připravenost webu na vyhledávání (SEO)");
-  }
-  if (
-    lead.web_score != null &&
-    lead.web_score < 45 &&
-    hasOwnWebsite(lead) &&
-    !lead.website_outdated
-  ) {
-    problems.push("celkový dojem webu je slabší než reputace salonu");
-  }
-  if (
-    lead.google_rating != null &&
-    lead.google_rating >= 4.6 &&
-    hasOwnWebsite(lead) &&
-    (lead.web_score == null || lead.web_score < 55)
-  ) {
-    problems.push(
-      "Google reputace je silná, ale web ji dostatečně neprodává",
-    );
-  }
-
-  const note = lead.opportunity_summary?.trim() || lead.opportunity_note?.trim();
-  if (note && note.length <= 160 && problems.length < 3) {
-    problems.push(note);
+    problems.push("slabší SEO");
   }
 
   return [...new Set(problems)].slice(0, 4);
 }
 
-/** What the salon already has — used to sound specific, not generic. */
+/**
+ * Distinctive phrases from audit/notes (e.g. K-SCAN) — never invent.
+ */
+export function distinctiveHighlights(lead: Lead): string[] {
+  const source = [
+    lead.website_audit,
+    lead.opportunity_note,
+    lead.opportunity_summary,
+    lead.notes,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  if (!source.trim()) return [];
+
+  const found = new Set<string>();
+
+  for (const match of source.matchAll(
+    /\b(?:technologie\s+)?([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][A-Za-zÁČĎÉĚÍŇÓŘŠŤÚŮÝŽáčďéěíňóřšťúůýž0-9]*(?:-[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ0-9]+)+)\b/g,
+  )) {
+    const value = match[1]?.trim();
+    if (value && value.length >= 3 && value.length <= 32) found.add(value);
+  }
+
+  for (const match of source.matchAll(
+    /\b(K-SCAN|Olaplex|Kerastase|Kérastase|Balayage|AirTouch|Nanoplastia|Nanoplastie|Great Lengths|HairTalk)\b/gi,
+  )) {
+    found.add(match[1]);
+  }
+
+  return [...found].slice(0, 3);
+}
+
+/**
+ * Content the salon already presents — for prose lists in the mail.
+ * Forms fit „základ – služby, tým, ceník i galerii“.
+ */
 export function contentStrengths(lead: Lead): string[] {
   const items: string[] = [];
+  if (hasOwnWebsite(lead) || lead.website_has_prices || lead.website_has_gallery) {
+    items.push("služby");
+  }
+  for (const highlight of distinctiveHighlights(lead)) {
+    items.push(highlight);
+  }
+  if (lead.website_has_team) items.push("tým");
   if (lead.website_has_prices) items.push("ceník");
   if (lead.website_has_gallery) items.push("galerii");
-  if (lead.website_has_team) items.push("tým");
   if (lead.website_has_reviews) items.push("recenze");
   if (lead.has_online_booking || lead.website_clear_booking_cta) {
     items.push(
       lead.booking_provider
-        ? `rezervace (${lead.booking_provider})`
+        ? `online rezervaci (${lead.booking_provider})`
         : "online rezervaci",
     );
-  }
-  if (lead.instagram_active || lead.instagram_handle || lead.instagram_url) {
-    items.push("Instagram");
   }
   return items;
 }
@@ -260,27 +271,66 @@ function joinCzechList(items: string[]): string {
   return `${items.slice(0, -1).join(", ")} i ${items[items.length - 1]}`;
 }
 
-function auditHook(lead: Lead): string | null {
-  const audit = lead.website_audit?.trim();
-  if (!audit) return null;
-  const line = audit
-    .split(/[\n.!?]/)
-    .map((part) => part.trim())
-    .find((part) => part.length >= 20 && part.length <= 140);
-  return line || null;
+/** „zaujal mě hlavně …“ — bez slova „hlavně“ (doplní šablona). */
+function interestLine(lead: Lead, strengths: string[]): string {
+  const distinctive = distinctiveHighlights(lead);
+  if (distinctive.length && strengths.includes("služby")) {
+    return distinctive.length === 1
+      ? `rozsah služeb a technologie ${distinctive[0]}`
+      : `rozsah služeb a ${joinCzechList(distinctive)}`;
+  }
+  if (distinctive.length) return joinCzechList(distinctive);
+  if (strengths.length >= 2) return joinCzechList(strengths.slice(0, 3));
+  if (strengths.length === 1) return strengths[0];
+  const rating = ratingLine(lead);
+  if (rating) return `úroveň salonu (${rating})`;
+  return "prezentaci salonu";
 }
 
-function packageBlock(
-  pkg: (typeof HAIRWEB_PACKAGES)[HairwebPackageId],
-  whyThisPackage: string,
-): string[] {
+function softCta(): string[] {
   return [
-    `Proto dává smysl balíček ${pkg.name} — ${pkg.summary} za ${pkg.price}.`,
-    whyThisPackage,
+    "Aby pro Vás nabídka nebyla jen „na papíře“, rád Vám zdarma a nezávazně připravím ukázku, jak by mohla vypadat nová úvodní stránka Vašeho salonu.",
     "",
-    "Součástí je:",
-    ...pkg.features.map((feature) => `– ${feature}`),
+    "Pokud Vás to zaujalo, stačí mi odpovědět „ANO“ a návrh Vám připravím.",
+    "Teprve pokud se Vám bude nový směr líbit, můžeme se bavit o samotné realizaci.",
   ];
+}
+
+/**
+ * Prose „Součástí by byl…“ — jako v reálném outreach mailu.
+ */
+export function scopeSentence(
+  _lead: Lead,
+  pkgId: HairwebPackageId,
+  strengths: string[],
+): string {
+  const bits = (strengths.length
+    ? strengths
+    : ["služby", "ceník", "galerie"]
+  ).map((item) => {
+    if (item === "galerii") return "galerie";
+    if (item === "online rezervaci") return "online rezervace";
+    if (item.startsWith("online rezervaci (")) {
+      return item.replace("online rezervaci (", "online rezervace (");
+    }
+    return item;
+  });
+
+  // Example style: „prezentace služeb a K-SCAN, tým, ceník, galerie“
+  let presentation: string;
+  if (bits[0] === "služby" && bits.length >= 2) {
+    presentation = `prezentace služeb a ${bits[1]}${bits.length > 2 ? `, ${bits.slice(2).join(", ")}` : ""}`;
+  } else if (bits[0] === "služby") {
+    presentation = "prezentace služeb";
+  } else {
+    presentation = bits.join(", ");
+  }
+
+  if (pkgId === "pro") {
+    return `Součástí by byl kompletní vícestránkový web s individuálním vzhledem, responzivním zpracováním pro mobil i počítač, samostatnými stránkami služeb, přepracováním současného obsahu (${presentation}), kontakty a mapou, výraznými možnostmi objednání, lokálním SEO, Analytics a pokročilejším obsahem.`;
+  }
+
+  return `Součástí by byl nový individuální vzhled, responzivní zpracování pro mobil i počítač, přepracování současného obsahu, ${presentation}, kontakty a mapa, výrazné možnosti objednání a základní SEO.`;
 }
 
 function wantsExplicitPro(lead: Lead): boolean {
@@ -299,7 +349,6 @@ function wantsExplicitPro(lead: Lead): boolean {
  * Match package to situation:
  * - one-pager / first site → START
  * - multi-page need / local SEO → PRO
- * Never upsell multi-page just because salon is popular.
  */
 export function suggestHairwebPackage(
   lead: Lead,
@@ -314,11 +363,9 @@ export function suggestHairwebPackage(
   const shape = inferWebsiteShape(lead);
 
   if (templateKey === "redesign") {
-    // Like-for-like: one-pager stays START; only multi_page → PRO.
     return shape === "multi_page" ? "pro" : "start";
   }
 
-  // no_website — first site is usually START unless larger shop needs structure
   if (shape === "none" || templateKey === "no_website") {
     if (lead.business_size === "medium" || lead.business_size === "large") {
       return "pro";
@@ -327,31 +374,6 @@ export function suggestHairwebPackage(
   }
 
   return shape === "multi_page" ? "pro" : "start";
-}
-
-function packageWhy(
-  lead: Lead,
-  templateKey: OutreachTemplateKey,
-  pkgId: HairwebPackageId,
-): string {
-  const shape = inferWebsiteShape(lead);
-  if (pkgId === "start") {
-    if (templateKey === "no_website") {
-      return "Nechci Vám hnát vícestránkový web — pro začátek stačí čistá jednostránka, která pokryje služby, ceník, galerii, rezervace i kontakty.";
-    }
-    if (shape === "one_pager" || templateKey === "redesign") {
-      return "Když už máte (nebo potřebujete) jednostránkový formát, dává smysl ho modernizovat ve stejném rozsahu — ne komplikovat zbytečně na více stránek.";
-    }
-    return "START drží rozsah jednoduchý: jeden přehledný web, který prodá salon a dovede k rezervaci.";
-  }
-
-  if (templateKey === "local_seo") {
-    return "U lokálního SEO potřebujete samostatné stránky a silnější strukturu — proto PRO, ne jen jednostránku.";
-  }
-  if (shape === "multi_page") {
-    return "Když má smysl vícestránková struktura (služby, tým, SEO), je lepší jít rovnou do PRO než natahovat jednostránku.";
-  }
-  return "PRO dává smysl, pokud chcete růst přes Google a mít prostor pro služby, tým i obsah.";
 }
 
 export type OutreachDraft = {
@@ -371,18 +393,15 @@ export function buildOutreachDraft(
   const rating = ratingLine(lead);
   const strengths = contentStrengths(lead);
   const strengthsLine = joinCzechList(strengths);
-  const problems = customerProblems(lead);
-  const hook = auditHook(lead);
   const pkgId = packageId ?? suggestHairwebPackage(lead, templateKey);
   const pkg = HAIRWEB_PACKAGES[pkgId];
-  const why = packageWhy(lead, templateKey, pkgId);
 
   if (templateKey === "blank") {
     return {
       templateKey,
       packageId: pkgId,
-      subject: `${salon} — nabídka webu ${pkg.name}`,
-      body: [open(lead), "", "", signature()].join("\n"),
+      subject: `${salon} — nabídka webu`,
+      body: [open(), "", "", signature()].join("\n"),
     };
   }
 
@@ -392,96 +411,64 @@ export function buildOutreachDraft(
       packageId: pkgId,
       subject: `Ještě jednou k webu pro ${salon}`,
       body: [
-        open(lead),
+        open(),
         "",
-        `jen krátce navazuji na předchozí zprávu ohledně webu pro ${salon} (balíček ${pkg.name} za ${pkg.price}).`,
+        `jen krátce navazuji na předchozí zprávu ohledně webu pro ${salon} (nabídka za ${pkg.price}).`,
         "",
         "Máte prostor se na to podívat, nebo to teď není aktuální?",
         "",
-        "Pokud Vás to zaujalo, stačí odpovědět „ANO“ a připravím Vám zdarma nezávaznou ukázku úvodní stránky.",
+        "Pokud Vás to zaujalo, stačí mi odpovědět „ANO“ a připravím Vám zdarma nezávaznou ukázku úvodní stránky.",
         "",
         signature(),
       ].join("\n"),
     };
   }
 
-  const softCta = [
-    "Aby to nebylo jen obecné, rád Vám zdarma a nezávazně připravím ukázku nové úvodní stránky přesně pro Váš salon.",
-    "",
-    "Pokud Vás to zaujalo, stačí mi odpovědět „ANO“ a návrh Vám připravím.",
-    "Teprve pokud se Vám bude směr líbit, můžeme se bavit o realizaci.",
-  ];
-
-  const problemParagraph =
-    problems.length > 0
-      ? `Konkrétně u Vás vidím: ${joinCzechList(problems)}.`
-      : null;
-
   if (templateKey === "redesign") {
-    const noticed = hook
-      ? `díval jsem se na web ${salon} — ${hook.charAt(0).toLowerCase()}${hook.slice(1)}.`
-      : strengthsLine
-        ? `díval jsem se na web ${salon}${city ? ` (${city})` : ""}. Obsahově máte základ — ${strengthsLine}.`
-        : `díval jsem se na web ${salon}${city ? ` v ${city}` : ""}.`;
-
-    const gap = rating
-      ? `Problém je, že web už nepůsobí na úrovni salonu — přitom na Googlu máte ${rating}.`
-      : "Problém je, že web už nepůsobí na úrovni salonu a služeb, které nabízíte.";
+    const interest = interestLine(lead, strengths);
+    const foundation = strengthsLine || "služby i základní informace o salonu";
 
     return {
       templateKey,
       packageId: pkgId,
-      subject:
-        pkgId === "start"
-          ? `${salon} — modernizace jednostránkového webu`
-          : `${salon} — redesign vícestránkového webu`,
+      subject: `${salon} — redesign webu`,
       body: [
-        open(lead),
+        open(),
         "",
-        noticed,
+        `narazil jsem na web Vašeho salonu ${salon} a zaujal mě hlavně ${interest}.`,
         "",
-        gap,
-        problemParagraph,
-        strengthsLine && !hook
-          ? `Nechci Vám říkat, že nic nemáte — naopak, ${strengthsLine} by se dal(y) prezentovat čistěji a hlavně lépe na mobilu.`
-          : strengthsLine
-            ? `To, co funguje (${strengthsLine}), bych nechal — jen to podat moderněji.`
-            : null,
+        `Myslím si ale, že současný web už vizuálně úplně neodpovídá úrovni salonu a služeb, které nabízíte. Obsahově přitom máte velmi dobrý základ – ${foundation} – který by se dal prezentovat moderněji a především lépe na mobilních telefonech.`,
         "",
-        ...packageBlock(pkg, why),
+        pkgId === "pro"
+          ? `Rád bych Vám proto nabídl kompletní redesign současného webu do vícestránkové podoby za ${pkg.price}.`
+          : `Rád bych Vám proto nabídl kompletní redesign současného webu za ${pkg.price}.`,
         "",
-        ...softCta,
+        scopeSentence(lead, pkgId, strengths),
+        "",
+        ...softCta(),
         "",
         signature(),
-      ]
-        .filter((line): line is string => line != null)
-        .join("\n"),
+      ].join("\n"),
     };
   }
 
   if (templateKey === "local_seo") {
-    const pro = HAIRWEB_PACKAGES.pro;
     return {
       templateKey,
       packageId: "pro",
-      subject: `${salon}${city ? ` ${city}` : ""} — web připravený na lokální SEO`,
+      subject: `${salon}${city ? ` ${city}` : ""} — web a lokální SEO`,
       body: [
-        open(lead),
+        open(),
         "",
-        `díval jsem se na ${salon}${city ? ` v ${city}` : ""}.`,
-        rating
-          ? `Hodnocení ${rating} je silné — reputaci máte.`
-          : "Působíte jako salon se silnou reputací.",
+        `narazil jsem na ${salon}${city ? ` v ${city}` : ""}${rating ? ` (${rating})` : ""}.`,
         "",
-        problemParagraph ||
-          "Co často brzdí podobné salony, je web bez struktury pro lokální vyhledávání — lidé Vás pak hůř najdou, i když služby jsou výborné.",
+        "Myslím si, že úroveň salonu už máte — co často chybí, je web připravený na lokální vyhledávání, aby Vás lidé snáz našli a rovnou se objednali.",
         "",
-        ...packageBlock(
-          pro,
-          "Proto u Vás nedává smysl jen kosmetická jednostránka, ale PRO s lokálním SEO a samostatnými stránkami.",
-        ),
+        `Rád bych Vám proto nabídl kompletní vícestránkový web s důrazem na lokální SEO za ${HAIRWEB_PACKAGES.pro.price}.`,
         "",
-        ...softCta,
+        scopeSentence(lead, "pro", strengths.length ? strengths : ["služby", "ceník", "galerii"]),
+        "",
+        ...softCta(),
         "",
         signature(),
       ].join("\n"),
@@ -496,36 +483,33 @@ export function buildOutreachDraft(
       : "";
 
   const intro = lead.instagram_handle || lead.instagram_url
-    ? `narazil jsem na ${salon}${city ? ` v ${city}` : ""}${rating ? ` (${rating})` : ""}. Na Instagramu${bookingBit ? ` / přes${bookingBit}` : ""} působíte dobře — chybí ale vlastní web, který Vás podrží na Googlu a převede zájem na rezervace.`
-    : `narazil jsem na ${salon}${city ? ` v ${city}` : ""}${rating ? ` (${rating})` : ""}. Chybí Vám vlastní web, který salon reprezentuje na Googlu a převádí návštěvy na rezervace.`;
+    ? `narazil jsem na Váš salon ${salon}${city ? ` v ${city}` : ""}${rating ? ` (${rating})` : ""}. Na Instagramu${bookingBit ? ` / přes${bookingBit}` : ""} působíte dobře — chybí ale vlastní web, který by Vás reprezentoval na Googlu a převáděl zájem na rezervace.`
+    : `narazil jsem na Váš salon ${salon}${city ? ` v ${city}` : ""}${rating ? ` (${rating})` : ""}. Chybí Vám ale vlastní web, který by salon reprezentoval na Googlu a převáděl návštěvy na rezervace.`;
 
-  const extraProblems = problems.filter(
-    (p) => !p.includes("chybí vlastní web"),
-  );
+  const noWebScope =
+    pkgId === "pro"
+      ? `Součástí by byl kompletní vícestránkový web s individuálním vzhledem, responzivním zpracováním, samostatnými stránkami služeb, týmem, galerií, Google recenzemi, ceníkem, kontakty a mapou, online rezervací, lokálním SEO, Analytics a pokročilejším obsahem.`
+      : `Součástí by byl nový individuální vzhled, responzivní zpracování pro mobil i počítač, služby a ceník, galerie, online rezervace, kontakty a mapa a základní SEO.`;
 
   return {
     templateKey,
     packageId: pkgId,
-    subject:
-      pkgId === "start"
-        ? `${salon} — jednostránkový web za ${pkg.price}`
-        : `${salon} — vícestránkový web za ${pkg.price}`,
+    subject: `${salon} — nový web za ${pkg.price}`,
     body: [
-      open(lead),
+      open(),
       "",
       intro,
-      extraProblems.length
-        ? `Navíc: ${joinCzechList(extraProblems)}.`
-        : null,
       "",
-      ...packageBlock(pkg, why),
+      pkgId === "pro"
+        ? `Rád bych Vám proto nabídl kompletní vícestránkový web za ${pkg.price}.`
+        : `Rád bych Vám proto nabídl nový jednostránkový web za ${pkg.price}.`,
       "",
-      ...softCta,
+      noWebScope,
+      "",
+      ...softCta(),
       "",
       signature(),
-    ]
-      .filter((line): line is string => line != null)
-      .join("\n"),
+    ].join("\n"),
   };
 }
 
@@ -537,13 +521,6 @@ export function suggestOutreachTemplate(lead: Lead): OutreachTemplateKey {
     lead.opportunity_summary?.toLowerCase().includes("seo")
   ) {
     return "local_seo";
-  }
-  if (
-    lead.website_outdated ||
-    lead.website_mobile_problem ||
-    (lead.web_score != null && lead.web_score < 50)
-  ) {
-    return "redesign";
   }
   return "redesign";
 }
