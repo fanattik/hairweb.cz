@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { GoogleEnrichButton } from "@/components/admin/GoogleEnrichButton";
 import { LeadCrmForm } from "@/components/admin/LeadCrmForm";
 import {
   OpportunityBadge,
@@ -211,21 +212,28 @@ export default async function AdminLeadDetailPage({
             leadScore={lead.lead_score ?? 0}
             priority={priority}
           />
-          <div className="border border-line bg-mist p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-soft">
-              Recommended action
-            </p>
-            <p className="mt-3 text-base text-ink">
-              {recommendedActionFromPriority(priority)}
-            </p>
-            {lead.opportunity_note ? (
-              <p className="mt-4 whitespace-pre-wrap text-sm text-ink-soft">
-                {lead.opportunity_note}
+          <div className="grid gap-4">
+            <div className="border border-line bg-mist p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-soft">
+                Recommended action
               </p>
-            ) : null}
+              <p className="mt-3 text-base text-ink">
+                {recommendedActionFromPriority(priority)}
+              </p>
+              {lead.opportunity_note ? (
+                <p className="mt-4 whitespace-pre-wrap text-sm text-ink-soft">
+                  {lead.opportunity_note}
+                </p>
+              ) : null}
+            </div>
+            <GoogleEnrichButton lead={lead} />
           </div>
         </div>
-      ) : null}
+      ) : (
+        <div className="mt-4">
+          <GoogleEnrichButton lead={lead} />
+        </div>
+      )}
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
         <section className="border border-line bg-foam p-5">

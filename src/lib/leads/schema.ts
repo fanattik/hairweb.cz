@@ -123,6 +123,7 @@ export const leadQualificationSchema = z.object({
   google_rating: z.number().min(0).max(5).nullable().optional(),
   google_reviews_count: z.number().int().min(0).nullable().optional(),
   google_maps_url: z.preprocess(emptyToNull, z.string().trim().max(1000).nullable().optional()),
+  google_place_id: z.preprocess(emptyToNull, z.string().trim().max(200).nullable().optional()),
 
   instagram_url: z.preprocess(emptyToNull, z.string().trim().max(500).nullable().optional()),
   instagram_handle: z.preprocess(emptyToNull, z.string().trim().max(100).nullable().optional()),

@@ -48,6 +48,7 @@ export async function POST(request: Request) {
     google_rating: input.google_rating ?? null,
     google_reviews_count: input.google_reviews_count ?? null,
     google_maps_url: emptyToNull(input.google_maps_url),
+    google_place_id: emptyToNull(input.google_place_id),
     instagram_url: emptyToNull(input.instagram_url),
     instagram_handle: emptyToNull(input.instagram_handle),
     instagram_active: input.instagram_active ?? null,

@@ -44,7 +44,10 @@ export function leadToScoreInput(
 }
 
 /** Server-side score columns to persist. */
-export function scoredColumnsFromInput(input: LeadScoreInput) {
+export function scoredColumnsFromInput(
+  input: LeadScoreInput,
+  options?: { enrichmentSource?: string },
+) {
   if (!hasQualificationSignals(input)) {
     return {
       business_score: null as number | null,
@@ -67,7 +70,7 @@ export function scoredColumnsFromInput(input: LeadScoreInput) {
     lead_score: scores.leadScore,
     score: scores.leadScore,
     last_enriched_at: new Date().toISOString(),
-    enrichment_source: "manual" as const,
+    enrichment_source: options?.enrichmentSource ?? "manual",
   };
 }
 

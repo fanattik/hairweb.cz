@@ -116,6 +116,7 @@ export type Lead = {
   google_rating: number | null;
   google_reviews_count: number | null;
   google_maps_url: string | null;
+  google_place_id: string | null;
 
   instagram_url: string | null;
   instagram_handle: string | null;
@@ -162,6 +163,8 @@ export type Lead = {
 
   enrichment_source: string | null;
   last_enriched_at: string | null;
+  enrichment_status: "idle" | "running" | "done" | "error" | null;
+  enrichment_error: string | null;
 };
 
 export const STATUS_LABELS: Record<LeadStatus, string> = {

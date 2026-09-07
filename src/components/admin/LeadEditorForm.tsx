@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { GoogleEnrichPreviewButton } from "@/components/admin/GoogleEnrichPreviewButton";
 import { ScoreSummaryCard } from "@/components/admin/ScoreBadges";
 import { calculateLeadScores } from "@/lib/leads/scoring";
 import {
@@ -32,6 +33,7 @@ type FormState = {
   region: string;
   website: string;
   google_maps_url: string;
+  google_place_id: string;
   google_rating: string;
   google_reviews_count: string;
   instagram_url: string;
@@ -106,6 +108,7 @@ function fromLead(lead?: Lead): FormState {
     region: lead?.region ?? "",
     website: lead?.website && lead.website !== "—" ? lead.website : "",
     google_maps_url: lead?.google_maps_url ?? "",
+    google_place_id: lead?.google_place_id ?? "",
     google_rating:
       lead?.google_rating != null ? String(lead.google_rating) : "",
     google_reviews_count:
@@ -304,6 +307,7 @@ export function LeadEditorForm({
       google_rating: numOrNull(state.google_rating),
       google_reviews_count: numOrNull(state.google_reviews_count),
       google_maps_url: state.google_maps_url || null,
+      google_place_id: state.google_place_id || null,
       instagram_url: state.instagram_url || null,
       instagram_handle: state.instagram_handle || null,
       instagram_active: state.instagram_active,
@@ -498,6 +502,31 @@ export function LeadEditorForm({
         </Section>
 
         <Section title="Google">
+          <GoogleEnrichPreviewButton
+            mapsUrl={state.google_maps_url}
+            salonName={state.salon_name}
+            city={state.city}
+            onFill={(payload) => {
+              setState((prev) => ({
+                ...prev,
+                google_place_id:
+                  payload.google_place_id ?? prev.google_place_id,
+                google_rating: payload.google_rating ?? prev.google_rating,
+                google_reviews_count:
+                  payload.google_reviews_count ?? prev.google_reviews_count,
+                google_maps_url:
+                  payload.google_maps_url ?? prev.google_maps_url,
+                salon_name: payload.salon_name || prev.salon_name,
+                city: payload.city || prev.city,
+                phone: payload.phone || prev.phone,
+                website: payload.website || prev.website,
+                has_website:
+                  payload.has_website != null
+                    ? payload.has_website
+                    : prev.has_website,
+              }));
+            }}
+          />
           <label className="grid gap-1 text-sm">
             <span className="font-medium">Google rating (0–5)</span>
             <input
@@ -520,6 +549,11 @@ export function LeadEditorForm({
               onChange={(e) => patch("google_reviews_count", e.target.value)}
             />
           </label>
+          {state.google_place_id ? (
+            <p className="sm:col-span-2 text-xs text-ink-soft">
+              Place ID: {state.google_place_id}
+            </p>
+          ) : null}
         </Section>
 
         <Section title="Instagram / social">
