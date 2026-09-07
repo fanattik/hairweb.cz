@@ -1,8 +1,21 @@
 import Link from "next/link";
 import { AdminShell } from "@/components/admin/AdminShell";
+import {
+  PriorityBadge,
+  WebBandBadge,
+} from "@/components/admin/ScoreBadges";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { requireAdmin } from "@/lib/admin/auth";
-import type { Lead, LeadPackage, LeadStatus, LeadType } from "@/lib/leads/types";
+import {
+  leadPriorityFromScore,
+  webScoreBand,
+} from "@/lib/leads/scoring";
+import type {
+  Lead,
+  LeadPriority,
+  LeadStatus,
+  LeadType,
+} from "@/lib/leads/types";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -19,6 +32,30 @@ function formatDate(value: string | null) {
   }).format(new Date(value));
 }
 
+function hrefWith(
+  current: Record<string, string | undefined>,
+  patch: Record<string, string | undefined>,
+) {
+  const params = new URLSearchParams();
+  const merged = { ...current, ...patch };
+  for (const [key, value] of Object.entries(merged)) {
+    if (value) params.set(key, value);
+  }
+  const qs = params.toString();
+  return qs ? `/admin/leads?${qs}` : "/admin/leads";
+}
+
+const SORT_OPTIONS = [
+  { value: "lead_score_desc", label: "Lead Score ↓", column: "lead_score", asc: false },
+  { value: "lead_score_asc", label: "Lead Score ↑", column: "lead_score", asc: true },
+  { value: "google_rating_desc", label: "Google rating ↓", column: "google_rating", asc: false },
+  { value: "reviews_desc", label: "Recenze ↓", column: "google_reviews_count", asc: false },
+  { value: "web_score_asc", label: "Web Score ↑", column: "web_score", asc: true },
+  { value: "web_score_desc", label: "Web Score ↓", column: "web_score", asc: false },
+  { value: "created_at_desc", label: "Created ↓", column: "created_at", asc: false },
+  { value: "followup_asc", label: "Follow-up ↑", column: "next_followup_at", asc: true },
+] as const;
+
 export default async function AdminLeadsPage({
   searchParams,
 }: {
@@ -29,33 +66,90 @@ export default async function AdminLeadsPage({
 
   const status = first(params.status);
   const type = first(params.type);
-  const pkg = first(params.package);
   const q = first(params.q)?.trim();
   const campaign = first(params.campaign)?.trim();
   const followup = first(params.followup);
   const pipeline = first(params.pipeline);
+  const priority = first(params.priority) as LeadPriority | undefined;
+  const city = first(params.city)?.trim();
+  const googleMin = first(params.google_min);
+  const reviewsMin = first(params.reviews_min);
+  const webBand = first(params.web_band);
+  const booking = first(params.booking);
+  const igActive = first(params.ig_active);
+  const quick = first(params.quick);
+  const sort = first(params.sort) ?? "lead_score_desc";
 
-  let query = supabase.from("leads").select("*").order("created_at", {
-    ascending: false,
-  });
+  const sortOption =
+    SORT_OPTIONS.find((option) => option.value === sort) ?? SORT_OPTIONS[0];
+
+  let query = supabase
+    .from("leads")
+    .select("*")
+    .order(sortOption.column, {
+      ascending: sortOption.asc,
+      nullsFirst: false,
+    });
 
   if (status) query = query.eq("status", status);
   if (type) query = query.eq("type", type);
-  if (pkg) query = query.eq("package", pkg);
   if (campaign) query = query.eq("utm_campaign", campaign);
+  if (city) query = query.ilike("city", `%${city}%`);
   if (pipeline === "1") {
     query = query.in("status", ["interested", "meeting", "proposal"]);
   }
-  if (followup === "today") {
+  if (followup === "today" || quick === "followup_today") {
     const end = new Date();
     end.setHours(23, 59, 59, 999);
     query = query
       .lte("next_followup_at", end.toISOString())
       .not("status", "in", "(won,lost)");
   }
+  if (priority === "hot" || quick === "hot") {
+    query = query.gte("lead_score", 80);
+  } else if (priority === "good") {
+    query = query.gte("lead_score", 65).lte("lead_score", 79);
+  } else if (priority === "warm") {
+    query = query.gte("lead_score", 50).lte("lead_score", 64);
+  } else if (priority === "low") {
+    query = query.lte("lead_score", 49);
+  }
+  if (googleMin) query = query.gte("google_rating", Number(googleMin));
+  if (reviewsMin || quick === "reviews_100") {
+    query = query.gte(
+      "google_reviews_count",
+      Number(reviewsMin || (quick === "reviews_100" ? 100 : 0)),
+    );
+  }
+  if (webBand === "0-39" || quick === "bad_web") {
+    query = query.lte("web_score", 39);
+  } else if (webBand === "40-59") {
+    query = query.gte("web_score", 40).lte("web_score", 59);
+  } else if (webBand === "60-79") {
+    query = query.gte("web_score", 60).lte("web_score", 79);
+  } else if (webBand === "80+") {
+    query = query.gte("web_score", 80);
+  }
+  if (booking === "yes" || quick === "booking") {
+    query = query.eq("has_online_booking", true);
+  } else if (booking === "no") {
+    query = query.eq("has_online_booking", false);
+  }
+  if (igActive === "yes") query = query.eq("instagram_active", true);
+  else if (igActive === "no") query = query.eq("instagram_active", false);
+  if (quick === "no_website") query = query.eq("has_website", false);
+
   if (q) {
     query = query.or(
-      `name.ilike.%${q}%,salon_name.ilike.%${q}%,email.ilike.%${q}%,website.ilike.%${q}%`,
+      [
+        `name.ilike.%${q}%`,
+        `salon_name.ilike.%${q}%`,
+        `email.ilike.%${q}%`,
+        `website.ilike.%${q}%`,
+        `instagram_handle.ilike.%${q}%`,
+        `city.ilike.%${q}%`,
+        `contact_person.ilike.%${q}%`,
+      ].join(","),
     );
   }
 
@@ -65,6 +159,37 @@ export default async function AdminLeadsPage({
   }
   const leads = data ?? [];
 
+  const currentFilters: Record<string, string | undefined> = {
+    q,
+    status,
+    type,
+    campaign,
+    priority,
+    city,
+    google_min: googleMin,
+    reviews_min: reviewsMin,
+    web_band: webBand,
+    booking,
+    ig_active: igActive,
+    sort,
+    followup,
+    pipeline,
+    quick,
+  };
+
+  const chip = (label: string, href: string, active = false) => (
+    <Link
+      href={href}
+      className={`inline-flex border px-3 py-1.5 text-xs tracking-wide transition ${
+        active
+          ? "border-ink bg-ink text-foam"
+          : "border-line bg-foam text-ink hover:border-ink"
+      }`}
+    >
+      {label}
+    </Link>
+  );
+
   return (
     <AdminShell email={user.email}>
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -72,7 +197,9 @@ export default async function AdminLeadsPage({
           <h1 className="font-[family-name:var(--font-fraunces)] text-3xl tracking-tight">
             Leady
           </h1>
-          <p className="mt-1 text-sm text-ink-soft">{leads.length} záznamů</p>
+          <p className="mt-1 text-sm text-ink-soft">
+            {leads.length} záznamů · prioritizace podle Lead Score
+          </p>
         </div>
         <Link
           href="/admin/leads/new"
@@ -82,13 +209,58 @@ export default async function AdminLeadsPage({
         </Link>
       </div>
 
-      <form className="mt-6 grid gap-3 border border-line bg-foam p-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="mt-5 flex flex-wrap gap-2">
+        {chip(
+          "Hot leads",
+          hrefWith(currentFilters, { quick: "hot", priority: "hot" }),
+          quick === "hot" || priority === "hot",
+        )}
+        {chip(
+          "Bez webu",
+          hrefWith(currentFilters, { quick: "no_website" }),
+          quick === "no_website",
+        )}
+        {chip(
+          "Špatný web",
+          hrefWith(currentFilters, { quick: "bad_web", web_band: "0-39" }),
+          quick === "bad_web" || webBand === "0-39",
+        )}
+        {chip(
+          "100+ recenzí",
+          hrefWith(currentFilters, { quick: "reviews_100", reviews_min: "100" }),
+          quick === "reviews_100" || reviewsMin === "100",
+        )}
+        {chip(
+          "Online booking",
+          hrefWith(currentFilters, { quick: "booking", booking: "yes" }),
+          quick === "booking" || booking === "yes",
+        )}
+        {chip(
+          "Dnes follow-up",
+          hrefWith(currentFilters, { quick: "followup_today", followup: "today" }),
+          quick === "followup_today" || followup === "today",
+        )}
+        {chip("Vyčistit filtry", "/admin/leads")}
+      </div>
+
+      <form className="mt-5 grid gap-3 border border-line bg-foam p-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
         <input
           name="q"
           defaultValue={q}
-          placeholder="Hledat jméno / salon / e-mail / web"
-          className="border border-line bg-mist px-3 py-2 text-sm outline-none focus:border-copper lg:col-span-2"
+          placeholder="Hledat salon / město / e-mail / IG…"
+          className="border border-line bg-mist px-3 py-2 text-sm outline-none focus:border-copper sm:col-span-2"
         />
+        <select
+          name="priority"
+          defaultValue={priority}
+          className="border border-line bg-mist px-3 py-2 text-sm"
+        >
+          <option value="">Priorita</option>
+          <option value="hot">HOT</option>
+          <option value="good">GOOD</option>
+          <option value="warm">WARM</option>
+          <option value="low">LOW</option>
+        </select>
         <select
           name="status"
           defaultValue={status}
@@ -116,34 +288,83 @@ export default async function AdminLeadsPage({
           defaultValue={type}
           className="border border-line bg-mist px-3 py-2 text-sm"
         >
-          <option value="">Type</option>
+          <option value="">Type (vše)</option>
           {(["inbound", "outbound"] as LeadType[]).map((t) => (
             <option key={t} value={t}>
               {t}
             </option>
           ))}
         </select>
+        <input
+          name="city"
+          defaultValue={city}
+          placeholder="Město"
+          className="border border-line bg-mist px-3 py-2 text-sm"
+        />
         <select
-          name="package"
-          defaultValue={pkg}
+          name="google_min"
+          defaultValue={googleMin}
           className="border border-line bg-mist px-3 py-2 text-sm"
         >
-          <option value="">Balíček</option>
-          {(["start", "pro"] as LeadPackage[]).map((p) => (
-            <option key={p} value={p}>
-              {p.toUpperCase()}
+          <option value="">Google rating</option>
+          <option value="4.8">4.8+</option>
+          <option value="4.6">4.6+</option>
+          <option value="4.4">4.4+</option>
+        </select>
+        <select
+          name="reviews_min"
+          defaultValue={reviewsMin}
+          className="border border-line bg-mist px-3 py-2 text-sm"
+        >
+          <option value="">Recenze</option>
+          <option value="200">200+</option>
+          <option value="100">100+</option>
+          <option value="50">50+</option>
+          <option value="20">20+</option>
+        </select>
+        <select
+          name="web_band"
+          defaultValue={webBand}
+          className="border border-line bg-mist px-3 py-2 text-sm"
+        >
+          <option value="">Web Score</option>
+          <option value="0-39">0–39 POOR</option>
+          <option value="40-59">40–59 WEAK</option>
+          <option value="60-79">60–79 GOOD</option>
+          <option value="80+">80+ STRONG</option>
+        </select>
+        <select
+          name="booking"
+          defaultValue={booking}
+          className="border border-line bg-mist px-3 py-2 text-sm"
+        >
+          <option value="">Booking</option>
+          <option value="yes">Ano</option>
+          <option value="no">Ne</option>
+        </select>
+        <select
+          name="ig_active"
+          defaultValue={igActive}
+          className="border border-line bg-mist px-3 py-2 text-sm"
+        >
+          <option value="">Instagram active</option>
+          <option value="yes">Ano</option>
+          <option value="no">Ne</option>
+        </select>
+        <select
+          name="sort"
+          defaultValue={sort}
+          className="border border-line bg-mist px-3 py-2 text-sm"
+        >
+          {SORT_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
             </option>
           ))}
         </select>
-        <input
-          name="campaign"
-          defaultValue={campaign}
-          placeholder="UTM campaign"
-          className="border border-line bg-mist px-3 py-2 text-sm outline-none focus:border-copper"
-        />
         <button
           type="submit"
-          className="bg-copper px-4 py-2 text-sm text-foam hover:bg-copper-deep sm:col-span-2 lg:col-span-1"
+          className="bg-copper px-4 py-2 text-sm text-foam hover:bg-copper-deep"
         >
           Filtrovat
         </button>
@@ -153,43 +374,110 @@ export default async function AdminLeadsPage({
         <table className="min-w-full text-left text-sm">
           <thead className="border-b border-line text-xs uppercase tracking-wide text-ink-soft">
             <tr>
-              <th className="px-3 py-3">Datum</th>
-              <th className="px-3 py-3">Jméno</th>
+              <th className="px-3 py-3">Score</th>
               <th className="px-3 py-3">Salon</th>
+              <th className="hidden px-3 py-3 md:table-cell">Město</th>
+              <th className="px-3 py-3">Google</th>
+              <th className="hidden px-3 py-3 lg:table-cell">Recenze</th>
               <th className="px-3 py-3">Web</th>
-              <th className="px-3 py-3">Typ</th>
-              <th className="px-3 py-3">Balíček</th>
-              <th className="px-3 py-3">Zdroj</th>
+              <th className="hidden px-3 py-3 xl:table-cell">Booking</th>
               <th className="px-3 py-3">Status</th>
-              <th className="px-3 py-3">Follow-up</th>
+              <th className="hidden px-3 py-3 lg:table-cell">Follow-up</th>
             </tr>
           </thead>
           <tbody>
-            {leads.map((lead) => (
-              <tr key={lead.id} className="border-b border-line/70 hover:bg-mist/60">
-                <td className="px-3 py-3 whitespace-nowrap">
-                  <Link href={`/admin/leads/${lead.id}`} className="underline-offset-2 hover:underline">
-                    {formatDate(lead.created_at)}
-                  </Link>
-                </td>
-                <td className="px-3 py-3">{lead.name}</td>
-                <td className="px-3 py-3">{lead.salon_name || "—"}</td>
-                <td className="max-w-[10rem] truncate px-3 py-3">
-                  {lead.website}
-                </td>
-                <td className="px-3 py-3">{lead.type}</td>
-                <td className="px-3 py-3">
-                  {lead.package ? lead.package.toUpperCase() : "—"}
-                </td>
-                <td className="px-3 py-3">{lead.source_detail || lead.source || "—"}</td>
-                <td className="px-3 py-3">
-                  <StatusBadge status={lead.status} />
-                </td>
-                <td className="px-3 py-3 whitespace-nowrap">
-                  {formatDate(lead.next_followup_at)}
-                </td>
-              </tr>
-            ))}
+            {leads.map((lead) => {
+              const score = lead.lead_score;
+              const priorityValue =
+                score != null ? leadPriorityFromScore(score) : null;
+              const web =
+                lead.has_website === false
+                  ? null
+                  : lead.web_score;
+
+              return (
+                <tr
+                  key={lead.id}
+                  className="border-b border-line/70 hover:bg-mist/60"
+                >
+                  <td className="px-3 py-3">
+                    <Link
+                      href={`/admin/leads/${lead.id}`}
+                      className="block min-w-[4.5rem]"
+                    >
+                      {score != null ? (
+                        <div>
+                          <p className="font-[family-name:var(--font-fraunces)] text-xl leading-none text-ink">
+                            {score}
+                          </p>
+                          {priorityValue ? (
+                            <div className="mt-1.5">
+                              <PriorityBadge priority={priorityValue} />
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : (
+                        <span className="text-ink-soft">—</span>
+                      )}
+                    </Link>
+                  </td>
+                  <td className="px-3 py-3">
+                    <Link
+                      href={`/admin/leads/${lead.id}`}
+                      className="font-medium hover:underline"
+                    >
+                      {lead.salon_name || lead.name}
+                    </Link>
+                    <p className="mt-0.5 text-xs text-ink-soft md:hidden">
+                      {lead.city || "—"}
+                    </p>
+                  </td>
+                  <td className="hidden px-3 py-3 md:table-cell">
+                    {lead.city || "—"}
+                  </td>
+                  <td className="px-3 py-3 whitespace-nowrap">
+                    {lead.google_rating != null ? (
+                      <span>{Number(lead.google_rating).toFixed(1)} ★</span>
+                    ) : (
+                      "—"
+                    )}
+                    <span className="mt-0.5 block text-xs text-ink-soft lg:hidden">
+                      {lead.google_reviews_count != null
+                        ? `${lead.google_reviews_count} rec.`
+                        : ""}
+                    </span>
+                  </td>
+                  <td className="hidden px-3 py-3 lg:table-cell">
+                    {lead.google_reviews_count ?? "—"}
+                  </td>
+                  <td className="px-3 py-3">
+                    {lead.has_website === false ? (
+                      <span className="text-xs font-semibold tracking-wide text-copper-deep">
+                        NO WEB
+                      </span>
+                    ) : web != null ? (
+                      <div className="flex flex-col gap-1">
+                        <span>{web} / 100</span>
+                        <WebBandBadge band={webScoreBand(web)} />
+                      </div>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
+                  <td className="hidden px-3 py-3 xl:table-cell">
+                    {lead.has_online_booking
+                      ? lead.booking_provider || "Ano"
+                      : "—"}
+                  </td>
+                  <td className="px-3 py-3">
+                    <StatusBadge status={lead.status} />
+                  </td>
+                  <td className="hidden whitespace-nowrap px-3 py-3 lg:table-cell">
+                    {formatDate(lead.next_followup_at)}
+                  </td>
+                </tr>
+              );
+            })}
             {leads.length === 0 ? (
               <tr>
                 <td colSpan={9} className="px-3 py-8 text-center text-ink-soft">

@@ -12,7 +12,6 @@ export function AnalyticsScripts() {
     if (!measurementId) return;
 
     let loaded = false;
-    let timeoutId: number | undefined;
 
     const load = () => {
       if (loaded) return;
@@ -41,13 +40,13 @@ export function AnalyticsScripts() {
     }
 
     // Late fallback for non-interactive sessions — past typical PSI wait window.
-    timeoutId = window.setTimeout(load, 12_000);
+    const timeoutId = window.setTimeout(load, 12_000);
 
     function cleanup() {
       for (const event of events) {
         window.removeEventListener(event, onInteract);
       }
-      if (timeoutId != null) window.clearTimeout(timeoutId);
+      window.clearTimeout(timeoutId);
     }
 
     return cleanup;

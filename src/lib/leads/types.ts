@@ -27,12 +27,56 @@ export const LEAD_SOURCE_DETAILS = [
 ] as const;
 export type LeadSourceDetail = (typeof LEAD_SOURCE_DETAILS)[number];
 
+export const INSTAGRAM_QUALITIES = [
+  "poor",
+  "average",
+  "good",
+  "excellent",
+] as const;
+export type InstagramQuality = (typeof INSTAGRAM_QUALITIES)[number];
+
+export const BUSINESS_SIZES = [
+  "solo",
+  "small",
+  "medium",
+  "large",
+  "unknown",
+] as const;
+export type BusinessSize = (typeof BUSINESS_SIZES)[number];
+
+export const LEAD_PRIORITIES = ["hot", "good", "warm", "low"] as const;
+export type LeadPriority = (typeof LEAD_PRIORITIES)[number];
+
+export const LEAD_OPPORTUNITIES = [
+  "very_high",
+  "high",
+  "medium",
+  "low",
+] as const;
+export type LeadOpportunity = (typeof LEAD_OPPORTUNITIES)[number];
+
+export const WEB_SCORE_BANDS = ["poor", "weak", "good", "strong"] as const;
+export type WebScoreBand = (typeof WEB_SCORE_BANDS)[number];
+
 export type LeadUtm = {
   utm_source: string | null;
   utm_medium: string | null;
   utm_campaign: string | null;
   utm_content: string | null;
   utm_term: string | null;
+};
+
+export type LeadScores = {
+  businessScore: number;
+  webScore: number;
+  webOpportunityScore: number;
+  purchaseIntentScore: number;
+  contactabilityScore: number;
+  leadScore: number;
+  priority: LeadPriority;
+  opportunity: LeadOpportunity;
+  recommendedAction: string;
+  webScoreBand: WebScoreBand;
 };
 
 export type Lead = {
@@ -57,12 +101,67 @@ export type Lead = {
   referrer: string | null;
   landing_page: string | null;
   status: LeadStatus;
+  /** Legacy manual score — kept in sync with lead_score when auto-scored. */
   score: number | null;
   notes: string | null;
   last_contact_at: string | null;
   next_followup_at: string | null;
   won_value: number | null;
   lost_reason: string | null;
+
+  city: string | null;
+  region: string | null;
+  contact_person: string | null;
+
+  google_rating: number | null;
+  google_reviews_count: number | null;
+  google_maps_url: string | null;
+
+  instagram_url: string | null;
+  instagram_handle: string | null;
+  instagram_active: boolean | null;
+  instagram_followers: number | null;
+  instagram_quality: InstagramQuality | null;
+
+  has_online_booking: boolean | null;
+  booking_provider: string | null;
+  booking_url: string | null;
+
+  business_size: BusinessSize | null;
+  premium_impression: boolean | null;
+  professional_photos: boolean | null;
+  professional_branding: boolean | null;
+  paid_marketing: boolean | null;
+
+  has_website: boolean | null;
+  website_design_score: number | null;
+  website_mobile_score: number | null;
+  website_cta_score: number | null;
+  website_content_score: number | null;
+  website_trust_score: number | null;
+  website_seo_score: number | null;
+  website_performance_score: number | null;
+  web_score: number | null;
+
+  website_outdated: boolean | null;
+  website_mobile_problem: boolean | null;
+  website_clear_booking_cta: boolean | null;
+  website_has_prices: boolean | null;
+  website_has_gallery: boolean | null;
+  website_has_team: boolean | null;
+  website_has_reviews: boolean | null;
+
+  website_audit: string | null;
+  opportunity_note: string | null;
+
+  business_score: number | null;
+  web_opportunity_score: number | null;
+  purchase_intent_score: number | null;
+  contactability_score: number | null;
+  lead_score: number | null;
+
+  enrichment_source: string | null;
+  last_enriched_at: string | null;
 };
 
 export const STATUS_LABELS: Record<LeadStatus, string> = {
@@ -74,3 +173,49 @@ export const STATUS_LABELS: Record<LeadStatus, string> = {
   won: "WON",
   lost: "LOST",
 };
+
+export const PRIORITY_LABELS: Record<LeadPriority, string> = {
+  hot: "HOT",
+  good: "GOOD",
+  warm: "WARM",
+  low: "LOW",
+};
+
+export const OPPORTUNITY_LABELS: Record<LeadOpportunity, string> = {
+  very_high: "VERY HIGH",
+  high: "HIGH",
+  medium: "MEDIUM",
+  low: "LOW",
+};
+
+export const WEB_BAND_LABELS: Record<WebScoreBand, string> = {
+  poor: "POOR",
+  weak: "WEAK",
+  good: "GOOD",
+  strong: "STRONG",
+};
+
+export const INSTAGRAM_QUALITY_LABELS: Record<InstagramQuality, string> = {
+  poor: "Slabý",
+  average: "Průměrný",
+  good: "Dobrý",
+  excellent: "Výborný",
+};
+
+export const BUSINESS_SIZE_LABELS: Record<BusinessSize, string> = {
+  solo: "Solo (1)",
+  small: "Malý (2–3)",
+  medium: "Střední (4–8)",
+  large: "Velký / pobočky",
+  unknown: "Neznámé",
+};
+
+export const WEB_SCORE_MAX = {
+  design: 20,
+  mobile: 15,
+  cta: 15,
+  content: 15,
+  trust: 10,
+  seo: 15,
+  performance: 10,
+} as const;

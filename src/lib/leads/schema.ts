@@ -1,11 +1,37 @@
 import { z } from "zod";
-import { LEAD_PACKAGES, LEAD_SOURCE_DETAILS } from "@/lib/leads/types";
+import {
+  BUSINESS_SIZES,
+  INSTAGRAM_QUALITIES,
+  LEAD_PACKAGES,
+  LEAD_SOURCE_DETAILS,
+  LEAD_STATUSES,
+} from "@/lib/leads/types";
 
 const emptyToUndefined = (value: unknown) => {
   if (typeof value !== "string") return value;
   const trimmed = value.trim();
   return trimmed.length === 0 ? undefined : trimmed;
 };
+
+const emptyToNull = (value: unknown) => {
+  if (value === "" || value === undefined) return null;
+  return value;
+};
+
+const optionalTrimmed = z.preprocess(
+  emptyToUndefined,
+  z.string().trim().max(500).optional(),
+);
+
+const nullableTrimmed = z.preprocess(
+  emptyToNull,
+  z.string().trim().max(5000).nullable().optional(),
+);
+
+const optionalBool = z
+  .union([z.boolean(), z.null()])
+  .optional()
+  .nullable();
 
 /** Accepts URL, domain, Instagram path, or @handle. */
 export const websiteSchema = z
@@ -23,7 +49,6 @@ export const websiteSchema = z
         return false;
       }
     }
-    // domain, path, or handle-like string without spaces
     return !/\s/.test(value) && /[a-z0-9]/i.test(value);
   }, "Zadejte platný web, Instagram nebo @handle.");
 
@@ -77,40 +102,94 @@ export const leadSubmitSchema = z.object({
     .optional(),
   referrer: z.string().max(1000).optional().nullable(),
   landingPage: z.string().max(1000).optional().nullable(),
-  /** Honeypot — must stay empty. */
   companyWebsite: z.string().max(200).optional().nullable(),
-  /** Form load timestamp (ms). */
   formStartedAt: z.number().int().positive().optional(),
 });
 
 export type LeadSubmitInput = z.infer<typeof leadSubmitSchema>;
 
-export const leadCrmUpdateSchema = z.object({
-  status: z
-    .enum([
-      "new",
-      "contacted",
-      "interested",
-      "meeting",
-      "proposal",
-      "won",
-      "lost",
-    ])
-    .optional(),
-  score: z.number().int().min(0).max(100).nullable().optional(),
-  notes: z.string().max(5000).nullable().optional(),
-  last_contact_at: z.string().datetime().nullable().optional(),
-  next_followup_at: z.string().datetime().nullable().optional(),
-  won_value: z.number().nonnegative().nullable().optional(),
-  lost_reason: z.string().max(1000).nullable().optional(),
+const scoreInt = (max: number) =>
+  z.number().int().min(0).max(max).nullable().optional();
+
+/** Shared qualification fields for outbound create + CRM update. */
+export const leadQualificationSchema = z.object({
+  salon_name: z.preprocess(emptyToNull, z.string().trim().max(150).nullable().optional()),
+  contact_person: z.preprocess(emptyToNull, z.string().trim().max(100).nullable().optional()),
+  city: z.preprocess(emptyToNull, z.string().trim().max(100).nullable().optional()),
+  region: z.preprocess(emptyToNull, z.string().trim().max(100).nullable().optional()),
+  phone: z.preprocess(emptyToNull, z.string().trim().max(50).nullable().optional()),
+  website: z.preprocess(emptyToNull, z.string().trim().max(500).nullable().optional()),
+
+  google_rating: z.number().min(0).max(5).nullable().optional(),
+  google_reviews_count: z.number().int().min(0).nullable().optional(),
+  google_maps_url: z.preprocess(emptyToNull, z.string().trim().max(1000).nullable().optional()),
+
+  instagram_url: z.preprocess(emptyToNull, z.string().trim().max(500).nullable().optional()),
+  instagram_handle: z.preprocess(emptyToNull, z.string().trim().max(100).nullable().optional()),
+  instagram_active: optionalBool,
+  instagram_followers: z.number().int().min(0).nullable().optional(),
+  instagram_quality: z.enum(INSTAGRAM_QUALITIES).nullable().optional(),
+
+  has_online_booking: optionalBool,
+  booking_provider: z.preprocess(emptyToNull, z.string().trim().max(100).nullable().optional()),
+  booking_url: z.preprocess(emptyToNull, z.string().trim().max(500).nullable().optional()),
+
+  business_size: z.enum(BUSINESS_SIZES).nullable().optional(),
+  premium_impression: optionalBool,
+  professional_photos: optionalBool,
+  professional_branding: optionalBool,
+  paid_marketing: optionalBool,
+
+  has_website: optionalBool,
+  website_design_score: scoreInt(20),
+  website_mobile_score: scoreInt(15),
+  website_cta_score: scoreInt(15),
+  website_content_score: scoreInt(15),
+  website_trust_score: scoreInt(10),
+  website_seo_score: scoreInt(15),
+  website_performance_score: scoreInt(10),
+
+  website_outdated: optionalBool,
+  website_mobile_problem: optionalBool,
+  website_clear_booking_cta: optionalBool,
+  website_has_prices: optionalBool,
+  website_has_gallery: optionalBool,
+  website_has_team: optionalBool,
+  website_has_reviews: optionalBool,
+
+  website_audit: nullableTrimmed,
+  opportunity_note: nullableTrimmed,
 });
 
-export const outboundLeadSchema = z.object({
-  name: z.string().trim().min(2).max(100),
-  salonName: z.string().trim().max(150).optional(),
-  email: z.string().trim().email().max(255),
-  phone: z.string().trim().max(50).optional(),
-  website: websiteSchema,
-  score: z.number().int().min(0).max(100).optional(),
-  notes: z.string().trim().max(5000).optional(),
-});
+export const leadCrmUpdateSchema = z
+  .object({
+    status: z.enum(LEAD_STATUSES).optional(),
+    notes: z.string().max(5000).nullable().optional(),
+    last_contact_at: z.string().datetime().nullable().optional(),
+    next_followup_at: z.string().datetime().nullable().optional(),
+    won_value: z.number().nonnegative().nullable().optional(),
+    lost_reason: z.string().max(1000).nullable().optional(),
+    name: z.string().trim().min(2).max(100).optional(),
+    email: z.string().trim().email().max(255).optional(),
+  })
+  .merge(leadQualificationSchema);
+
+export const outboundLeadSchema = z
+  .object({
+    name: z.string().trim().min(2).max(100),
+    salonName: optionalTrimmed,
+    email: z.string().trim().email().max(255),
+    phone: optionalTrimmed,
+    website: z.preprocess((value) => {
+      if (value === "" || value == null) return undefined;
+      return value;
+    }, websiteSchema.optional()),
+    notes: optionalTrimmed,
+  })
+  .merge(
+    leadQualificationSchema.omit({
+      salon_name: true,
+      phone: true,
+      website: true,
+    }),
+  );
