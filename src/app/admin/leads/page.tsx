@@ -79,6 +79,9 @@ export default async function AdminLeadsPage({
   const igActive = first(params.ig_active);
   const quick = first(params.quick);
   const sort = first(params.sort) ?? "lead_score_desc";
+  const importId = first(params.import_id);
+  const grade = first(params.grade);
+  const sourceType = first(params.source_type);
 
   const sortOption =
     SORT_OPTIONS.find((option) => option.value === sort) ?? SORT_OPTIONS[0];
@@ -138,6 +141,28 @@ export default async function AdminLeadsPage({
   if (igActive === "yes") query = query.eq("instagram_active", true);
   else if (igActive === "no") query = query.eq("instagram_active", false);
   if (quick === "no_website") query = query.eq("has_website", false);
+  if (grade) query = query.eq("lead_grade", grade.toUpperCase());
+  if (sourceType) query = query.eq("source_type", sourceType);
+
+  if (importId) {
+    const { data: items } = await supabase
+      .from("lead_import_items")
+      .select("lead_id")
+      .eq("import_id", importId)
+      .not("lead_id", "is", null);
+    const ids = [
+      ...new Set(
+        (items || [])
+          .map((item) => item.lead_id as string | null)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ];
+    if (ids.length === 0) {
+      query = query.eq("id", "00000000-0000-0000-0000-000000000000");
+    } else {
+      query = query.in("id", ids);
+    }
+  }
 
   if (q) {
     query = query.or(
@@ -175,6 +200,9 @@ export default async function AdminLeadsPage({
     followup,
     pipeline,
     quick,
+    import_id: importId,
+    grade,
+    source_type: sourceType,
   };
 
   const chip = (label: string, href: string, active = false) => (
@@ -201,12 +229,20 @@ export default async function AdminLeadsPage({
             {leads.length} záznamů · prioritizace podle Lead Score
           </p>
         </div>
-        <Link
-          href="/admin/leads/new"
-          className="bg-ink px-4 py-2.5 text-sm text-foam hover:bg-ink-soft"
-        >
-          Nový outbound
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/admin/leads/import"
+            className="border border-line px-4 py-2.5 text-sm hover:border-ink"
+          >
+            Importovat leady
+          </Link>
+          <Link
+            href="/admin/leads/new"
+            className="bg-ink px-4 py-2.5 text-sm text-foam hover:bg-ink-soft"
+          >
+            Nový outbound
+          </Link>
+        </div>
       </div>
 
       <div className="mt-5 flex flex-wrap gap-2">
@@ -299,6 +335,35 @@ export default async function AdminLeadsPage({
           name="city"
           defaultValue={city}
           placeholder="Město"
+          className="border border-line bg-mist px-3 py-2 text-sm"
+        />
+        <select
+          name="grade"
+          defaultValue={grade}
+          className="border border-line bg-mist px-3 py-2 text-sm"
+        >
+          <option value="">Grade</option>
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="C">C</option>
+          <option value="D">D</option>
+        </select>
+        <select
+          name="source_type"
+          defaultValue={sourceType}
+          className="border border-line bg-mist px-3 py-2 text-sm"
+        >
+          <option value="">Zdroj</option>
+          <option value="google_maps">Google Maps</option>
+          <option value="firmy_cz">Firmy.cz</option>
+          <option value="instagram">Instagram</option>
+          <option value="manual">Manual</option>
+          <option value="other">Other</option>
+        </select>
+        <input
+          name="import_id"
+          defaultValue={importId}
+          placeholder="Import ID"
           className="border border-line bg-mist px-3 py-2 text-sm"
         />
         <select

@@ -157,6 +157,14 @@ export function leadPriorityFromScore(leadScore: number): LeadPriority {
   return "low";
 }
 
+/** Import grade bands (A–D) derived from Lead Score. */
+export function leadGradeFromScore(leadScore: number): "A" | "B" | "C" | "D" {
+  if (leadScore >= 75) return "A";
+  if (leadScore >= 50) return "B";
+  if (leadScore >= 25) return "C";
+  return "D";
+}
+
 export function leadOpportunityFromScore(leadScore: number): LeadOpportunity {
   if (leadScore >= 80) return "very_high";
   if (leadScore >= 65) return "high";

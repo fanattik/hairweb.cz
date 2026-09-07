@@ -1,6 +1,7 @@
 import {
   calculateLeadScores,
   hasQualificationSignals,
+  leadGradeFromScore,
   type LeadScoreInput,
 } from "@/lib/leads/scoring";
 import type {
@@ -56,6 +57,7 @@ export function scoredColumnsFromInput(
       purchase_intent_score: null as number | null,
       contactability_score: null as number | null,
       lead_score: null as number | null,
+      lead_grade: null as string | null,
       score: null as number | null,
     };
   }
@@ -68,6 +70,7 @@ export function scoredColumnsFromInput(
     purchase_intent_score: scores.purchaseIntentScore,
     contactability_score: scores.contactabilityScore,
     lead_score: scores.leadScore,
+    lead_grade: leadGradeFromScore(scores.leadScore),
     score: scores.leadScore,
     last_enriched_at: new Date().toISOString(),
     enrichment_source: options?.enrichmentSource ?? "manual",

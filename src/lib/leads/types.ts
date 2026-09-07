@@ -159,6 +159,20 @@ export type Lead = {
   website_audit: string | null;
   opportunity_note: string | null;
 
+  facebook_url: string | null;
+  address: string | null;
+  postal_code: string | null;
+  country: string | null;
+  website_domain: string | null;
+  phone_normalized: string | null;
+  email_normalized: string | null;
+  salon_name_normalized: string | null;
+  raw_import_data: Record<string, string | null> | null;
+  source_type: string | null;
+  source_name: string | null;
+  source_url: string | null;
+  lead_grade: "A" | "B" | "C" | "D" | null;
+
   lighthouse_performance: number | null;
   lighthouse_accessibility: number | null;
   lighthouse_seo: number | null;
