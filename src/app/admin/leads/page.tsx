@@ -1,19 +1,10 @@
 import Link from "next/link";
 import { AdminShell } from "@/components/admin/AdminShell";
-import {
-  PriorityBadge,
-  WebBandBadge,
-} from "@/components/admin/ScoreBadges";
-import { StatusBadge } from "@/components/admin/StatusBadge";
+import { LeadsBulkTable } from "@/components/admin/LeadsBulkTable";
 import { requireAdmin } from "@/lib/admin/auth";
-import {
-  leadPriorityFromScore,
-  webScoreBand,
-} from "@/lib/leads/scoring";
 import type {
   Lead,
   LeadPriority,
-  LeadStatus,
   LeadType,
 } from "@/lib/leads/types";
 import { LEAD_STATUSES, STATUS_LABELS } from "@/lib/leads/types";
@@ -22,15 +13,6 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 function first(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
-}
-
-function formatDate(value: string | null) {
-  if (!value) return "—";
-  return new Intl.DateTimeFormat("cs-CZ", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(new Date(value));
 }
 
 function hrefWith(
@@ -149,6 +131,11 @@ export default async function AdminLeadsPage({
   if (igActive === "yes") query = query.eq("instagram_active", true);
   else if (igActive === "no") query = query.eq("instagram_active", false);
   if (quick === "no_website") query = query.eq("has_website", false);
+  if (quick === "needs_analyze") {
+    query = query.or(
+      "last_enriched_at.is.null,enrichment_status.is.null,enrichment_status.eq.idle,enrichment_status.eq.error",
+    );
+  }
   if (quick === "high_rating_no_web") {
     query = query
       .eq("has_website", false)
@@ -290,6 +277,11 @@ export default async function AdminLeadsPage({
           "100+ recenzí",
           hrefWith(currentFilters, { quick: "reviews_100", reviews_min: "100" }),
           quick === "reviews_100" || reviewsMin === "100",
+        )}
+        {chip(
+          "Bez analýzy",
+          hrefWith(currentFilters, { quick: "needs_analyze" }),
+          quick === "needs_analyze",
         )}
         {chip(
           "A-grade opportunity",
@@ -498,131 +490,13 @@ export default async function AdminLeadsPage({
         </button>
       </form>
 
-      <div className="mt-6 overflow-x-auto border border-line bg-foam">
-        <table className="min-w-full text-left text-sm">
-          <thead className="border-b border-line text-xs uppercase tracking-wide text-ink-soft">
-            <tr>
-              <th className="px-3 py-3">Opp / Score</th>
-              <th className="px-3 py-3">Salon</th>
-              <th className="hidden px-3 py-3 md:table-cell">Město</th>
-              <th className="px-3 py-3">Google</th>
-              <th className="hidden px-3 py-3 lg:table-cell">Recenze</th>
-              <th className="px-3 py-3">Web</th>
-              <th className="hidden px-3 py-3 xl:table-cell">Booking</th>
-              <th className="px-3 py-3">Status</th>
-              <th className="hidden px-3 py-3 lg:table-cell">Follow-up</th>
-            </tr>
-          </thead>
-          <tbody>
-            {leads.map((lead) => {
-              const score = lead.opportunity_score ?? lead.lead_score;
-              const priorityValue =
-                lead.lead_score != null
-                  ? leadPriorityFromScore(lead.lead_score)
-                  : null;
-              const web =
-                lead.has_website === false
-                  ? null
-                  : lead.web_score;
-
-              return (
-                <tr
-                  key={lead.id}
-                  className="border-b border-line/70 hover:bg-mist/60"
-                >
-                  <td className="px-3 py-3">
-                    <Link
-                      href={`/admin/leads/${lead.id}`}
-                      className="block min-w-[4.5rem]"
-                    >
-                      {score != null ? (
-                        <div>
-                          <p className="font-[family-name:var(--font-fraunces)] text-xl leading-none text-ink">
-                            {score}
-                          </p>
-                          <div className="mt-1.5 flex flex-wrap items-center gap-1">
-                            {lead.opportunity_grade ? (
-                              <span className="text-[10px] font-semibold tracking-wide">
-                                {lead.opportunity_grade}
-                              </span>
-                            ) : null}
-                            {priorityValue ? (
-                              <PriorityBadge priority={priorityValue} />
-                            ) : null}
-                          </div>
-                        </div>
-                      ) : (
-                        <span className="text-ink-soft">—</span>
-                      )}
-                    </Link>
-                  </td>
-                  <td className="px-3 py-3">
-                    <Link
-                      href={`/admin/leads/${lead.id}`}
-                      className="font-medium hover:underline"
-                    >
-                      {lead.salon_name || lead.name}
-                    </Link>
-                    <p className="mt-0.5 text-xs text-ink-soft md:hidden">
-                      {lead.city || "—"}
-                    </p>
-                  </td>
-                  <td className="hidden px-3 py-3 md:table-cell">
-                    {lead.city || "—"}
-                  </td>
-                  <td className="px-3 py-3 whitespace-nowrap">
-                    {lead.google_rating != null ? (
-                      <span>{Number(lead.google_rating).toFixed(1)} ★</span>
-                    ) : (
-                      "—"
-                    )}
-                    <span className="mt-0.5 block text-xs text-ink-soft lg:hidden">
-                      {lead.google_reviews_count != null
-                        ? `${lead.google_reviews_count} rec.`
-                        : ""}
-                    </span>
-                  </td>
-                  <td className="hidden px-3 py-3 lg:table-cell">
-                    {lead.google_reviews_count ?? "—"}
-                  </td>
-                  <td className="px-3 py-3">
-                    {lead.has_website === false ? (
-                      <span className="text-xs font-semibold tracking-wide text-copper-deep">
-                        NO WEB
-                      </span>
-                    ) : web != null ? (
-                      <div className="flex flex-col gap-1">
-                        <span>{web} / 100</span>
-                        <WebBandBadge band={webScoreBand(web)} />
-                      </div>
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-                  <td className="hidden px-3 py-3 xl:table-cell">
-                    {lead.has_online_booking
-                      ? lead.booking_provider || "Ano"
-                      : "—"}
-                  </td>
-                  <td className="px-3 py-3">
-                    <StatusBadge status={lead.status} />
-                  </td>
-                  <td className="hidden whitespace-nowrap px-3 py-3 lg:table-cell">
-                    {formatDate(lead.next_followup_at)}
-                  </td>
-                </tr>
-              );
-            })}
-            {leads.length === 0 ? (
-              <tr>
-                <td colSpan={9} className="px-3 py-8 text-center text-ink-soft">
-                  Žádné leady.
-                </td>
-              </tr>
-            ) : null}
-          </tbody>
-        </table>
-      </div>
+      {leads.length === 0 ? (
+        <p className="mt-6 border border-line bg-foam px-3 py-8 text-center text-ink-soft">
+          Žádné leady.
+        </p>
+      ) : (
+        <LeadsBulkTable leads={leads} />
+      )}
     </AdminShell>
   );
 }

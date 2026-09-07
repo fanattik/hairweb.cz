@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { planLeadAnalysis, runLeadAnalysis } from "@/lib/leads/analyze";
+import { recalculateOpportunityForLead } from "@/lib/discovery/create-lead";
 import type { Lead } from "@/lib/leads/types";
 
 const bodySchema = z.object({
@@ -87,12 +88,21 @@ export async function POST(
 
     if (updateError) throw new Error(updateError.message);
 
+    let opportunityScore: number | null = null;
+    try {
+      const opportunity = await recalculateOpportunityForLead(supabase, id);
+      opportunityScore = opportunity.opportunityScore;
+    } catch {
+      // optional
+    }
+
     return NextResponse.json({
       ok: true,
       plan: result.plan,
       steps: result.steps,
       scores: result.scores,
       webAudit: result.webAudit,
+      opportunityScore,
     });
   } catch (error) {
     const message =
