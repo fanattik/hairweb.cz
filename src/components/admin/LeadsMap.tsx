@@ -24,6 +24,7 @@ const STATUS_COLORS: Record<LeadStatus, string> = {
   proposal: "#9a5b3c",
   won: "#066e3c",
   lost: "#6b6560",
+  skip: "#a8a29e",
 };
 
 type Props = {

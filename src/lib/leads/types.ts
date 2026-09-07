@@ -12,6 +12,7 @@ export const LEAD_STATUSES = [
   "proposal",
   "won",
   "lost",
+  "skip",
 ] as const;
 export type LeadStatus = (typeof LEAD_STATUSES)[number];
 
@@ -194,13 +195,14 @@ export type Lead = {
 };
 
 export const STATUS_LABELS: Record<LeadStatus, string> = {
-  new: "NEW",
-  contacted: "CONTACTED",
-  interested: "INTERESTED",
-  meeting: "MEETING",
-  proposal: "PROPOSAL",
-  won: "WON",
-  lost: "LOST",
+  new: "Nový",
+  contacted: "Osloven",
+  interested: "Zájem",
+  meeting: "Schůzka",
+  proposal: "Nabídka",
+  won: "Vyhráno",
+  lost: "Ztraceno",
+  skip: "Neřešit",
 };
 
 export const PRIORITY_LABELS: Record<LeadPriority, string> = {

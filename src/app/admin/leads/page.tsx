@@ -16,6 +16,7 @@ import type {
   LeadStatus,
   LeadType,
 } from "@/lib/leads/types";
+import { LEAD_STATUSES, STATUS_LABELS } from "@/lib/leads/types";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -106,7 +107,7 @@ export default async function AdminLeadsPage({
     end.setHours(23, 59, 59, 999);
     query = query
       .lte("next_followup_at", end.toISOString())
-      .not("status", "in", "(won,lost)");
+      .not("status", "in", "(won,lost,skip)");
   }
   if (priority === "hot" || quick === "hot") {
     query = query.gte("lead_score", 80);
@@ -303,19 +304,9 @@ export default async function AdminLeadsPage({
           className="border border-line bg-mist px-3 py-2 text-sm"
         >
           <option value="">Status</option>
-          {(
-            [
-              "new",
-              "contacted",
-              "interested",
-              "meeting",
-              "proposal",
-              "won",
-              "lost",
-            ] as LeadStatus[]
-          ).map((s) => (
+          {LEAD_STATUSES.map((s) => (
             <option key={s} value={s}>
-              {s}
+              {STATUS_LABELS[s]}
             </option>
           ))}
         </select>

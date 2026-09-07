@@ -12,6 +12,7 @@ import {
   INSTAGRAM_QUALITIES,
   INSTAGRAM_QUALITY_LABELS,
   LEAD_STATUSES,
+  STATUS_LABELS,
   WEB_SCORE_MAX,
   type BusinessSize,
   type InstagramQuality,
@@ -860,7 +861,7 @@ export function LeadEditorForm({
                 >
                   {LEAD_STATUSES.map((s) => (
                     <option key={s} value={s}>
-                      {s}
+                      {STATUS_LABELS[s]}
                     </option>
                   ))}
                 </select>

@@ -8,6 +8,7 @@ const styles: Record<LeadStatus, string> = {
   proposal: "bg-copper text-foam",
   won: "bg-emerald-800 text-white",
   lost: "bg-stone-deep text-ink-soft",
+  skip: "bg-stone text-ink-soft",
 };
 
 export function StatusBadge({ status }: { status: LeadStatus }) {

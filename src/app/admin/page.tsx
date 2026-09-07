@@ -36,7 +36,7 @@ export default async function AdminDashboardPage() {
     (l) =>
       l.next_followup_at &&
       new Date(l.next_followup_at) <= endOfToday &&
-      !["won", "lost"].includes(l.status),
+      !["won", "lost", "skip"].includes(l.status),
   ).length;
   const inProgress = rows.filter((l) =>
     ["interested", "meeting", "proposal"].includes(l.status),
