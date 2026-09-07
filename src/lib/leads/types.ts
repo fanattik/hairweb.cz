@@ -123,6 +123,10 @@ export type Lead = {
   instagram_active: boolean | null;
   instagram_followers: number | null;
   instagram_quality: InstagramQuality | null;
+  instagram_media_count: number | null;
+  instagram_name: string | null;
+  instagram_biography: string | null;
+  instagram_suggested_quality: InstagramQuality | null;
 
   has_online_booking: boolean | null;
   booking_provider: string | null;

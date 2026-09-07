@@ -3,6 +3,8 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { GoogleEnrichButton } from "@/components/admin/GoogleEnrichButton";
+import { InstagramEnrichButton } from "@/components/admin/InstagramEnrichButton";
+import { WebAuditButton } from "@/components/admin/WebAuditButton";
 import { LeadCrmForm } from "@/components/admin/LeadCrmForm";
 import {
   OpportunityBadge,
@@ -227,11 +229,15 @@ export default async function AdminLeadDetailPage({
               ) : null}
             </div>
             <GoogleEnrichButton lead={lead} />
+            <InstagramEnrichButton lead={lead} />
+            <WebAuditButton lead={lead} />
           </div>
         </div>
       ) : (
-        <div className="mt-4">
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
           <GoogleEnrichButton lead={lead} />
+          <InstagramEnrichButton lead={lead} />
+          <WebAuditButton lead={lead} />
         </div>
       )}
 
@@ -262,6 +268,10 @@ export default async function AdminLeadDetailPage({
               value={lead.instagram_followers ?? "—"}
             />
             <Row
+              label="IG posts"
+              value={lead.instagram_media_count ?? "—"}
+            />
+            <Row
               label="IG active"
               value={
                 lead.instagram_active == null
@@ -276,6 +286,14 @@ export default async function AdminLeadDetailPage({
               value={
                 lead.instagram_quality
                   ? INSTAGRAM_QUALITY_LABELS[lead.instagram_quality]
+                  : "—"
+              }
+            />
+            <Row
+              label="IG návrh kvality"
+              value={
+                lead.instagram_suggested_quality
+                  ? INSTAGRAM_QUALITY_LABELS[lead.instagram_suggested_quality]
                   : "—"
               }
             />

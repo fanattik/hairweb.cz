@@ -130,6 +130,10 @@ export const leadQualificationSchema = z.object({
   instagram_active: optionalBool,
   instagram_followers: z.number().int().min(0).nullable().optional(),
   instagram_quality: z.enum(INSTAGRAM_QUALITIES).nullable().optional(),
+  instagram_media_count: z.number().int().min(0).nullable().optional(),
+  instagram_name: z.preprocess(emptyToNull, z.string().trim().max(200).nullable().optional()),
+  instagram_biography: z.preprocess(emptyToNull, z.string().trim().max(2000).nullable().optional()),
+  instagram_suggested_quality: z.enum(INSTAGRAM_QUALITIES).nullable().optional(),
 
   has_online_booking: optionalBool,
   booking_provider: z.preprocess(emptyToNull, z.string().trim().max(100).nullable().optional()),

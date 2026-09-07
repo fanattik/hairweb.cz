@@ -7,12 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test src/lib/leads/scoring.test.ts src/lib/google-places/parse-url.test.ts",
+    "test": "tsx --test src/lib/leads/scoring.test.ts src/lib/google-places/parse-url.test.ts src/lib/instagram/parse.test.ts src/lib/web-audit/web-audit.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.6",
     "@supabase/supabase-js": "^2.115.0",
+    "ai": "^7.0.93",
     "next": "16.3.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",

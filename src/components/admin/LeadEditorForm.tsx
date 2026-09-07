@@ -3,6 +3,7 @@
 import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { GoogleEnrichPreviewButton } from "@/components/admin/GoogleEnrichPreviewButton";
+import { InstagramEnrichPreviewButton } from "@/components/admin/InstagramEnrichPreviewButton";
 import { ScoreSummaryCard } from "@/components/admin/ScoreBadges";
 import { calculateLeadScores } from "@/lib/leads/scoring";
 import {
@@ -557,6 +558,33 @@ export function LeadEditorForm({
         </Section>
 
         <Section title="Instagram / social">
+          <InstagramEnrichPreviewButton
+            handle={state.instagram_handle}
+            url={state.instagram_url}
+            onFill={(payload) => {
+              setState((prev) => ({
+                ...prev,
+                instagram_handle:
+                  payload.instagram_handle ?? prev.instagram_handle,
+                instagram_url: payload.instagram_url ?? prev.instagram_url,
+                instagram_followers:
+                  payload.instagram_followers ?? prev.instagram_followers,
+                instagram_active:
+                  payload.instagram_active !== undefined
+                    ? payload.instagram_active
+                    : prev.instagram_active,
+                instagram_quality:
+                  payload.instagram_quality !== undefined
+                    ? payload.instagram_quality
+                    : prev.instagram_quality,
+                website: payload.website || prev.website,
+                has_website:
+                  payload.has_website != null
+                    ? payload.has_website
+                    : prev.has_website,
+              }));
+            }}
+          />
           <label className="grid gap-1 text-sm">
             <span className="font-medium">Handle</span>
             <input
