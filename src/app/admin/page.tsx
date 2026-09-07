@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { LeadsMap } from "@/components/admin/LeadsMap";
 import { requireAdmin } from "@/lib/admin/auth";
 import type { Lead } from "@/lib/leads/types";
 
@@ -8,8 +9,23 @@ export default async function AdminDashboardPage() {
 
   const { data: leads } = await supabase
     .from("leads")
-    .select("id, status, next_followup_at")
-    .returns<Pick<Lead, "id" | "status" | "next_followup_at">[]>();
+    .select(
+      "id, status, next_followup_at, salon_name, name, city, latitude, longitude, lead_score",
+    )
+    .returns<
+      Pick<
+        Lead,
+        | "id"
+        | "status"
+        | "next_followup_at"
+        | "salon_name"
+        | "name"
+        | "city"
+        | "latitude"
+        | "longitude"
+        | "lead_score"
+      >[]
+    >();
 
   const rows = leads ?? [];
   const endOfToday = new Date();
@@ -63,6 +79,11 @@ export default async function AdminDashboardPage() {
           </Link>
         ))}
       </div>
+
+      <div className="mt-8">
+        <LeadsMap leads={rows} />
+      </div>
+
       <div className="mt-8 flex gap-3">
         <Link
           href="/admin/leads"

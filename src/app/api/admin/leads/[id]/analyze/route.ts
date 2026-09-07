@@ -1,20 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import {
-  buildWebAuditEnrichPatch,
-  summarizeLighthouse,
-} from "@/lib/web-audit/apply";
-import { runWebAudit } from "@/lib/web-audit/run-audit";
-import {
-  leadToScoreInput,
-  scoredColumnsFromInput,
-} from "@/lib/leads/persist-scores";
+import { planLeadAnalysis, runLeadAnalysis } from "@/lib/leads/analyze";
 import type { Lead } from "@/lib/leads/types";
 
 const bodySchema = z.object({
-  website: z.string().trim().min(1).optional(),
   overwrite: z.boolean().optional(),
+  placeId: z.string().trim().min(1).optional(),
 });
 
 export async function POST(
@@ -47,7 +39,17 @@ export async function POST(
   }
 
   const lead = existing as Lead;
-  const website = parsed.data.website || lead.website;
+  const plan = planLeadAnalysis(lead);
+
+  if (!plan.google && !plan.instagram && !plan.web) {
+    return NextResponse.json(
+      {
+        error:
+          "Není co analyzovat. Vyplň Maps URL / název+město, Instagram, nebo web.",
+      },
+      { status: 400 },
+    );
+  }
 
   await supabase
     .from("leads")
@@ -55,42 +57,47 @@ export async function POST(
     .eq("id", id);
 
   try {
-    const audit = await runWebAudit(website);
-    const enrichPatch = buildWebAuditEnrichPatch(lead, audit.scores, {
+    const result = await runLeadAnalysis(lead, {
       overwrite: parsed.data.overwrite,
-      lighthouse: audit.lighthouse,
+      placeId: parsed.data.placeId,
     });
 
-    const merged = { ...lead, ...enrichPatch } as Lead;
-    const scores = scoredColumnsFromInput(leadToScoreInput(merged), {
-      enrichmentSource: "ai_audit",
-    });
+    if (result.needsSelection) {
+      await supabase
+        .from("leads")
+        .update({ enrichment_status: "idle", enrichment_error: null })
+        .eq("id", id);
+
+      return NextResponse.json({
+        ok: false,
+        needsSelection: true,
+        candidates: result.candidates,
+        plan: result.plan,
+      });
+    }
+
+    if (Object.keys(result.patch).length === 0) {
+      throw new Error("Analýza nic nevrátila.");
+    }
 
     const { error: updateError } = await supabase
       .from("leads")
-      .update({ ...enrichPatch, ...scores })
+      .update(result.patch)
       .eq("id", id);
 
-    if (updateError) {
-      throw new Error(updateError.message);
-    }
+    if (updateError) throw new Error(updateError.message);
 
     return NextResponse.json({
       ok: true,
-      url: audit.url,
-      finalUrl: audit.finalUrl,
-      auditScores: audit.scores,
-      lighthouse: summarizeLighthouse(audit.lighthouse),
-      aiSource: audit.aiSource,
-      aiConfigured: audit.aiConfigured,
-      warnings: audit.warnings,
-      patch: enrichPatch,
-      scores,
+      plan: result.plan,
+      steps: result.steps,
+      scores: result.scores,
+      webAudit: result.webAudit,
     });
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Web audit enrichment failed";
-    console.error("[admin] enrich-web-audit apply", error);
+      error instanceof Error ? error.message : "Analyze failed";
+    console.error("[admin] analyze", error);
     await supabase
       .from("leads")
       .update({

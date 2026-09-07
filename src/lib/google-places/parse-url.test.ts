@@ -53,6 +53,8 @@ describe("google enrich merge", () => {
     city: "Praha 1",
     phone: "+420111222333",
     website: "https://hairlab.cz",
+    latitude: null,
+    longitude: null,
   };
 
   it("always updates rating fields and fills blanks", () => {

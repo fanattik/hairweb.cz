@@ -6,6 +6,8 @@ export type GoogleEnrichPatch = {
   google_rating: number | null;
   google_reviews_count: number | null;
   google_maps_url: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   salon_name?: string | null;
   city?: string | null;
   phone?: string | null;
@@ -45,6 +47,11 @@ export function buildGoogleEnrichPatch(
     enrichment_error: null,
     last_enriched_at: new Date().toISOString(),
   };
+
+  if (place.latitude != null && place.longitude != null) {
+    patch.latitude = place.latitude;
+    patch.longitude = place.longitude;
+  }
 
   if (overwrite || isBlank(lead.salon_name)) {
     if (place.name) patch.salon_name = place.name;

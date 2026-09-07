@@ -159,6 +159,14 @@ export type Lead = {
   website_audit: string | null;
   opportunity_note: string | null;
 
+  lighthouse_performance: number | null;
+  lighthouse_accessibility: number | null;
+  lighthouse_seo: number | null;
+  lighthouse_best_practices: number | null;
+
+  latitude: number | null;
+  longitude: number | null;
+
   business_score: number | null;
   web_opportunity_score: number | null;
   purchase_intent_score: number | null;

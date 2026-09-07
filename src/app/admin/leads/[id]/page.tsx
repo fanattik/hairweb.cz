@@ -2,9 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { AdminShell } from "@/components/admin/AdminShell";
-import { GoogleEnrichButton } from "@/components/admin/GoogleEnrichButton";
-import { InstagramEnrichButton } from "@/components/admin/InstagramEnrichButton";
-import { WebAuditButton } from "@/components/admin/WebAuditButton";
+import { AnalyzeLeadButton } from "@/components/admin/AnalyzeLeadButton";
 import { LeadCrmForm } from "@/components/admin/LeadCrmForm";
 import {
   OpportunityBadge,
@@ -13,6 +11,7 @@ import {
   WebBandBadge,
 } from "@/components/admin/ScoreBadges";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { WebAuditGauges } from "@/components/admin/WebAuditGauges";
 import { requireAdmin } from "@/lib/admin/auth";
 import {
   leadOpportunityFromScore,
@@ -23,7 +22,6 @@ import {
 import {
   BUSINESS_SIZE_LABELS,
   INSTAGRAM_QUALITY_LABELS,
-  WEB_SCORE_MAX,
   type Lead,
 } from "@/lib/leads/types";
 
@@ -228,16 +226,12 @@ export default async function AdminLeadDetailPage({
                 </p>
               ) : null}
             </div>
-            <GoogleEnrichButton lead={lead} />
-            <InstagramEnrichButton lead={lead} />
-            <WebAuditButton lead={lead} />
+            <AnalyzeLeadButton lead={lead} />
           </div>
         </div>
       ) : (
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
-          <GoogleEnrichButton lead={lead} />
-          <InstagramEnrichButton lead={lead} />
-          <WebAuditButton lead={lead} />
+        <div className="mt-4">
+          <AnalyzeLeadButton lead={lead} />
         </div>
       )}
 
@@ -340,49 +334,38 @@ export default async function AdminLeadDetailPage({
           </h2>
           {lead.has_website === false ? (
             <p className="mt-4 text-sm text-ink-soft">Salon nemá web.</p>
+          ) : lead.lighthouse_performance != null ||
+            lead.website_design_score != null ? (
+            <div className="mt-4">
+              <WebAuditGauges
+                lighthouse={{
+                  performance: lead.lighthouse_performance,
+                  accessibility: lead.lighthouse_accessibility,
+                  bestPractices: lead.lighthouse_best_practices,
+                  seo: lead.lighthouse_seo,
+                }}
+                scores={{
+                  website_design_score: lead.website_design_score,
+                  website_mobile_score: lead.website_mobile_score,
+                  website_cta_score: lead.website_cta_score,
+                  website_content_score: lead.website_content_score,
+                  website_trust_score: lead.website_trust_score,
+                  website_seo_score: lead.website_seo_score,
+                  website_performance_score: lead.website_performance_score,
+                }}
+                auditText={lead.website_audit}
+              />
+              {lead.web_score != null ? (
+                <p className="mt-4 text-sm text-ink-soft">
+                  Web Score {lead.web_score} / 100
+                </p>
+              ) : null}
+            </div>
           ) : (
-            <dl className="mt-2">
-              <Row
-                label={`Design / ${WEB_SCORE_MAX.design}`}
-                value={lead.website_design_score ?? "—"}
-              />
-              <Row
-                label={`Mobile / ${WEB_SCORE_MAX.mobile}`}
-                value={lead.website_mobile_score ?? "—"}
-              />
-              <Row
-                label={`CTA / ${WEB_SCORE_MAX.cta}`}
-                value={lead.website_cta_score ?? "—"}
-              />
-              <Row
-                label={`Content / ${WEB_SCORE_MAX.content}`}
-                value={lead.website_content_score ?? "—"}
-              />
-              <Row
-                label={`Trust / ${WEB_SCORE_MAX.trust}`}
-                value={lead.website_trust_score ?? "—"}
-              />
-              <Row
-                label={`SEO / ${WEB_SCORE_MAX.seo}`}
-                value={lead.website_seo_score ?? "—"}
-              />
-              <Row
-                label={`Performance / ${WEB_SCORE_MAX.performance}`}
-                value={lead.website_performance_score ?? "—"}
-              />
-              <Row
-                label="Web Score"
-                value={
-                  lead.web_score != null ? `${lead.web_score} / 100` : "—"
-                }
-              />
-            </dl>
-          )}
-          {lead.website_audit ? (
-            <p className="mt-4 whitespace-pre-wrap text-sm text-ink-soft">
-              {lead.website_audit}
+            <p className="mt-4 text-sm text-ink-soft">
+              Zatím bez auditu — spusť Analyzovat.
             </p>
-          ) : null}
+          )}
         </section>
 
         <section className="border border-line bg-foam p-5 lg:col-span-2">

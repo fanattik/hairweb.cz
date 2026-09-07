@@ -15,6 +15,8 @@ export type GooglePlaceSnapshot = {
   city: string | null;
   phone: string | null;
   website: string | null;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 type PlacesApiPlace = {
@@ -28,6 +30,7 @@ type PlacesApiPlace = {
   nationalPhoneNumber?: string;
   internationalPhoneNumber?: string;
   websiteUri?: string;
+  location?: { latitude?: number; longitude?: number };
 };
 
 const SEARCH_FIELD_MASK = [
@@ -40,6 +43,7 @@ const SEARCH_FIELD_MASK = [
   "places.nationalPhoneNumber",
   "places.internationalPhoneNumber",
   "places.websiteUri",
+  "places.location",
 ].join(",");
 
 const DETAILS_FIELD_MASK = [
@@ -52,6 +56,7 @@ const DETAILS_FIELD_MASK = [
   "nationalPhoneNumber",
   "internationalPhoneNumber",
   "websiteUri",
+  "location",
 ].join(",");
 
 function getApiKey() {
@@ -94,6 +99,14 @@ function toSnapshot(place: PlacesApiPlace): GooglePlaceSnapshot | null {
       place.internationalPhoneNumber?.trim() ||
       null,
     website: place.websiteUri?.trim() || null,
+    latitude:
+      typeof place.location?.latitude === "number"
+        ? place.location.latitude
+        : null,
+    longitude:
+      typeof place.location?.longitude === "number"
+        ? place.location.longitude
+        : null,
   };
 }
 

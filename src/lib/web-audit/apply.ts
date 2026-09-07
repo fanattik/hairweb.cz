@@ -20,6 +20,10 @@ export type WebAuditEnrichPatch = {
   website_has_reviews: boolean;
   website_audit: string;
   opportunity_note: string;
+  lighthouse_performance: number | null;
+  lighthouse_accessibility: number | null;
+  lighthouse_seo: number | null;
+  lighthouse_best_practices: number | null;
   has_online_booking?: boolean | null;
   enrichment_source: "ai_audit";
   enrichment_status: "done";
@@ -38,9 +42,10 @@ export type MergedWebAuditScores = WebAiAuditResult & {
 export function buildWebAuditEnrichPatch(
   lead: Pick<Lead, "has_online_booking" | "opportunity_note">,
   audit: MergedWebAuditScores,
-  options?: { overwrite?: boolean },
+  options?: { overwrite?: boolean; lighthouse?: LighthouseSnapshot | null },
 ): WebAuditEnrichPatch {
   const overwrite = options?.overwrite === true;
+  const lh = options?.lighthouse;
 
   const opportunity =
     overwrite || !lead.opportunity_note?.trim()
@@ -65,6 +70,10 @@ export function buildWebAuditEnrichPatch(
     website_has_reviews: audit.website_has_reviews,
     website_audit: audit.website_audit,
     opportunity_note: opportunity,
+    lighthouse_performance: lh?.performance ?? null,
+    lighthouse_accessibility: lh?.accessibility ?? null,
+    lighthouse_seo: lh?.seo ?? null,
+    lighthouse_best_practices: lh?.bestPractices ?? null,
     enrichment_source: "ai_audit",
     enrichment_status: "done",
     enrichment_error: null,
