@@ -82,7 +82,7 @@ function heuristicAiAudit(
     website_has_team: Boolean(signals.hasTeam),
     website_has_reviews: Boolean(signals.hasReviews),
     website_audit:
-      "Automatický heuristický audit (AI Gateway není nastavená). " +
+      "Heuristický audit (bez AI). " +
       `Stránka má ${signals.imageCount} obrázků a ${signals.linkCount} odkazů. ` +
       (signals.clearBookingCta
         ? "Rezervační CTA vypadá přítomné. "
@@ -90,8 +90,24 @@ function heuristicAiAudit(
       (signals.looksOutdated
         ? "Web působí technicky zastarale."
         : "Technické signály zastaralosti jsou slabé."),
-    opportunity_note:
-      "Doplň AI Gateway pro kvalitnější audit. Mezitím použij heuristiky a Lighthouse jako výchozí bod pro outreach.",
+    opportunity_note: [
+      !signals.clearBookingCta
+        ? "Chybí jasná online rezervace — silný argument pro nový web."
+        : null,
+      signals.looksOutdated
+        ? "Web vypadá zastarale — nabídnout moderní redesign."
+        : null,
+      !signals.hasGallery
+        ? "Slabé portfolio/galerie — ukázat hodnotu vizuálů."
+        : null,
+      lighthouse.performance != null && lighthouse.performance < 50
+        ? `Slabý mobile performance (${lighthouse.performance}) — zmínit rychlost webu.`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .slice(0, 800) ||
+      "Web má základní signály; ověř manuálně a nabídni konkrétní upgrade.",
   };
 }
 

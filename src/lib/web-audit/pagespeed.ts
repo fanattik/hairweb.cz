@@ -63,14 +63,37 @@ export function detectMobileProblem(input: {
   return false;
 }
 
-export async function fetchPageSpeedMobile(
-  url: string,
-): Promise<LighthouseSnapshot> {
-  const apiKey =
-    process.env.GOOGLE_PSI_API_KEY?.trim() ||
-    process.env.GOOGLE_PLACES_API_KEY?.trim() ||
-    "";
+function emptyLighthouse(error: string): LighthouseSnapshot {
+  return {
+    performance: null,
+    seo: null,
+    accessibility: null,
+    bestPractices: null,
+    lcpMs: null,
+    cls: null,
+    tbtMs: null,
+    source: "pagespeed",
+    error,
+  };
+}
 
+function explainPageSpeedError(message: string | undefined, status: number) {
+  const raw = message || `PageSpeed API error (${status})`;
+  if (/blocked/i.test(raw)) {
+    return (
+      "PageSpeed API je zablokované na použitém klíči. " +
+      "Vytvoř samostatný GOOGLE_PSI_API_KEY, zapni „PageSpeed Insights API“ " +
+      "a u Application restrictions dej None (nebo IP serveru) — HTTP referrers nefungují ze serveru. " +
+      "Nepoužívej Places klíč."
+    );
+  }
+  return (
+    raw +
+    " Přidej GOOGLE_PSI_API_KEY a povol PageSpeed Insights API v Google Cloud."
+  );
+}
+
+async function requestPageSpeed(url: string, apiKey: string | null) {
   const endpoint = new URL(
     "https://www.googleapis.com/pagespeedonline/v5/runPagespeed",
   );
@@ -82,30 +105,44 @@ export async function fetchPageSpeedMobile(
   endpoint.searchParams.append("category", "best-practices");
   if (apiKey) endpoint.searchParams.set("key", apiKey);
 
-  try {
-    const response = await fetch(endpoint, { cache: "no-store" });
-    const json = (await response.json()) as {
-      error?: { message?: string };
-      lighthouseResult?: {
-        categories?: Record<string, { score?: number | null }>;
-        audits?: Record<string, { numericValue?: number }>;
-      };
+  const response = await fetch(endpoint, { cache: "no-store" });
+  const json = (await response.json()) as {
+    error?: { message?: string };
+    lighthouseResult?: {
+      categories?: Record<string, { score?: number | null }>;
+      audits?: Record<string, { numericValue?: number }>;
     };
+  };
+
+  return { response, json };
+}
+
+/**
+ * PageSpeed Insights — use dedicated GOOGLE_PSI_API_KEY only.
+ * Do not reuse GOOGLE_PLACES_API_KEY (often API-restricted → "blocked").
+ * Without a key we call the public quota endpoint.
+ */
+export async function fetchPageSpeedMobile(
+  url: string,
+): Promise<LighthouseSnapshot> {
+  const apiKey = process.env.GOOGLE_PSI_API_KEY?.trim() || null;
+
+  try {
+    let { response, json } = await requestPageSpeed(url, apiKey);
+
+    // Key present but restricted → retry once without key (lower public quota).
+    if (
+      apiKey &&
+      (!response.ok || json.error) &&
+      /blocked/i.test(json.error?.message || "")
+    ) {
+      ({ response, json } = await requestPageSpeed(url, null));
+    }
 
     if (!response.ok || json.error) {
-      return {
-        performance: null,
-        seo: null,
-        accessibility: null,
-        bestPractices: null,
-        lcpMs: null,
-        cls: null,
-        tbtMs: null,
-        source: "pagespeed",
-        error:
-          json.error?.message ||
-          `PageSpeed API error (${response.status}). Přidej GOOGLE_PSI_API_KEY a povol PageSpeed Insights API.`,
-      };
+      return emptyLighthouse(
+        explainPageSpeedError(json.error?.message, response.status),
+      );
     }
 
     const categories = json.lighthouseResult?.categories || {};
@@ -123,16 +160,8 @@ export async function fetchPageSpeedMobile(
       error: null,
     };
   } catch (error) {
-    return {
-      performance: null,
-      seo: null,
-      accessibility: null,
-      bestPractices: null,
-      lcpMs: null,
-      cls: null,
-      tbtMs: null,
-      source: "pagespeed",
-      error: error instanceof Error ? error.message : "PageSpeed fetch failed",
-    };
+    return emptyLighthouse(
+      error instanceof Error ? error.message : "PageSpeed fetch failed",
+    );
   }
 }
