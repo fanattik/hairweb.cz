@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test src/lib/leads/scoring.test.ts src/lib/leads/web-flags.test.ts src/lib/discovery/opportunity-scoring.test.ts src/lib/google-places/parse-url.test.ts src/lib/instagram/parse.test.ts src/lib/web-audit/web-audit.test.ts src/lib/leads/import/import.test.ts",
+    "test": "tsx --test src/lib/leads/scoring.test.ts src/lib/leads/web-flags.test.ts src/lib/leads/outreach-templates.test.ts src/lib/discovery/opportunity-scoring.test.ts src/lib/google-places/parse-url.test.ts src/lib/instagram/parse.test.ts src/lib/web-audit/web-audit.test.ts src/lib/leads/import/import.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

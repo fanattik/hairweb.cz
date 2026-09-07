@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AnalyzeLeadButton } from "@/components/admin/AnalyzeLeadButton";
+import { LeadOutreachPanel } from "@/components/admin/LeadOutreachPanel";
 import { OpportunityActions } from "@/components/admin/discovery/OpportunityActions";
 import { LeadCrmForm } from "@/components/admin/LeadCrmForm";
 import {
@@ -456,6 +457,10 @@ export default async function AdminLeadDetailPage({
             </p>
           ) : null}
         </section>
+      </div>
+
+      <div className="mt-8">
+        <LeadOutreachPanel lead={lead} />
       </div>
 
       <section className="mt-8">

@@ -16,7 +16,7 @@ const faqs = [
   },
   {
     q: "Musím měnit rezervační systém?",
-    a: "Ne. Napojím nebo odkážu na systém, který už používáte — Reservio, Fresha, Bookio i jiné.",
+    a: "Ne. Napojím nebo odkážu na systém, který už používáte — Reservio, Fresha, Bookio, Noona i jiné.",
   },
   {
     q: "Budu si moct upravovat ceník?",

@@ -638,6 +638,7 @@ export function LeadEditorForm({
               <option value="Reservio" />
               <option value="Fresha" />
               <option value="Bookio" />
+              <option value="Noona" />
               <option value="SimplyBook" />
               <option value="Vlastní systém" />
               <option value="Jiný" />

@@ -90,7 +90,7 @@ export async function fetchPageSignals(url: string): Promise<PageSignals> {
       /\bbook\s*now/i,
       /\bonline\s*booking/i,
       /\bobjednat\b/i,
-      /reservio|fresha|bookio|simplybook/i,
+      /reservio|fresha|bookio|noona|simplybook/i,
     ]);
 
     const hasPrices = matchAny(text, [

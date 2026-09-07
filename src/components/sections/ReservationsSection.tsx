@@ -59,7 +59,7 @@ export function ReservationsSection() {
         </ol>
 
         <Reveal className="mt-8 text-sm text-foam/50">
-          Například Reservio · Fresha · Bookio · jiné systémy
+          Například Reservio · Fresha · Bookio · Noona · jiné systémy
         </Reveal>
       </div>
     </section>
