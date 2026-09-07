@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Lead } from "@/lib/leads/types";
 import {
+  HAIRWEB_PACKAGES,
   OUTREACH_TEMPLATES,
+  type HairwebPackageId,
   type OutreachTemplateKey,
 } from "@/lib/leads/outreach-templates";
 
@@ -26,6 +28,7 @@ export function LeadOutreachPanel({ lead }: { lead: Lead }) {
   const router = useRouter();
   const [toEmail, setToEmail] = useState(lead.email || "");
   const [templateKey, setTemplateKey] = useState<OutreachTemplateKey>("no_website");
+  const [packageId, setPackageId] = useState<HairwebPackageId>("start");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [loadingDraft, setLoadingDraft] = useState(false);
@@ -50,8 +53,14 @@ export function LeadOutreachPanel({ lead }: { lead: Lead }) {
     const response = await fetch(`/api/admin/leads/${lead.id}/outreach-draft`);
     const data = (await response.json()) as {
       error?: string;
-      draft?: { subject: string; body: string; templateKey: OutreachTemplateKey };
+      draft?: {
+        subject: string;
+        body: string;
+        templateKey: OutreachTemplateKey;
+        packageId?: HairwebPackageId;
+      };
       suggestedKey?: OutreachTemplateKey;
+      suggestedPackage?: HairwebPackageId;
       aiAvailable?: boolean;
       emailConfigured?: boolean;
     };
@@ -61,10 +70,12 @@ export function LeadOutreachPanel({ lead }: { lead: Lead }) {
       return;
     }
     if (data.suggestedKey) setTemplateKey(data.suggestedKey);
+    if (data.suggestedPackage) setPackageId(data.suggestedPackage);
     if (data.draft) {
       setSubject(data.draft.subject);
       setBody(data.draft.body);
       setTemplateKey(data.draft.templateKey);
+      if (data.draft.packageId) setPackageId(data.draft.packageId);
       setSource("template");
     }
     setAiAvailable(Boolean(data.aiAvailable));
@@ -77,18 +88,32 @@ export function LeadOutreachPanel({ lead }: { lead: Lead }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lead.id]);
 
-  async function applyTemplate(key: OutreachTemplateKey) {
+  async function reloadDraft(next: {
+    templateKey?: OutreachTemplateKey;
+    packageId?: HairwebPackageId;
+    mode?: "template" | "ai";
+  }) {
+    const key = next.templateKey ?? templateKey;
+    const pkg = next.packageId ?? packageId;
+    const mode = next.mode ?? "template";
     setTemplateKey(key);
+    setPackageId(pkg);
     setLoadingDraft(true);
     setError(null);
     const response = await fetch(`/api/admin/leads/${lead.id}/outreach-draft`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mode: "template", templateKey: key }),
+      body: JSON.stringify({ mode, templateKey: key, packageId: pkg }),
     });
     const data = (await response.json()) as {
       error?: string;
-      draft?: { subject: string; body: string };
+      draft?: {
+        subject: string;
+        body: string;
+        templateKey: OutreachTemplateKey;
+        packageId?: HairwebPackageId;
+        source?: string;
+      };
     };
     setLoadingDraft(false);
     if (!response.ok) {
@@ -98,43 +123,15 @@ export function LeadOutreachPanel({ lead }: { lead: Lead }) {
     if (data.draft) {
       setSubject(data.draft.subject);
       setBody(data.draft.body);
-      setSource("template");
-      setMessage("Šablona načtena — uprav a odešli.");
-    }
-  }
-
-  async function generateAi() {
-    setLoadingDraft(true);
-    setError(null);
-    setMessage(null);
-    const response = await fetch(`/api/admin/leads/${lead.id}/outreach-draft`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mode: "ai" }),
-    });
-    const data = (await response.json()) as {
-      error?: string;
-      draft?: {
-        subject: string;
-        body: string;
-        templateKey: OutreachTemplateKey;
-        source?: string;
-      };
-    };
-    setLoadingDraft(false);
-    if (!response.ok) {
-      setError(data.error || "AI draft selhal.");
-      return;
-    }
-    if (data.draft) {
-      setSubject(data.draft.subject);
-      setBody(data.draft.body);
       setTemplateKey(data.draft.templateKey);
-      setSource(data.draft.source === "ai" ? "ai" : "template");
+      if (data.draft.packageId) setPackageId(data.draft.packageId);
+      setSource(data.draft.source === "ai" || mode === "ai" ? "ai" : "template");
       setMessage(
-        data.draft.source === "ai"
-          ? "AI draft připraven — zkontroluj a odešli."
-          : "AI nedostupné, použita šablona.",
+        mode === "ai"
+          ? data.draft.source === "ai"
+            ? "AI draft připraven — zkontroluj a odešli."
+            : "AI nedostupné, použita šablona."
+          : "Šablona načtena — uprav a odešli.",
       );
     }
   }
@@ -210,7 +207,9 @@ export function LeadOutreachPanel({ lead }: { lead: Lead }) {
             className={field}
             value={templateKey}
             onChange={(e) =>
-              void applyTemplate(e.target.value as OutreachTemplateKey)
+              void reloadDraft({
+                templateKey: e.target.value as OutreachTemplateKey,
+              })
             }
             disabled={loadingDraft || sending}
           >
@@ -222,11 +221,38 @@ export function LeadOutreachPanel({ lead }: { lead: Lead }) {
           </select>
         </label>
 
+        <label className="grid gap-1 text-sm">
+          <span className="font-medium">Balíček</span>
+          <select
+            className={field}
+            value={packageId}
+            onChange={(e) =>
+              void reloadDraft({
+                packageId: e.target.value as HairwebPackageId,
+              })
+            }
+            disabled={loadingDraft || sending}
+          >
+            {(Object.keys(HAIRWEB_PACKAGES) as HairwebPackageId[]).map((id) => {
+              const pkg = HAIRWEB_PACKAGES[id];
+              return (
+                <option key={id} value={id}>
+                  {pkg.name} — {pkg.price} ({pkg.summary})
+                </option>
+              );
+            })}
+          </select>
+          <span className="text-xs text-ink-soft">
+            Tip: jednostránka → START, SEO / vícestránka → PRO. Mail se drží
+            konkrétního problému leadu.
+          </span>
+        </label>
+
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
             disabled={loadingDraft || sending}
-            onClick={() => void applyTemplate(templateKey)}
+            onClick={() => void reloadDraft({ mode: "template" })}
             className="border border-line px-3 py-2 text-sm hover:border-ink disabled:opacity-50"
           >
             Obnovit šablonu
@@ -234,7 +260,7 @@ export function LeadOutreachPanel({ lead }: { lead: Lead }) {
           <button
             type="button"
             disabled={loadingDraft || sending || !aiAvailable}
-            onClick={() => void generateAi()}
+            onClick={() => void reloadDraft({ mode: "ai" })}
             className="border border-line px-3 py-2 text-sm hover:border-ink disabled:opacity-50"
             title={
               aiAvailable

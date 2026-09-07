@@ -3,9 +3,12 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { generatePersonalizedOutreach } from "@/lib/leads/outreach-ai";
 import {
+  HAIRWEB_PACKAGES,
   OUTREACH_TEMPLATES,
   buildOutreachDraft,
+  suggestHairwebPackage,
   suggestOutreachTemplate,
+  type HairwebPackageId,
   type OutreachTemplateKey,
 } from "@/lib/leads/outreach-templates";
 import type { Lead } from "@/lib/leads/types";
@@ -15,6 +18,7 @@ const bodySchema = z.object({
   templateKey: z
     .enum(["no_website", "redesign", "local_seo", "follow_up", "blank"])
     .optional(),
+  packageId: z.enum(["start", "pro"]).optional(),
 });
 
 export async function POST(
@@ -46,19 +50,32 @@ export async function POST(
   }
 
   const row = lead as Lead;
+  const key =
+    (parsed.data.templateKey as OutreachTemplateKey | undefined) ||
+    suggestOutreachTemplate(row);
+  const packageId =
+    (parsed.data.packageId as HairwebPackageId | undefined) ||
+    suggestHairwebPackage(row, key);
 
   if (parsed.data.mode === "ai") {
-    const draft = await generatePersonalizedOutreach(row);
-    return NextResponse.json({ draft, templates: OUTREACH_TEMPLATES });
+    const draft = await generatePersonalizedOutreach(row, {
+      templateKey: key,
+      packageId,
+    });
+    return NextResponse.json({
+      draft,
+      templates: OUTREACH_TEMPLATES,
+      packages: HAIRWEB_PACKAGES,
+    });
   }
 
-  const key =
-    parsed.data.templateKey || suggestOutreachTemplate(row);
-  const draft = buildOutreachDraft(row, key);
+  const draft = buildOutreachDraft(row, key, packageId);
   return NextResponse.json({
     draft: { ...draft, source: "template" as const },
     templates: OUTREACH_TEMPLATES,
+    packages: HAIRWEB_PACKAGES,
     suggestedKey: suggestOutreachTemplate(row),
+    suggestedPackage: suggestHairwebPackage(row, key),
   });
 }
 
@@ -87,12 +104,15 @@ export async function GET(
 
   const row = lead as Lead;
   const suggestedKey = suggestOutreachTemplate(row);
-  const draft = buildOutreachDraft(row, suggestedKey);
+  const suggestedPackage = suggestHairwebPackage(row, suggestedKey);
+  const draft = buildOutreachDraft(row, suggestedKey, suggestedPackage);
 
   return NextResponse.json({
     draft: { ...draft, source: "template" as const },
     templates: OUTREACH_TEMPLATES,
+    packages: HAIRWEB_PACKAGES,
     suggestedKey,
+    suggestedPackage,
     aiAvailable: Boolean(process.env.OPENAI_API_KEY?.trim()),
     emailConfigured: Boolean(
       process.env.RESEND_API_KEY?.trim() &&

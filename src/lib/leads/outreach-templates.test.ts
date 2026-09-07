@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  HAIRWEB_PACKAGES,
   buildOutreachDraft,
+  inferWebsiteShape,
+  suggestHairwebPackage,
   suggestOutreachTemplate,
 } from "@/lib/leads/outreach-templates";
 import type { Lead } from "@/lib/leads/types";
@@ -130,10 +133,70 @@ describe("outreach templates", () => {
     assert.equal(suggestOutreachTemplate(baseLead()), "no_website");
   });
 
-  it("personalizes greeting and salon name", () => {
-    const draft = buildOutreachDraft(baseLead(), "no_website");
-    assert.match(draft.body, /Dobrý den Jana/);
-    assert.match(draft.body, /Hair Lab Praha/);
-    assert.match(draft.subject, /Hair Lab Praha/);
+  it("treats existing salon sites as one-pager by default (even with team section)", () => {
+    const lead = baseLead({
+      has_website: true,
+      website: "https://example.cz",
+      website_has_prices: true,
+      website_has_gallery: true,
+      website_has_team: true,
+      google_reviews_count: 200,
+    });
+    assert.equal(inferWebsiteShape(lead), "one_pager");
+    assert.equal(suggestHairwebPackage(lead, "redesign"), "start");
+  });
+
+  it("suggests PRO only for multi-page / local SEO need", () => {
+    assert.equal(suggestHairwebPackage(baseLead(), "local_seo"), "pro");
+    assert.equal(
+      suggestHairwebPackage(
+        baseLead({
+          has_website: true,
+          website: "https://example.cz",
+          website_audit: "Vícestránkový web se slabou strukturou pro SEO.",
+        }),
+        "redesign",
+      ),
+      "pro",
+    );
+    assert.equal(
+      suggestHairwebPackage(baseLead({ business_size: "large" }), "no_website"),
+      "pro",
+    );
+  });
+
+  it("builds redesign mail around concrete problems + START for one-pager", () => {
+    const draft = buildOutreachDraft(
+      baseLead({
+        has_website: true,
+        website: "https://example.cz",
+        website_has_prices: true,
+        website_has_gallery: true,
+        website_mobile_problem: true,
+        website_outdated: true,
+        contact_person: null,
+      }),
+      "redesign",
+    );
+    assert.equal(draft.packageId, "start");
+    assert.match(draft.subject, /jednostránkového/);
+    assert.match(draft.body, /mobilu/);
+    assert.match(draft.body, /zastarale/);
+    assert.match(draft.body, /9 900 Kč/);
+    assert.match(draft.body, /ne komplikovat zbytečně na více stránek/);
+    assert.match(draft.body, /„ANO“/);
+    assert.match(draft.body, /Lukáš Ptáčník/);
+  });
+
+  it("builds PRO mail with full feature list when forced", () => {
+    const draft = buildOutreachDraft(baseLead(), "no_website", "pro");
+    assert.equal(draft.packageId, "pro");
+    assert.match(draft.body, /balíček PRO/);
+    for (const feature of HAIRWEB_PACKAGES.pro.features) {
+      assert.match(
+        draft.body,
+        new RegExp(feature.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
+      );
+    }
   });
 });
