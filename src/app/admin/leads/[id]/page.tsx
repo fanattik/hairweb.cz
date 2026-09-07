@@ -94,12 +94,14 @@ export default async function AdminLeadDetailPage({
           </div>
 
           <div className="flex flex-wrap gap-2 text-sm">
-            <a
-              href={`mailto:${lead.email}`}
-              className="border border-line px-3 py-2 hover:border-ink"
-            >
-              E-mail
-            </a>
+            {lead.email ? (
+              <a
+                href={`mailto:${lead.email}`}
+                className="border border-line px-3 py-2 hover:border-ink"
+              >
+                E-mail
+              </a>
+            ) : null}
             {lead.phone ? (
               <a
                 href={`tel:${lead.phone}`}

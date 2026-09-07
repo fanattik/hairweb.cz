@@ -1,11 +1,21 @@
 "use client";
 
-import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import { useRouter } from "next/navigation";
 import { GoogleEnrichPreviewButton } from "@/components/admin/GoogleEnrichPreviewButton";
 import { InstagramEnrichPreviewButton } from "@/components/admin/InstagramEnrichPreviewButton";
 import { ScoreSummaryCard } from "@/components/admin/ScoreBadges";
 import { calculateLeadScores } from "@/lib/leads/scoring";
+import {
+  scoresToWebFlags,
+  webFlagsToScores,
+} from "@/lib/leads/web-flags";
 import {
   BUSINESS_SIZE_LABELS,
   BUSINESS_SIZES,
@@ -13,7 +23,6 @@ import {
   INSTAGRAM_QUALITY_LABELS,
   LEAD_STATUSES,
   STATUS_LABELS,
-  WEB_SCORE_MAX,
   type BusinessSize,
   type InstagramQuality,
   type Lead,
@@ -52,13 +61,13 @@ type FormState = {
   professional_branding: boolean;
   paid_marketing: boolean;
   has_website: boolean;
-  website_design_score: string;
-  website_mobile_score: string;
-  website_cta_score: string;
-  website_content_score: string;
-  website_trust_score: string;
-  website_seo_score: string;
-  website_performance_score: string;
+  website_design_ok: boolean | null;
+  website_mobile_ok: boolean | null;
+  website_cta_ok: boolean | null;
+  website_content_ok: boolean | null;
+  website_trust_ok: boolean | null;
+  website_seo_ok: boolean | null;
+  website_performance_ok: boolean | null;
   website_outdated: boolean;
   website_mobile_problem: boolean;
   website_clear_booking_cta: boolean | null;
@@ -91,7 +100,7 @@ function toIsoOrNull(value: string) {
 
 function numOrNull(value: string) {
   if (value.trim() === "") return null;
-  const n = Number(value);
+  const n = Number(value.replace(",", "."));
   return Number.isFinite(n) ? n : null;
 }
 
@@ -100,6 +109,16 @@ function boolTri(value: boolean | null): boolean | null {
 }
 
 function fromLead(lead?: Lead): FormState {
+  const flags = scoresToWebFlags({
+    website_design_score: lead?.website_design_score,
+    website_mobile_score: lead?.website_mobile_score,
+    website_cta_score: lead?.website_cta_score,
+    website_content_score: lead?.website_content_score,
+    website_trust_score: lead?.website_trust_score,
+    website_seo_score: lead?.website_seo_score,
+    website_performance_score: lead?.website_performance_score,
+  });
+
   return {
     name: lead?.name ?? "",
     salon_name: lead?.salon_name ?? "",
@@ -134,30 +153,7 @@ function fromLead(lead?: Lead): FormState {
     professional_branding: lead?.professional_branding ?? false,
     paid_marketing: lead?.paid_marketing ?? false,
     has_website: lead?.has_website ?? true,
-    website_design_score:
-      lead?.website_design_score != null
-        ? String(lead.website_design_score)
-        : "",
-    website_mobile_score:
-      lead?.website_mobile_score != null
-        ? String(lead.website_mobile_score)
-        : "",
-    website_cta_score:
-      lead?.website_cta_score != null ? String(lead.website_cta_score) : "",
-    website_content_score:
-      lead?.website_content_score != null
-        ? String(lead.website_content_score)
-        : "",
-    website_trust_score:
-      lead?.website_trust_score != null
-        ? String(lead.website_trust_score)
-        : "",
-    website_seo_score:
-      lead?.website_seo_score != null ? String(lead.website_seo_score) : "",
-    website_performance_score:
-      lead?.website_performance_score != null
-        ? String(lead.website_performance_score)
-        : "",
+    ...flags,
     website_outdated: lead?.website_outdated ?? false,
     website_mobile_problem: lead?.website_mobile_problem ?? false,
     website_clear_booking_cta: lead?.website_clear_booking_cta ?? null,
@@ -190,35 +186,6 @@ function Section({
       </h2>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">{children}</div>
     </section>
-  );
-}
-
-function ScoreField({
-  label,
-  max,
-  value,
-  onChange,
-}: {
-  label: string;
-  max: number;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <label className="grid gap-1 text-sm sm:col-span-1">
-      <span className="font-medium">
-        {label}{" "}
-        <span className="font-normal text-ink-soft">/ {max}</span>
-      </span>
-      <input
-        type="number"
-        min={0}
-        max={max}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={field}
-      />
-    </label>
   );
 }
 
@@ -262,11 +229,38 @@ export function LeadEditorForm({
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
+  // After Analyzovat / Uložit → router.refresh() updates `lead`; keep form in sync
+  // so a later Uložit does not wipe google_rating / city / web flags with stale state.
+  useEffect(() => {
+    if (!lead) return;
+    setState(fromLead(lead));
+  }, [lead?.id, lead?.last_enriched_at, lead?.updated_at]);
+
   function patch<K extends keyof FormState>(key: K, value: FormState[K]) {
     setState((prev) => ({ ...prev, [key]: value }));
   }
 
   const liveScores = useMemo(() => {
+    const webScores = state.has_website
+      ? webFlagsToScores({
+          website_design_ok: state.website_design_ok,
+          website_mobile_ok: state.website_mobile_ok,
+          website_cta_ok: state.website_cta_ok,
+          website_content_ok: state.website_content_ok,
+          website_trust_ok: state.website_trust_ok,
+          website_seo_ok: state.website_seo_ok,
+          website_performance_ok: state.website_performance_ok,
+        })
+      : {
+          website_design_score: null,
+          website_mobile_score: null,
+          website_cta_score: null,
+          website_content_score: null,
+          website_trust_score: null,
+          website_seo_score: null,
+          website_performance_score: null,
+        };
+
     return calculateLeadScores({
       email: state.email,
       phone: state.phone,
@@ -284,13 +278,7 @@ export function LeadEditorForm({
       professional_photos: state.professional_photos,
       business_size: state.business_size || null,
       has_website: state.has_website,
-      website_design_score: numOrNull(state.website_design_score),
-      website_mobile_score: numOrNull(state.website_mobile_score),
-      website_cta_score: numOrNull(state.website_cta_score),
-      website_content_score: numOrNull(state.website_content_score),
-      website_trust_score: numOrNull(state.website_trust_score),
-      website_seo_score: numOrNull(state.website_seo_score),
-      website_performance_score: numOrNull(state.website_performance_score),
+      ...webScores,
       website_mobile_problem: state.website_mobile_problem,
       website_clear_booking_cta: boolTri(state.website_clear_booking_cta),
       website_has_prices: boolTri(state.website_has_prices),
@@ -299,6 +287,26 @@ export function LeadEditorForm({
   }, [state]);
 
   function buildPayload() {
+    const webScores = state.has_website
+      ? webFlagsToScores({
+          website_design_ok: state.website_design_ok,
+          website_mobile_ok: state.website_mobile_ok,
+          website_cta_ok: state.website_cta_ok,
+          website_content_ok: state.website_content_ok,
+          website_trust_ok: state.website_trust_ok,
+          website_seo_ok: state.website_seo_ok,
+          website_performance_ok: state.website_performance_ok,
+        })
+      : {
+          website_design_score: null,
+          website_mobile_score: null,
+          website_cta_score: null,
+          website_content_score: null,
+          website_trust_score: null,
+          website_seo_score: null,
+          website_performance_score: null,
+        };
+
     const qualification = {
       salon_name: state.salon_name || null,
       contact_person: state.contact_person || null,
@@ -324,27 +332,7 @@ export function LeadEditorForm({
       professional_branding: state.professional_branding,
       paid_marketing: state.paid_marketing,
       has_website: state.has_website,
-      website_design_score: state.has_website
-        ? numOrNull(state.website_design_score)
-        : null,
-      website_mobile_score: state.has_website
-        ? numOrNull(state.website_mobile_score)
-        : null,
-      website_cta_score: state.has_website
-        ? numOrNull(state.website_cta_score)
-        : null,
-      website_content_score: state.has_website
-        ? numOrNull(state.website_content_score)
-        : null,
-      website_trust_score: state.has_website
-        ? numOrNull(state.website_trust_score)
-        : null,
-      website_seo_score: state.has_website
-        ? numOrNull(state.website_seo_score)
-        : null,
-      website_performance_score: state.has_website
-        ? numOrNull(state.website_performance_score)
-        : null,
+      ...webScores,
       website_outdated: state.website_outdated,
       website_mobile_problem: state.website_mobile_problem,
       website_clear_booking_cta: state.website_clear_booking_cta,
@@ -361,7 +349,7 @@ export function LeadEditorForm({
         ...qualification,
         name: state.name,
         salonName: state.salon_name,
-        email: state.email,
+        email: state.email.trim() || null,
         phone: state.phone,
         website: state.website,
         notes: state.notes,
@@ -370,7 +358,7 @@ export function LeadEditorForm({
 
     return {
       name: state.name,
-      email: state.email,
+      email: state.email.trim() || null,
       status: state.status,
       notes: state.notes || null,
       last_contact_at: toIsoOrNull(state.last_contact_at),
@@ -443,9 +431,8 @@ export function LeadEditorForm({
             />
           </label>
           <label className="grid gap-1 text-sm">
-            <span className="font-medium">E-mail *</span>
+            <span className="font-medium">E-mail</span>
             <input
-              required
               type="email"
               className={field}
               value={state.email}
@@ -520,6 +507,7 @@ export function LeadEditorForm({
                   payload.google_maps_url ?? prev.google_maps_url,
                 salon_name: payload.salon_name || prev.salon_name,
                 city: payload.city || prev.city,
+                region: payload.region || prev.region,
                 phone: payload.phone || prev.phone,
                 website: payload.website || prev.website,
                 has_website:
@@ -729,47 +717,44 @@ export function LeadEditorForm({
 
           {state.has_website ? (
             <>
-              <ScoreField
-                label="Design"
-                max={WEB_SCORE_MAX.design}
-                value={state.website_design_score}
-                onChange={(v) => patch("website_design_score", v)}
+              <p className="sm:col-span-2 text-xs text-ink-soft">
+                Ano / Ne — po Analyzovat se doplní z auditu webu. Interně se
+                ukládá jako skóre pro Lead Score.
+              </p>
+              <TriBool
+                label="Design v pořádku"
+                value={state.website_design_ok}
+                onChange={(v) => patch("website_design_ok", v)}
               />
-              <ScoreField
-                label="Mobile UX"
-                max={WEB_SCORE_MAX.mobile}
-                value={state.website_mobile_score}
-                onChange={(v) => patch("website_mobile_score", v)}
+              <TriBool
+                label="Mobile UX v pořádku"
+                value={state.website_mobile_ok}
+                onChange={(v) => patch("website_mobile_ok", v)}
               />
-              <ScoreField
-                label="CTA / rezervace"
-                max={WEB_SCORE_MAX.cta}
-                value={state.website_cta_score}
-                onChange={(v) => patch("website_cta_score", v)}
+              <TriBool
+                label="CTA / rezervace v pořádku"
+                value={state.website_cta_ok}
+                onChange={(v) => patch("website_cta_ok", v)}
               />
-              <ScoreField
-                label="Obsah / služby / ceník"
-                max={WEB_SCORE_MAX.content}
-                value={state.website_content_score}
-                onChange={(v) => patch("website_content_score", v)}
+              <TriBool
+                label="Obsah / služby / ceník v pořádku"
+                value={state.website_content_ok}
+                onChange={(v) => patch("website_content_ok", v)}
               />
-              <ScoreField
-                label="Trust"
-                max={WEB_SCORE_MAX.trust}
-                value={state.website_trust_score}
-                onChange={(v) => patch("website_trust_score", v)}
+              <TriBool
+                label="Trust v pořádku"
+                value={state.website_trust_ok}
+                onChange={(v) => patch("website_trust_ok", v)}
               />
-              <ScoreField
-                label="SEO"
-                max={WEB_SCORE_MAX.seo}
-                value={state.website_seo_score}
-                onChange={(v) => patch("website_seo_score", v)}
+              <TriBool
+                label="SEO v pořádku"
+                value={state.website_seo_ok}
+                onChange={(v) => patch("website_seo_ok", v)}
               />
-              <ScoreField
-                label="Performance"
-                max={WEB_SCORE_MAX.performance}
-                value={state.website_performance_score}
-                onChange={(v) => patch("website_performance_score", v)}
+              <TriBool
+                label="Performance v pořádku"
+                value={state.website_performance_ok}
+                onChange={(v) => patch("website_performance_ok", v)}
               />
               <p className="sm:col-span-2 text-sm text-ink-soft">
                 Web Score live:{" "}

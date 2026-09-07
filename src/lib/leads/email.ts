@@ -32,7 +32,7 @@ export async function sendAdminNotification(lead: Lead) {
     "",
     `Jméno: ${lead.name}`,
     `Salon: ${lead.salon_name || "—"}`,
-    `E-mail: ${lead.email}`,
+    `E-mail: ${lead.email || "—"}`,
     `Telefon: ${lead.phone || "—"}`,
     `Web / Instagram: ${lead.website}`,
     `Balíček: ${packageLabel(lead.package)}`,
@@ -64,6 +64,10 @@ export async function sendAdminNotification(lead: Lead) {
 export async function sendCustomerConfirmation(lead: Lead) {
   const resend = getResend();
   const from = process.env.HAIRWEB_FROM_EMAIL;
+
+  if (!lead.email) {
+    return { skipped: true as const };
+  }
 
   if (!resend || !from) {
     console.warn("[email] Skipping customer confirmation — Resend env not configured");

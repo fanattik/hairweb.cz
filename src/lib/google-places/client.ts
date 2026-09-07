@@ -2,6 +2,7 @@ import {
   cityFromFormattedAddress,
   extractPlaceId,
   parseMapsInput,
+  regionFromCity,
   resolveMapsRedirect,
 } from "@/lib/google-places/parse-url";
 
@@ -13,6 +14,7 @@ export type GooglePlaceSnapshot = {
   mapsUrl: string | null;
   formattedAddress: string | null;
   city: string | null;
+  region: string | null;
   phone: string | null;
   website: string | null;
   latitude: number | null;
@@ -31,6 +33,11 @@ type PlacesApiPlace = {
   internationalPhoneNumber?: string;
   websiteUri?: string;
   location?: { latitude?: number; longitude?: number };
+  addressComponents?: Array<{
+    longText?: string;
+    shortText?: string;
+    types?: string[];
+  }>;
 };
 
 const SEARCH_FIELD_MASK = [
@@ -44,6 +51,7 @@ const SEARCH_FIELD_MASK = [
   "places.internationalPhoneNumber",
   "places.websiteUri",
   "places.location",
+  "places.addressComponents",
 ].join(",");
 
 const DETAILS_FIELD_MASK = [
@@ -57,7 +65,29 @@ const DETAILS_FIELD_MASK = [
   "internationalPhoneNumber",
   "websiteUri",
   "location",
+  "addressComponents",
 ].join(",");
+
+function cityFromComponents(
+  components: PlacesApiPlace["addressComponents"],
+): string | null {
+  if (!components?.length) return null;
+  const locality =
+    components.find((c) => c.types?.includes("locality"))?.longText ||
+    components.find((c) => c.types?.includes("postal_town"))?.longText ||
+    components.find((c) => c.types?.includes("sublocality"))?.longText;
+  return locality?.trim() || null;
+}
+
+function regionFromComponents(
+  components: PlacesApiPlace["addressComponents"],
+): string | null {
+  if (!components?.length) return null;
+  const area = components.find((c) =>
+    c.types?.includes("administrative_area_level_1"),
+  )?.longText;
+  return area?.trim() || null;
+}
 
 function getApiKey() {
   const key = process.env.GOOGLE_PLACES_API_KEY?.trim();
@@ -86,6 +116,10 @@ function toSnapshot(place: PlacesApiPlace): GooglePlaceSnapshot | null {
       ? place.userRatingCount
       : null;
 
+  const city =
+    cityFromComponents(place.addressComponents) ||
+    cityFromFormattedAddress(place.formattedAddress);
+
   return {
     placeId,
     name: place.displayName?.text?.trim() || null,
@@ -93,7 +127,9 @@ function toSnapshot(place: PlacesApiPlace): GooglePlaceSnapshot | null {
     reviewsCount,
     mapsUrl: place.googleMapsUri || null,
     formattedAddress: place.formattedAddress || null,
-    city: cityFromFormattedAddress(place.formattedAddress),
+    city,
+    region:
+      regionFromComponents(place.addressComponents) || regionFromCity(city),
     phone:
       place.nationalPhoneNumber?.trim() ||
       place.internationalPhoneNumber?.trim() ||

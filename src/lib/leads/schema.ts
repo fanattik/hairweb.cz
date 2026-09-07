@@ -175,7 +175,10 @@ export const leadCrmUpdateSchema = z
     won_value: z.number().nonnegative().nullable().optional(),
     lost_reason: z.string().max(1000).nullable().optional(),
     name: z.string().trim().min(2).max(100).optional(),
-    email: z.string().trim().email().max(255).optional(),
+    email: z.preprocess(
+      emptyToNull,
+      z.string().trim().email().max(255).nullable().optional(),
+    ),
   })
   .merge(leadQualificationSchema);
 
@@ -183,7 +186,10 @@ export const outboundLeadSchema = z
   .object({
     name: z.string().trim().min(2).max(100),
     salonName: optionalTrimmed,
-    email: z.string().trim().email().max(255),
+    email: z.preprocess(
+      emptyToNull,
+      z.string().trim().email().max(255).nullable().optional(),
+    ),
     phone: optionalTrimmed,
     website: z.preprocess((value) => {
       if (value === "" || value == null) return undefined;

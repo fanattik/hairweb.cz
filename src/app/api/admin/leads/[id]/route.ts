@@ -46,7 +46,7 @@ export async function PATCH(
   const merged: Lead = {
     ...current,
     ...patch,
-    email: patch.email ?? current.email,
+    email: patch.email !== undefined ? patch.email : current.email,
     phone: patch.phone !== undefined ? patch.phone : current.phone,
     website:
       patch.website !== undefined

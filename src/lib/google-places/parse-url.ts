@@ -103,3 +103,46 @@ export function cityFromFormattedAddress(
   const candidate = parts[parts.length - 2] ?? parts[0];
   return candidate.replace(/^\d{3}\s?\d{2}\s+/, "").trim() || null;
 }
+
+/** Rough Czech kraj from city name. */
+export function regionFromCity(city: string | null | undefined): string | null {
+  if (!city) return null;
+  const c = city
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  if (c.includes("praha")) return "Hlavní město Praha";
+  if (c.includes("brno") || c.includes("blansko") || c.includes("hodonin")) {
+    return "Jihomoravský kraj";
+  }
+  if (c.includes("ostrava") || c.includes("opava") || c.includes("karvina")) {
+    return "Moravskoslezský kraj";
+  }
+  if (c.includes("plzen") || c.includes("plzeň")) return "Plzeňský kraj";
+  if (c.includes("liberec")) return "Liberecký kraj";
+  if (c.includes("olomouc")) return "Olomoucký kraj";
+  if (c.includes("hradec")) return "Královéhradecký kraj";
+  if (c.includes("pardubic")) return "Pardubický kraj";
+  if (c.includes("zlin") || c.includes("zlín") || c.includes("zlin")) {
+    return "Zlínský kraj";
+  }
+  if (c.includes("usti") || c.includes("ústí") || c.includes("teplice")) {
+    return "Ústecký kraj";
+  }
+  if (c.includes("ceske budejovice") || c.includes("české budějovice")) {
+    return "Jihočeský kraj";
+  }
+  if (c.includes("karlovy")) return "Karlovarský kraj";
+  if (c.includes("jihlava")) return "Kraj Vysočina";
+  if (
+    c.includes("kladno") ||
+    c.includes("mlada") ||
+    c.includes("kolin") ||
+    c.includes("benešov") ||
+    c.includes("benesov")
+  ) {
+    return "Středočeský kraj";
+  }
+  return null;
+}

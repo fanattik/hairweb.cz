@@ -87,7 +87,7 @@ export type Lead = {
   type: LeadType;
   name: string;
   salon_name: string | null;
-  email: string;
+  email: string | null;
   phone: string | null;
   website: string;
   message: string | null;

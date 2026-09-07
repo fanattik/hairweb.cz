@@ -10,6 +10,7 @@ type FillPayload = {
   google_maps_url?: string;
   salon_name?: string;
   city?: string;
+  region?: string;
   phone?: string;
   website?: string;
   has_website?: boolean;
@@ -43,6 +44,7 @@ export function GoogleEnrichPreviewButton({
       google_maps_url: place.mapsUrl || mapsUrl,
       salon_name: place.name || undefined,
       city: place.city || undefined,
+      region: place.region || undefined,
       phone: place.phone || undefined,
       website: place.website || undefined,
       has_website: place.website ? true : undefined,

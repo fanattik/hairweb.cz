@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     status: "new" as const,
     name: input.name.trim(),
     salon_name: emptyToNull(input.salonName),
-    email: input.email.trim().toLowerCase(),
+    email: input.email?.trim().toLowerCase() ?? null,
     phone: emptyToNull(input.phone),
     website,
     notes: emptyToNull(input.notes),

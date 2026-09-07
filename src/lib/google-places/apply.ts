@@ -10,6 +10,7 @@ export type GoogleEnrichPatch = {
   longitude?: number | null;
   salon_name?: string | null;
   city?: string | null;
+  region?: string | null;
   phone?: string | null;
   website?: string | null;
   has_website?: boolean | null;
@@ -31,7 +32,7 @@ function isBlank(value: string | null | undefined) {
 export function buildGoogleEnrichPatch(
   lead: Pick<
     Lead,
-    "salon_name" | "city" | "phone" | "website" | "has_website"
+    "salon_name" | "city" | "region" | "phone" | "website" | "has_website"
   >,
   place: GooglePlaceSnapshot,
   options?: { overwrite?: boolean },
@@ -58,6 +59,9 @@ export function buildGoogleEnrichPatch(
   }
   if (overwrite || isBlank(lead.city)) {
     if (place.city) patch.city = place.city;
+  }
+  if (overwrite || isBlank(lead.region)) {
+    if (place.region) patch.region = place.region;
   }
   if (overwrite || isBlank(lead.phone)) {
     if (place.phone) patch.phone = place.phone;

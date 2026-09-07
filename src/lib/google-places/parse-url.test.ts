@@ -42,6 +42,14 @@ describe("google places url parsing", () => {
   });
 });
 
+describe("region from city", () => {
+  it("maps major cities", async () => {
+    const { regionFromCity } = await import("@/lib/google-places/parse-url");
+    assert.equal(regionFromCity("Praha 7"), "Hlavní město Praha");
+    assert.equal(regionFromCity("Brno"), "Jihomoravský kraj");
+  });
+});
+
 describe("google enrich merge", () => {
   const place: GooglePlaceSnapshot = {
     placeId: "ChIJtest",
@@ -53,6 +61,7 @@ describe("google enrich merge", () => {
     city: "Praha 1",
     phone: "+420111222333",
     website: "https://hairlab.cz",
+    region: "Hlavní město Praha",
     latitude: null,
     longitude: null,
   };
@@ -62,6 +71,7 @@ describe("google enrich merge", () => {
       {
         salon_name: null,
         city: null,
+        region: null,
         phone: null,
         website: "—",
         has_website: false,
@@ -72,6 +82,7 @@ describe("google enrich merge", () => {
     assert.equal(patch.google_reviews_count, 210);
     assert.equal(patch.salon_name, "Hair Lab");
     assert.equal(patch.city, "Praha 1");
+    assert.equal(patch.region, "Hlavní město Praha");
     assert.equal(patch.phone, "+420111222333");
     assert.equal(patch.website, "https://hairlab.cz");
     assert.equal(patch.has_website, true);
@@ -83,6 +94,7 @@ describe("google enrich merge", () => {
       {
         salon_name: "Manual Name",
         city: "Brno",
+        region: "Jihomoravský kraj",
         phone: "+420999",
         website: "https://manual.cz",
         has_website: true,
@@ -91,6 +103,7 @@ describe("google enrich merge", () => {
     );
     assert.equal(patch.salon_name, undefined);
     assert.equal(patch.city, undefined);
+    assert.equal(patch.region, undefined);
     assert.equal(patch.phone, undefined);
     assert.equal(patch.website, undefined);
     assert.equal(patch.google_rating, 4.9);
@@ -101,6 +114,7 @@ describe("google enrich merge", () => {
       {
         salon_name: "Manual Name",
         city: "Brno",
+        region: "Jihomoravský kraj",
         phone: "+420999",
         website: "https://manual.cz",
         has_website: true,
@@ -110,5 +124,6 @@ describe("google enrich merge", () => {
     );
     assert.equal(patch.salon_name, "Hair Lab");
     assert.equal(patch.city, "Praha 1");
+    assert.equal(patch.region, "Hlavní město Praha");
   });
 });

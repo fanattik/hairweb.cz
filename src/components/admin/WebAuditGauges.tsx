@@ -1,4 +1,4 @@
-import { WEB_SCORE_MAX } from "@/lib/leads/types";
+import { scoresToWebFlags } from "@/lib/leads/web-flags";
 import { PsiLegend, ScoreGauge } from "@/components/admin/ScoreGauge";
 
 export type LighthouseScores = {
@@ -26,6 +26,36 @@ type Props = {
   warnings?: string[];
 };
 
+const FLAG_ROWS: Array<{
+  key: keyof ReturnType<typeof scoresToWebFlags>;
+  label: string;
+}> = [
+  { key: "website_design_ok", label: "Design" },
+  { key: "website_mobile_ok", label: "Mobile UX" },
+  { key: "website_cta_ok", label: "CTA / rezervace" },
+  { key: "website_content_ok", label: "Obsah" },
+  { key: "website_trust_ok", label: "Trust" },
+  { key: "website_seo_ok", label: "SEO" },
+  { key: "website_performance_ok", label: "Performance" },
+];
+
+function FlagPill({ ok }: { ok: boolean | null }) {
+  if (ok == null) {
+    return <span className="text-ink-soft">—</span>;
+  }
+  return (
+    <span
+      className={
+        ok
+          ? "font-medium text-emerald-800"
+          : "font-medium text-copper-deep"
+      }
+    >
+      {ok ? "Ano" : "Ne"}
+    </span>
+  );
+}
+
 export function WebAuditGauges({
   lighthouse,
   scores,
@@ -40,9 +70,9 @@ export function WebAuditGauges({
       lighthouse.bestPractices != null ||
       lighthouse.seo != null);
 
+  const flags = scores ? scoresToWebFlags(scores) : null;
   const hasScores =
-    scores &&
-    Object.values(scores).some((value) => value != null);
+    flags && Object.values(flags).some((value) => value != null);
 
   if (!hasLh && !hasScores && !auditText) return null;
 
@@ -75,55 +105,22 @@ export function WebAuditGauges({
         </div>
       ) : null}
 
-      {hasScores ? (
+      {hasScores && flags ? (
         <div>
           <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft">
-            Hairweb web skóre
+            Hairweb web checklist
           </p>
-          <div className="flex flex-wrap justify-around gap-3">
-            <ScoreGauge
-              label="Design"
-              score={scores.website_design_score}
-              max={WEB_SCORE_MAX.design}
-              size="sm"
-            />
-            <ScoreGauge
-              label="Mobile"
-              score={scores.website_mobile_score}
-              max={WEB_SCORE_MAX.mobile}
-              size="sm"
-            />
-            <ScoreGauge
-              label="CTA"
-              score={scores.website_cta_score}
-              max={WEB_SCORE_MAX.cta}
-              size="sm"
-            />
-            <ScoreGauge
-              label="Content"
-              score={scores.website_content_score}
-              max={WEB_SCORE_MAX.content}
-              size="sm"
-            />
-            <ScoreGauge
-              label="Trust"
-              score={scores.website_trust_score}
-              max={WEB_SCORE_MAX.trust}
-              size="sm"
-            />
-            <ScoreGauge
-              label="SEO"
-              score={scores.website_seo_score}
-              max={WEB_SCORE_MAX.seo}
-              size="sm"
-            />
-            <ScoreGauge
-              label="Perf"
-              score={scores.website_performance_score}
-              max={WEB_SCORE_MAX.performance}
-              size="sm"
-            />
-          </div>
+          <ul className="grid gap-2 sm:grid-cols-2">
+            {FLAG_ROWS.map((row) => (
+              <li
+                key={row.key}
+                className="flex items-center justify-between border border-line bg-mist px-3 py-2 text-sm"
+              >
+                <span>{row.label}</span>
+                <FlagPill ok={flags[row.key]} />
+              </li>
+            ))}
+          </ul>
         </div>
       ) : null}
 
