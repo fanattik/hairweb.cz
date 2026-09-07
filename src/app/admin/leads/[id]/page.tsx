@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AnalyzeLeadButton } from "@/components/admin/AnalyzeLeadButton";
+import { OpportunityActions } from "@/components/admin/discovery/OpportunityActions";
 import { LeadCrmForm } from "@/components/admin/LeadCrmForm";
 import {
   OpportunityBadge,
@@ -203,6 +204,63 @@ export default async function AdminLeadDetailPage({
           </div>
         </div>
       </div>
+
+      {lead.opportunity_score != null ? (
+        <section className="mt-4 border border-line bg-foam p-5">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-soft">
+                Opportunity
+              </h2>
+              <p className="mt-2 font-[family-name:var(--font-fraunces)] text-4xl">
+                {lead.opportunity_score}
+                <span className="text-lg text-ink-soft"> / 100</span>
+              </p>
+              <p className="mt-1 text-sm">
+                Grade{" "}
+                <span className="font-semibold">{lead.opportunity_grade}</span>
+                {lead.opportunity_grade === "A" ? (
+                  <span className="ml-2 text-copper-deep">Hot opportunity</span>
+                ) : null}
+              </p>
+            </div>
+            <OpportunityActions lead={lead} />
+          </div>
+
+          {Array.isArray(lead.opportunity_reasons) &&
+          lead.opportunity_reasons.length ? (
+            <ul className="mt-4 grid gap-1 text-sm sm:grid-cols-2">
+              {lead.opportunity_reasons.map((reason) => (
+                <li key={`${reason.label}-${reason.points}`}>
+                  +{reason.points} {reason.label}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          {lead.opportunity_summary ? (
+            <p className="mt-4 text-sm leading-relaxed text-ink">
+              <span className="font-medium">AI summary: </span>
+              {lead.opportunity_summary}
+            </p>
+          ) : null}
+
+          <dl className="mt-4 grid gap-2 text-sm sm:grid-cols-3">
+            <div>
+              <dt className="text-ink-soft">Recommended pitch</dt>
+              <dd>{lead.recommended_pitch || "—"}</dd>
+            </div>
+            <div>
+              <dt className="text-ink-soft">Suggested service</dt>
+              <dd>{lead.suggested_service || "—"}</dd>
+            </div>
+            <div>
+              <dt className="text-ink-soft">Outreach channel</dt>
+              <dd>{lead.recommended_channel || "—"}</dd>
+            </div>
+          </dl>
+        </section>
+      ) : null}
 
       {hasScore && priority ? (
         <div className="mt-4 grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">

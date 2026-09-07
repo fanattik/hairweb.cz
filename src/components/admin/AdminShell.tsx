@@ -25,6 +25,9 @@ export function AdminShell({
               <Link href="/admin/leads" className="hover:text-ink">
                 Leady
               </Link>
+              <Link href="/admin/leads/discovery" className="hover:text-ink">
+                Discovery
+              </Link>
               <Link href="/admin/leads/import" className="hover:text-ink">
                 Import
               </Link>
@@ -33,6 +36,9 @@ export function AdminShell({
               </Link>
               <Link href="/admin/leads/new" className="hover:text-ink">
                 Nový outbound
+              </Link>
+              <Link href="/admin/settings" className="hover:text-ink">
+                Settings
               </Link>
             </nav>
           </div>

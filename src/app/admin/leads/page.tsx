@@ -47,6 +47,8 @@ function hrefWith(
 }
 
 const SORT_OPTIONS = [
+  { value: "opportunity_desc", label: "Opportunity ↓", column: "opportunity_score", asc: false },
+  { value: "opportunity_asc", label: "Opportunity ↑", column: "opportunity_score", asc: true },
   { value: "lead_score_desc", label: "Lead Score ↓", column: "lead_score", asc: false },
   { value: "lead_score_asc", label: "Lead Score ↑", column: "lead_score", asc: true },
   { value: "google_rating_desc", label: "Google rating ↓", column: "google_rating", asc: false },
@@ -83,6 +85,11 @@ export default async function AdminLeadsPage({
   const importId = first(params.import_id);
   const grade = first(params.grade);
   const sourceType = first(params.source_type);
+  const oppGrade = first(params.opp_grade);
+  const oppMin = first(params.opp_min);
+  const hasWebsite = first(params.has_website);
+  const discoveryStatus = first(params.discovery_status);
+  const discoverySource = first(params.discovery_source);
 
   const sortOption =
     SORT_OPTIONS.find((option) => option.value === sort) ?? SORT_OPTIONS[0];
@@ -142,6 +149,18 @@ export default async function AdminLeadsPage({
   if (igActive === "yes") query = query.eq("instagram_active", true);
   else if (igActive === "no") query = query.eq("instagram_active", false);
   if (quick === "no_website") query = query.eq("has_website", false);
+  if (quick === "high_rating_no_web") {
+    query = query
+      .eq("has_website", false)
+      .gte("google_rating", 4.7)
+      .gte("google_reviews_count", 50);
+  }
+  if (hasWebsite === "yes") query = query.eq("has_website", true);
+  else if (hasWebsite === "no") query = query.eq("has_website", false);
+  if (oppGrade) query = query.eq("opportunity_grade", oppGrade.toUpperCase());
+  if (oppMin) query = query.gte("opportunity_score", Number(oppMin));
+  if (discoveryStatus) query = query.eq("discovery_status", discoveryStatus);
+  if (discoverySource) query = query.eq("discovery_source", discoverySource);
   if (grade) query = query.eq("lead_grade", grade.toUpperCase());
   if (sourceType) query = query.eq("source_type", sourceType);
 
@@ -204,6 +223,11 @@ export default async function AdminLeadsPage({
     import_id: importId,
     grade,
     source_type: sourceType,
+    opp_grade: oppGrade,
+    opp_min: oppMin,
+    has_website: hasWebsite,
+    discovery_status: discoveryStatus,
+    discovery_source: discoverySource,
   };
 
   const chip = (label: string, href: string, active = false) => (
@@ -268,6 +292,16 @@ export default async function AdminLeadsPage({
           quick === "reviews_100" || reviewsMin === "100",
         )}
         {chip(
+          "A-grade opportunity",
+          hrefWith(currentFilters, { opp_grade: "A" }),
+          oppGrade === "A",
+        )}
+        {chip(
+          "High rating / no web",
+          hrefWith(currentFilters, { quick: "high_rating_no_web" }),
+          quick === "high_rating_no_web",
+        )}
+        {chip(
           "Online booking",
           hrefWith(currentFilters, { quick: "booking", booking: "yes" }),
           quick === "booking" || booking === "yes",
@@ -299,11 +333,49 @@ export default async function AdminLeadsPage({
           <option value="low">LOW</option>
         </select>
         <select
+          name="opp_grade"
+          defaultValue={oppGrade}
+          className="border border-line bg-mist px-3 py-2 text-sm"
+        >
+          <option value="">Opportunity grade</option>
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="C">C</option>
+          <option value="D">D</option>
+        </select>
+        <select
+          name="has_website"
+          defaultValue={hasWebsite}
+          className="border border-line bg-mist px-3 py-2 text-sm"
+        >
+          <option value="">Web</option>
+          <option value="yes">Má web</option>
+          <option value="no">Bez webu</option>
+        </select>
+        <select
+          name="discovery_status"
+          defaultValue={discoveryStatus}
+          className="border border-line bg-mist px-3 py-2 text-sm"
+        >
+          <option value="">Discovery status</option>
+          <option value="ready">Připraveno</option>
+          <option value="needs_review">Ke kontrole</option>
+          <option value="discovered">Nalezeno</option>
+          <option value="enriching">Obohacování</option>
+          <option value="rejected">Zamítnuto</option>
+        </select>
+        <input
+          name="discovery_source"
+          defaultValue={discoverySource}
+          placeholder="Discovery source"
+          className="border border-line bg-mist px-3 py-2 text-sm"
+        />
+        <select
           name="status"
           defaultValue={status}
           className="border border-line bg-mist px-3 py-2 text-sm"
         >
-          <option value="">Status</option>
+          <option value="">Sales status</option>
           {LEAD_STATUSES.map((s) => (
             <option key={s} value={s}>
               {STATUS_LABELS[s]}
@@ -430,7 +502,7 @@ export default async function AdminLeadsPage({
         <table className="min-w-full text-left text-sm">
           <thead className="border-b border-line text-xs uppercase tracking-wide text-ink-soft">
             <tr>
-              <th className="px-3 py-3">Score</th>
+              <th className="px-3 py-3">Opp / Score</th>
               <th className="px-3 py-3">Salon</th>
               <th className="hidden px-3 py-3 md:table-cell">Město</th>
               <th className="px-3 py-3">Google</th>
@@ -443,9 +515,11 @@ export default async function AdminLeadsPage({
           </thead>
           <tbody>
             {leads.map((lead) => {
-              const score = lead.lead_score;
+              const score = lead.opportunity_score ?? lead.lead_score;
               const priorityValue =
-                score != null ? leadPriorityFromScore(score) : null;
+                lead.lead_score != null
+                  ? leadPriorityFromScore(lead.lead_score)
+                  : null;
               const web =
                 lead.has_website === false
                   ? null
@@ -466,11 +540,16 @@ export default async function AdminLeadsPage({
                           <p className="font-[family-name:var(--font-fraunces)] text-xl leading-none text-ink">
                             {score}
                           </p>
-                          {priorityValue ? (
-                            <div className="mt-1.5">
+                          <div className="mt-1.5 flex flex-wrap items-center gap-1">
+                            {lead.opportunity_grade ? (
+                              <span className="text-[10px] font-semibold tracking-wide">
+                                {lead.opportunity_grade}
+                              </span>
+                            ) : null}
+                            {priorityValue ? (
                               <PriorityBadge priority={priorityValue} />
-                            </div>
-                          ) : null}
+                            ) : null}
+                          </div>
                         </div>
                       ) : (
                         <span className="text-ink-soft">—</span>

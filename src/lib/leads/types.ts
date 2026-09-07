@@ -190,8 +190,41 @@ export type Lead = {
 
   enrichment_source: string | null;
   last_enriched_at: string | null;
-  enrichment_status: "idle" | "running" | "done" | "error" | null;
+  enrichment_status:
+    | "idle"
+    | "running"
+    | "done"
+    | "error"
+    | "pending"
+    | "processing"
+    | "completed"
+    | "partial"
+    | "failed"
+    | null;
   enrichment_error: string | null;
+
+  discovery_status:
+    | "discovered"
+    | "enriching"
+    | "ready"
+    | "needs_review"
+    | "rejected"
+    | null;
+  discovery_source: string | null;
+  discovery_job_id: string | null;
+  discovery_run_id: string | null;
+  business_status: string | null;
+  primary_type: string | null;
+  google_types: string[] | null;
+  opening_hours: unknown | null;
+  cover_photo_url: string | null;
+  opportunity_score: number | null;
+  opportunity_grade: "A" | "B" | "C" | "D" | null;
+  opportunity_summary: string | null;
+  recommended_pitch: string | null;
+  recommended_channel: string | null;
+  suggested_service: string | null;
+  opportunity_reasons: Array<{ label: string; points: number }> | null;
 };
 
 export const STATUS_LABELS: Record<LeadStatus, string> = {
