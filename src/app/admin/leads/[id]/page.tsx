@@ -3,11 +3,13 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AnalyzeLeadButton } from "@/components/admin/AnalyzeLeadButton";
+import { DeleteLeadButton } from "@/components/admin/DeleteLeadButton";
 import { LeadOutreachPanel } from "@/components/admin/LeadOutreachPanel";
 import { LeadFollowupPanel } from "@/components/admin/LeadFollowupPanel";
 import { OpportunityActions } from "@/components/admin/discovery/OpportunityActions";
 import { LeadCrmForm } from "@/components/admin/LeadCrmForm";
 import { LeadSourceSection } from "@/components/admin/LeadSourceSection";
+
 import {
   OpportunityBadge,
   PriorityBadge,
@@ -149,6 +151,7 @@ export default async function AdminLeadDetailPage({
                 Google Maps
               </a>
             ) : null}
+            <DeleteLeadButton leadId={lead.id} leadLabel={title} />
           </div>
         </div>
       </div>

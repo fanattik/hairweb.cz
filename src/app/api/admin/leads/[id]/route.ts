@@ -89,3 +89,37 @@ export async function PATCH(
 
   return NextResponse.json({ ok: true, scores });
 }
+
+export async function DELETE(
+  _request: Request,
+  context: { params: Promise<{ id: string }> },
+) {
+  const { id } = await context.params;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { data, error } = await supabase
+    .from("leads")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    console.error("[admin] lead delete", error);
+    return NextResponse.json({ error: "Smazání selhalo." }, { status: 500 });
+  }
+
+  if (!data) {
+    return NextResponse.json({ error: "Lead nenalezen." }, { status: 404 });
+  }
+
+  return NextResponse.json({ ok: true, id: data.id });
+}
+

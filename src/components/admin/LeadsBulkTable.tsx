@@ -18,6 +18,7 @@ import {
 import type { Lead } from "@/lib/leads/types";
 
 const BATCH_SIZE = 5;
+const DELETE_BATCH_SIZE = 50;
 
 type Props = {
   leads: Lead[];
@@ -47,6 +48,7 @@ function isAnalyzable(lead: Lead) {
 
 export function LeadsBulkTable({ leads }: Props) {
   const router = useRouter();
+  const allIds = useMemo(() => leads.map((l) => l.id), [leads]);
   const analyzableIds = useMemo(
     () => leads.filter(isAnalyzable).map((l) => l.id),
     [leads],
@@ -55,6 +57,7 @@ export function LeadsBulkTable({ leads }: Props) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [overwrite, setOverwrite] = useState(false);
   const [running, setRunning] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [progress, setProgress] = useState<{
     done: number;
     total: number;
@@ -67,10 +70,14 @@ export function LeadsBulkTable({ leads }: Props) {
   } | null>(null);
   const [failures, setFailures] = useState<BulkResult[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
 
   const allSelected =
-    analyzableIds.length > 0 &&
-    analyzableIds.every((id) => selected.has(id));
+    allIds.length > 0 && allIds.every((id) => selected.has(id));
+  const selectedAnalyzable = useMemo(
+    () => [...selected].filter((id) => analyzableIds.includes(id)),
+    [selected, analyzableIds],
+  );
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -79,20 +86,24 @@ export function LeadsBulkTable({ leads }: Props) {
       else next.add(id);
       return next;
     });
+    setConfirmDelete(false);
   }
 
   function toggleAll() {
+    setConfirmDelete(false);
     if (allSelected) {
       setSelected(new Set());
       return;
     }
-    setSelected(new Set(analyzableIds));
+    setSelected(new Set(allIds));
   }
 
   async function runBulk(ids: string[]) {
     if (!ids.length) return;
     setRunning(true);
+    setConfirmDelete(false);
     setError(null);
+    setDeleteMessage(null);
     setFailures([]);
     setSummary({ ok: 0, skipped: 0, needs_selection: 0, failed: 0 });
     setProgress({ done: 0, total: ids.length });
@@ -144,6 +155,51 @@ export function LeadsBulkTable({ leads }: Props) {
     router.refresh();
   }
 
+  async function runDelete(ids: string[]) {
+    if (!ids.length) return;
+    setRunning(true);
+    setError(null);
+    setDeleteMessage(null);
+    setSummary(null);
+    setFailures([]);
+    setProgress({ done: 0, total: ids.length });
+
+    let deleted = 0;
+
+    for (let i = 0; i < ids.length; i += DELETE_BATCH_SIZE) {
+      const chunk = ids.slice(i, i + DELETE_BATCH_SIZE);
+      const response = await fetch("/api/admin/leads/delete-bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: chunk }),
+      });
+
+      const data = (await response.json()) as {
+        error?: string;
+        deleted?: number;
+      };
+
+      if (!response.ok) {
+        setError(data.error || "Hromadné mazání selhalo.");
+        setRunning(false);
+        setConfirmDelete(false);
+        return;
+      }
+
+      deleted += data.deleted ?? chunk.length;
+      setProgress({
+        done: Math.min(i + chunk.length, ids.length),
+        total: ids.length,
+      });
+    }
+
+    setRunning(false);
+    setConfirmDelete(false);
+    setSelected(new Set());
+    setDeleteMessage(`Smazáno: ${deleted}`);
+    router.refresh();
+  }
+
   const selectedCount = selected.size;
 
   return (
@@ -154,10 +210,21 @@ export function LeadsBulkTable({ leads }: Props) {
             type="checkbox"
             checked={allSelected}
             onChange={toggleAll}
-            disabled={running || analyzableIds.length === 0}
+            disabled={running || allIds.length === 0}
           />
-          Vybrat analyzovatelné ({analyzableIds.length})
+          Vybrat vše ({allIds.length})
         </label>
+        <button
+          type="button"
+          disabled={running || analyzableIds.length === 0}
+          onClick={() => {
+            setConfirmDelete(false);
+            setSelected(new Set(analyzableIds));
+          }}
+          className="border border-line px-3 py-2 text-sm hover:border-ink disabled:opacity-50"
+        >
+          Jen analyzovatelné ({analyzableIds.length})
+        </button>
         <label className="flex items-center gap-2 text-sm text-ink-soft">
           <input
             type="checkbox"
@@ -169,13 +236,13 @@ export function LeadsBulkTable({ leads }: Props) {
         </label>
         <button
           type="button"
-          disabled={running || selectedCount === 0}
-          onClick={() => runBulk([...selected])}
+          disabled={running || selectedAnalyzable.length === 0}
+          onClick={() => runBulk(selectedAnalyzable)}
           className="bg-ink px-3 py-2 text-sm text-foam hover:bg-ink-soft disabled:opacity-50"
         >
-          {running
+          {running && !confirmDelete
             ? `Analyzuji… ${progress?.done ?? 0}/${progress?.total ?? 0}`
-            : `Analyzovat vybrané (${selectedCount})`}
+            : `Analyzovat vybrané (${selectedAnalyzable.length})`}
         </button>
         <button
           type="button"
@@ -185,6 +252,40 @@ export function LeadsBulkTable({ leads }: Props) {
         >
           Analyzovat všechny na stránce ({analyzableIds.length})
         </button>
+        {!confirmDelete ? (
+          <button
+            type="button"
+            disabled={running || selectedCount === 0}
+            onClick={() => setConfirmDelete(true)}
+            className="border border-copper/40 px-3 py-2 text-sm text-copper-deep hover:border-copper-deep disabled:opacity-50"
+          >
+            Smazat vybrané ({selectedCount})
+          </button>
+        ) : (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm text-ink-soft">
+              Opravdu smazat {selectedCount}? Nelze vrátit.
+            </span>
+            <button
+              type="button"
+              disabled={running}
+              onClick={() => setConfirmDelete(false)}
+              className="border border-line px-3 py-2 text-sm hover:border-ink disabled:opacity-50"
+            >
+              Zrušit
+            </button>
+            <button
+              type="button"
+              disabled={running || selectedCount === 0}
+              onClick={() => runDelete([...selected])}
+              className="bg-copper-deep px-3 py-2 text-sm text-foam hover:bg-copper disabled:opacity-50"
+            >
+              {running
+                ? `Mazání… ${progress?.done ?? 0}/${progress?.total ?? 0}`
+                : `Ano, smazat (${selectedCount})`}
+            </button>
+          </div>
+        )}
       </div>
 
       {summary ? (
@@ -192,6 +293,9 @@ export function LeadsBulkTable({ leads }: Props) {
           Hotovo: ✓ {summary.ok} · přeskočeno {summary.skipped} · ke kontrole{" "}
           {summary.needs_selection} · chyby {summary.failed}
         </p>
+      ) : null}
+      {deleteMessage ? (
+        <p className="text-sm text-ink-soft">{deleteMessage}</p>
       ) : null}
       {error ? <p className="text-sm text-copper-deep">{error}</p> : null}
       {failures.length ? (
@@ -249,12 +353,12 @@ export function LeadsBulkTable({ leads }: Props) {
                     <input
                       type="checkbox"
                       checked={selected.has(lead.id)}
-                      disabled={!canAnalyze || running}
+                      disabled={running}
                       onChange={() => toggle(lead.id)}
                       title={
                         canAnalyze
-                          ? "Vybrat k analýze"
-                          : "Není co analyzovat"
+                          ? "Vybrat k analýze / smazání"
+                          : "Vybrat ke smazání"
                       }
                     />
                   </td>
