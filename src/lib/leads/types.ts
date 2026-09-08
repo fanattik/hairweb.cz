@@ -101,6 +101,24 @@ export type Lead = {
   utm_term: string | null;
   referrer: string | null;
   landing_page: string | null;
+  fbclid: string | null;
+  first_touch_at: string | null;
+  first_touch_source: string | null;
+  first_touch_medium: string | null;
+  first_touch_campaign: string | null;
+  first_touch_content: string | null;
+  first_touch_term: string | null;
+  first_touch_landing_page: string | null;
+  first_touch_referrer: string | null;
+  last_touch_at: string | null;
+  last_touch_source: string | null;
+  last_touch_medium: string | null;
+  last_touch_campaign: string | null;
+  last_touch_content: string | null;
+  last_touch_term: string | null;
+  last_touch_landing_page: string | null;
+  last_touch_referrer: string | null;
+  last_touch_fbclid: string | null;
   status: LeadStatus;
   /** Legacy manual score — kept in sync with lead_score when auto-scored. */
   score: number | null;

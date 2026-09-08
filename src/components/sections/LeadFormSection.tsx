@@ -6,9 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { trackEvent } from "@/lib/analytics";
 import {
   getSourceDetail,
-  getStoredLandingPage,
-  getStoredReferrer,
-  getStoredUtm,
+  getStoredAttribution,
   setSourceDetail,
   type SourceDetail,
 } from "@/lib/attribution";
@@ -78,6 +76,7 @@ function LeadFormFields() {
     const sourceDetail = (getSourceDetail() || undefined) as
       | SourceDetail
       | undefined;
+    const attribution = getStoredAttribution();
 
     try {
       const response = await fetch("/api/leads", {
@@ -92,9 +91,16 @@ function LeadFormFields() {
           message,
           package: pkg || undefined,
           sourceDetail,
-          utm: getStoredUtm(),
-          referrer: getStoredReferrer(),
-          landingPage: getStoredLandingPage(),
+          utm: attribution.utm,
+          referrer: attribution.referrer,
+          landingPage: attribution.landingPage,
+          fbclid: attribution.fbclid,
+          attribution: {
+            firstTouchAt: attribution.firstTouchAt,
+            lastTouchAt: attribution.lastTouchAt,
+            first: attribution.first,
+            last: attribution.last,
+          },
           companyWebsite: honeypot,
           formStartedAt: formStartedAt.current,
         }),

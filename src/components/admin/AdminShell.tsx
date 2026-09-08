@@ -25,6 +25,9 @@ export function AdminShell({
               <Link href="/admin/leads" className="hover:text-ink">
                 Leady
               </Link>
+              <Link href="/admin/marketing" className="hover:text-ink">
+                Marketing
+              </Link>
               <Link href="/admin/leads/discovery" className="hover:text-ink">
                 Discovery
               </Link>

@@ -48,11 +48,13 @@ export default function CookiesPage() {
 
       <h3>2.2 Preferenční / funkční údaje v prohlížeči</h3>
       <p>
-        Pro správné fungování poptávkového formuláře můžeme v{" "}
-        <code className="text-ink">sessionStorage</code> dočasně uložit
-        first-touch marketingové parametry (např. UTM), referrer a vstupní
-        stránku. Tyto údaje se používají výhradně k vyhodnocení poptávky a
-        nejsou marketingovými cookies třetích stran.
+        Pro správné fungování poptávkového formuláře ukládáme v{" "}
+        <code className="text-ink">localStorage</code> first-touch a last-touch
+        marketingové parametry (UTM, případně <code className="text-ink">fbclid</code>
+        ), referrer a vstupní stránku — typicky po dobu 90 dní. First-touch se
+        při dalších návštěvách nepřepisuje. Tyto údaje slouží výhradně k
+        vyhodnocení, odkud poptávka přišla, a nejsou marketingovými cookies
+        třetích stran (Meta Pixel / Google Analytics se řeší samostatně).
       </p>
 
       <h3>2.3 Analytické cookies (volitelné)</h3>

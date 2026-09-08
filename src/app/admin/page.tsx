@@ -211,6 +211,12 @@ export default async function AdminDashboardPage() {
         ))}
       </div>
 
+      <div className="mt-4 flex flex-wrap gap-3 text-sm">
+        <Link href="/admin/marketing" className="text-copper hover:underline">
+          Marketing / Acquisition →
+        </Link>
+      </div>
+
       <TodayFollowupsSection
         overdue={overdue as Lead[]}
         dueToday={dueToday as Lead[]}

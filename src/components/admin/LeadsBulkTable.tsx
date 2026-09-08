@@ -7,6 +7,7 @@ import {
   PriorityBadge,
   WebBandBadge,
 } from "@/components/admin/ScoreBadges";
+import { MarketingChannelBadge } from "@/components/admin/MarketingChannelBadge";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { planLeadAnalysis } from "@/lib/leads/analyze-plan";
 import { followupBadgeLabel } from "@/lib/leads/followup";
@@ -219,6 +220,7 @@ export function LeadsBulkTable({ leads }: Props) {
               <th className="px-3 py-3">Web</th>
               <th className="hidden px-3 py-3 xl:table-cell">Booking</th>
               <th className="px-3 py-3">Status</th>
+              <th className="hidden px-3 py-3 xl:table-cell">Zdroj</th>
               <th className="hidden px-3 py-3 lg:table-cell">Follow-up</th>
             </tr>
           </thead>
@@ -327,6 +329,28 @@ export function LeadsBulkTable({ leads }: Props) {
                   </td>
                   <td className="px-3 py-3">
                     <StatusBadge status={lead.status} />
+                  </td>
+                  <td className="hidden px-3 py-3 xl:table-cell">
+                    <MarketingChannelBadge
+                      lead={{
+                        type: lead.type,
+                        leadSource: lead.source,
+                        first_touch_source: lead.first_touch_source,
+                        first_touch_medium: lead.first_touch_medium,
+                        first_touch_campaign: lead.first_touch_campaign,
+                        first_touch_referrer: lead.first_touch_referrer,
+                        utm_source: lead.utm_source,
+                        utm_medium: lead.utm_medium,
+                        utm_campaign: lead.utm_campaign,
+                        fbclid: lead.fbclid,
+                        referrer: lead.referrer,
+                      }}
+                    />
+                    {lead.first_touch_campaign || lead.utm_campaign ? (
+                      <p className="mt-1 max-w-[9rem] truncate text-[10px] text-ink-soft">
+                        {lead.first_touch_campaign || lead.utm_campaign}
+                      </p>
+                    ) : null}
                   </td>
                   <td className="hidden px-3 py-3 lg:table-cell whitespace-nowrap">
                     <span

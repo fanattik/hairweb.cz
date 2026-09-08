@@ -7,6 +7,7 @@ import { LeadOutreachPanel } from "@/components/admin/LeadOutreachPanel";
 import { LeadFollowupPanel } from "@/components/admin/LeadFollowupPanel";
 import { OpportunityActions } from "@/components/admin/discovery/OpportunityActions";
 import { LeadCrmForm } from "@/components/admin/LeadCrmForm";
+import { LeadSourceSection } from "@/components/admin/LeadSourceSection";
 import {
   OpportunityBadge,
   PriorityBadge,
@@ -440,15 +441,6 @@ export default async function AdminLeadDetailPage({
               label="Balíček"
               value={lead.package ? lead.package.toUpperCase() : "—"}
             />
-            <Row label="Source" value={lead.source_detail || lead.source || "—"} />
-            <Row
-              label="UTM"
-              value={
-                [lead.utm_source, lead.utm_medium, lead.utm_campaign]
-                  .filter(Boolean)
-                  .join(" / ") || "—"
-              }
-            />
             <Row label="Kontakt" value={lead.name} />
             <Row label="E-mail" value={lead.email} />
           </dl>
@@ -457,6 +449,9 @@ export default async function AdminLeadDetailPage({
               {lead.message}
             </p>
           ) : null}
+          <div className="mt-4">
+            <LeadSourceSection lead={lead} />
+          </div>
         </section>
       </div>
 

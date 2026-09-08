@@ -102,6 +102,39 @@ export const leadSubmitSchema = z.object({
     .optional(),
   referrer: z.string().max(1000).optional().nullable(),
   landingPage: z.string().max(1000).optional().nullable(),
+  fbclid: z.string().max(500).optional().nullable(),
+  attribution: z
+    .object({
+      firstTouchAt: z.string().max(40).optional().nullable(),
+      lastTouchAt: z.string().max(40).optional().nullable(),
+      first: z
+        .object({
+          utm_source: z.string().max(200).optional().nullable(),
+          utm_medium: z.string().max(200).optional().nullable(),
+          utm_campaign: z.string().max(200).optional().nullable(),
+          utm_content: z.string().max(200).optional().nullable(),
+          utm_term: z.string().max(200).optional().nullable(),
+          fbclid: z.string().max(500).optional().nullable(),
+          landing_page: z.string().max(1000).optional().nullable(),
+          referrer: z.string().max(1000).optional().nullable(),
+          at: z.string().max(40).optional().nullable(),
+        })
+        .optional(),
+      last: z
+        .object({
+          utm_source: z.string().max(200).optional().nullable(),
+          utm_medium: z.string().max(200).optional().nullable(),
+          utm_campaign: z.string().max(200).optional().nullable(),
+          utm_content: z.string().max(200).optional().nullable(),
+          utm_term: z.string().max(200).optional().nullable(),
+          fbclid: z.string().max(500).optional().nullable(),
+          landing_page: z.string().max(1000).optional().nullable(),
+          referrer: z.string().max(1000).optional().nullable(),
+          at: z.string().max(40).optional().nullable(),
+        })
+        .optional(),
+    })
+    .optional(),
   companyWebsite: z.string().max(200).optional().nullable(),
   formStartedAt: z.number().int().positive().optional(),
 });

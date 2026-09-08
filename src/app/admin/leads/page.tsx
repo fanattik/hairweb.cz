@@ -76,6 +76,7 @@ export default async function AdminLeadsPage({
   const hasWebsite = first(params.has_website);
   const discoveryStatus = first(params.discovery_status);
   const discoverySource = first(params.discovery_source);
+  const mktChannel = first(params.mkt_channel);
 
   const sortOption =
     SORT_OPTIONS.find((option) => option.value === sort) ?? SORT_OPTIONS[0];
@@ -90,7 +91,11 @@ export default async function AdminLeadsPage({
 
   if (status) query = query.eq("status", status);
   if (type) query = query.eq("type", type);
-  if (campaign) query = query.eq("utm_campaign", campaign);
+  if (campaign) {
+    query = query.or(
+      `utm_campaign.eq.${campaign},first_touch_campaign.eq.${campaign}`,
+    );
+  }
   if (city) query = query.ilike("city", `%${city}%`);
   if (pipeline === "1") {
     query = query.in("status", ["interested", "meeting", "proposal"]);
@@ -233,7 +238,27 @@ export default async function AdminLeadsPage({
   if (error) {
     console.error("[admin] leads list", error);
   }
-  const leads = data ?? [];
+  let leads = data ?? [];
+
+  if (mktChannel) {
+    const { leadMarketingChannel } = await import("@/lib/marketing-channel");
+    leads = leads.filter(
+      (lead) =>
+        leadMarketingChannel({
+          type: lead.type,
+          leadSource: lead.source,
+          first_touch_source: lead.first_touch_source,
+          first_touch_medium: lead.first_touch_medium,
+          first_touch_campaign: lead.first_touch_campaign,
+          first_touch_referrer: lead.first_touch_referrer,
+          utm_source: lead.utm_source,
+          utm_medium: lead.utm_medium,
+          utm_campaign: lead.utm_campaign,
+          fbclid: lead.fbclid,
+          referrer: lead.referrer,
+        }) === mktChannel,
+    );
+  }
 
   const currentFilters: Record<string, string | undefined> = {
     q,
@@ -259,6 +284,7 @@ export default async function AdminLeadsPage({
     has_website: hasWebsite,
     discovery_status: discoveryStatus,
     discovery_source: discoverySource,
+    mkt_channel: mktChannel,
   };
 
   const chip = (label: string, href: string, active = false) => (
@@ -486,13 +512,34 @@ export default async function AdminLeadsPage({
           defaultValue={sourceType}
           className="border border-line bg-mist px-3 py-2 text-sm"
         >
-          <option value="">Zdroj</option>
+          <option value="">CRM zdroj</option>
           <option value="google_maps">Google Maps</option>
           <option value="firmy_cz">Firmy.cz</option>
           <option value="instagram">Instagram</option>
           <option value="manual">Manual</option>
           <option value="other">Other</option>
         </select>
+        <select
+          name="mkt_channel"
+          defaultValue={mktChannel}
+          className="border border-line bg-mist px-3 py-2 text-sm"
+        >
+          <option value="">Marketing zdroj</option>
+          <option value="meta_ads">Meta Ads</option>
+          <option value="google_ads">Google Ads</option>
+          <option value="google_organic">Google Organic</option>
+          <option value="organic_social">Organic Social</option>
+          <option value="referral">Referral</option>
+          <option value="direct">Direct</option>
+          <option value="outbound">Outbound</option>
+          <option value="other">Other</option>
+        </select>
+        <input
+          name="campaign"
+          defaultValue={campaign}
+          placeholder="utm_campaign"
+          className="border border-line bg-mist px-3 py-2 text-sm"
+        />
         <input
           name="import_id"
           defaultValue={importId}
