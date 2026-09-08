@@ -10,6 +10,10 @@ import {
   setSourceDetail,
   type SourceDetail,
 } from "@/lib/attribution";
+import {
+  LEAD_THANKS_PATH,
+  markLeadFormSuccess,
+} from "@/lib/leads/thanks-flag";
 import { site } from "@/lib/site";
 
 type FieldErrors = Partial<
@@ -26,6 +30,7 @@ function LeadFormFields() {
   const started = useRef(false);
   const formStartedAt = useRef(0);
   const metaLeadSent = useRef(false);
+  const submitLock = useRef(false);
   const initialPlan = searchParams.get("plan") ?? "";
 
   const [name, setName] = useState("");
@@ -40,7 +45,7 @@ function LeadFormFields() {
   const [honeypot, setHoneypot] = useState("");
   const [consent, setConsent] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">(
+  const [status, setStatus] = useState<"idle" | "loading" | "error">(
     "idle",
   );
 
@@ -73,9 +78,10 @@ function LeadFormFields() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (status === "loading" || status === "success") return;
+    if (status === "loading" || submitLock.current) return;
     if (!validateClient()) return;
 
+    submitLock.current = true;
     setStatus("loading");
     setErrors({});
 
@@ -137,25 +143,24 @@ function LeadFormFields() {
         } else {
           setErrors({ form: data.error || "Něco se nepovedlo." });
         }
+        submitLock.current = false;
         setStatus("error");
         return;
       }
 
-      // Meta Lead only after CRM successfully created a real lead (never on click).
-      // Guard: honeypot returns { ok: true, id: "ignored" } without insert.
-      if (data.ok && isRealLeadId(data.id) && !metaLeadSent.current) {
-        metaLeadSent.current = true;
-        // Fire before unmounting the form (success UI) so the beacon can flush.
-        trackMetaLead({ eventId: data.id });
-      } else if (
-        process.env.NODE_ENV === "development" ||
-        searchParams.get("meta_debug") === "1"
-      ) {
-        console.warn("[Meta Pixel] Lead not sent after form success", {
-          ok: data.ok,
-          id: data.id,
-          alreadySent: metaLeadSent.current,
+      // Honeypot soft-success — do not thank / redirect / Meta convert.
+      if (!data.ok || !isRealLeadId(data.id)) {
+        submitLock.current = false;
+        setStatus("error");
+        setErrors({
+          form: "Něco se nepovedlo. Zkuste formulář odeslat znovu nebo mě kontaktujte e-mailem.",
         });
+        return;
+      }
+
+      if (!metaLeadSent.current) {
+        metaLeadSent.current = true;
+        trackMetaLead({ eventId: data.id });
       }
 
       trackEvent("generate_lead", {
@@ -166,8 +171,12 @@ function LeadFormFields() {
         utm_campaign: data.utm?.utm_campaign,
       });
 
-      setStatus("success");
+      // Attribution already persisted with the lead above — then hard navigate
+      // so Meta Pixel PageView runs on /poptavka-odeslana (Custom Conversion).
+      markLeadFormSuccess(data.id);
+      window.location.assign(LEAD_THANKS_PATH);
     } catch {
+      submitLock.current = false;
       setErrors({
         form: "Něco se nepovedlo. Zkuste formulář odeslat znovu nebo mě kontaktujte e-mailem.",
       });
@@ -178,20 +187,7 @@ function LeadFormFields() {
   const fieldClass =
     "border border-line bg-mist px-3 py-2.5 text-ink outline-none transition focus:border-copper disabled:opacity-60";
   const errorClass = "border-copper-deep";
-  const disabled = status === "loading" || status === "success";
-
-  if (status === "success") {
-    return (
-      <div className="border border-line bg-foam p-6 sm:p-8" role="status">
-        <p className="font-[family-name:var(--font-fraunces)] text-2xl text-ink">
-          Děkuji. Ozvu se vám co nejdříve.
-        </p>
-        <p className="mt-3 text-sm leading-relaxed text-ink-soft">
-          Podívám se na váš web nebo Instagram a navrhnu další postup.
-        </p>
-      </div>
-    );
-  }
+  const disabled = status === "loading";
 
   return (
     <form
