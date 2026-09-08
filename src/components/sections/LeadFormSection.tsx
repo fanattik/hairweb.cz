@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { trackEvent } from "@/lib/analytics";
+import { trackEvent, trackMetaLead } from "@/lib/analytics";
 import {
   getSourceDetail,
   getStoredAttribution,
@@ -16,10 +16,20 @@ type FieldErrors = Partial<
   Record<"name" | "email" | "website" | "consent" | "form", string>
 >;
 
+function isRealLeadId(id: unknown): id is string {
+  return (
+    typeof id === "string" &&
+    id.length > 10 &&
+    id !== "ignored" &&
+    /^[0-9a-f-]{20,}$/i.test(id)
+  );
+}
+
 function LeadFormFields() {
   const searchParams = useSearchParams();
   const started = useRef(false);
   const formStartedAt = useRef(0);
+  const metaLeadSent = useRef(false);
   const initialPlan = searchParams.get("plan") ?? "";
 
   const [name, setName] = useState("");
@@ -110,6 +120,7 @@ function LeadFormFields() {
         error?: string;
         fieldErrors?: Record<string, string>;
         ok?: boolean;
+        id?: string;
         package?: string | null;
         sourceDetail?: string | null;
         utm?: {
@@ -132,6 +143,12 @@ function LeadFormFields() {
         }
         setStatus("error");
         return;
+      }
+
+      // Real CRM lead only — skip honeypot silent ok / missing id.
+      if (data.ok && isRealLeadId(data.id) && !metaLeadSent.current) {
+        metaLeadSent.current = true;
+        trackMetaLead();
       }
 
       trackEvent("generate_lead", {

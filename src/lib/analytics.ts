@@ -18,6 +18,7 @@ declare global {
   interface Window {
     dataLayer?: Array<Record<string, unknown>>;
     gtag?: (...args: unknown[]) => void;
+    fbq?: (...args: unknown[]) => void;
   }
 }
 
@@ -49,6 +50,23 @@ export function trackEvent(event: AnalyticsEvent, payload?: AnalyticsPayload) {
 
   if (typeof window.gtag === "function") {
     window.gtag("event", event, safePayload);
+  }
+}
+
+/**
+ * Meta Pixel standard Lead event via existing fbq (layout init).
+ * No-op when Pixel blocked, missing, or fbq unavailable — never throws.
+ */
+export function trackMetaLead() {
+  if (typeof window === "undefined") return;
+  try {
+    if (typeof window.fbq !== "function") return;
+    window.fbq("track", "Lead");
+    if (process.env.NODE_ENV === "development") {
+      console.debug("[meta-pixel] Lead");
+    }
+  } catch {
+    // Pixel blocked / consent / adblock — ignore
   }
 }
 
