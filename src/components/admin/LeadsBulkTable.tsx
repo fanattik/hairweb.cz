@@ -9,6 +9,7 @@ import {
 } from "@/components/admin/ScoreBadges";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { planLeadAnalysis } from "@/lib/leads/analyze-plan";
+import { followupBadgeLabel } from "@/lib/leads/followup";
 import {
   leadPriorityFromScore,
   webScoreBand,
@@ -34,6 +35,7 @@ function formatDate(value: string | null) {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+    timeZone: "Europe/Prague",
   }).format(new Date(value));
 }
 
@@ -230,6 +232,11 @@ export function LeadsBulkTable({ leads }: Props) {
               const web =
                 lead.has_website === false ? null : lead.web_score;
               const canAnalyze = isAnalyzable(lead);
+              const fu = followupBadgeLabel(lead.next_followup_at, {
+                followupPaused: lead.followup_paused,
+                followupStopped: lead.followup_stopped,
+                leadStatus: lead.status,
+              });
 
               return (
                 <tr
@@ -322,7 +329,20 @@ export function LeadsBulkTable({ leads }: Props) {
                     <StatusBadge status={lead.status} />
                   </td>
                   <td className="hidden px-3 py-3 lg:table-cell whitespace-nowrap">
-                    {formatDate(lead.next_followup_at)}
+                    <span
+                      className={
+                        fu.tone === "danger"
+                          ? "text-xs font-medium text-copper-deep"
+                          : fu.tone === "warning"
+                            ? "text-xs font-medium text-amber-800"
+                            : fu.tone === "muted"
+                              ? "text-xs text-ink-soft"
+                              : "text-xs text-ink"
+                      }
+                      title={formatDate(lead.next_followup_at)}
+                    >
+                      {fu.label}
+                    </span>
                   </td>
                 </tr>
               );

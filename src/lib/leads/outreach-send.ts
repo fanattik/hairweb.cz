@@ -1,5 +1,7 @@
 import { Resend } from "resend";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { buildPatchAfterOutreachEmail } from "@/lib/leads/followup-actions";
+import { formatPragueDate } from "@/lib/leads/followup";
 import type { Lead } from "@/lib/leads/types";
 
 function getResend() {
@@ -66,12 +68,7 @@ export async function sendLeadOutreachEmail(input: {
   });
 
   const now = new Date().toISOString();
-  const patch: Record<string, unknown> = {
-    last_contact_at: now,
-  };
-  if (input.lead.status === "new") {
-    patch.status = "contacted";
-  }
+  const patch = buildPatchAfterOutreachEmail(input.lead, now);
 
   const noteLine = `[E-mail ${new Date().toLocaleString("cs-CZ")}] ${input.subject}`;
   const notes = input.lead.notes?.trim()
@@ -80,6 +77,22 @@ export async function sendLeadOutreachEmail(input: {
   patch.notes = notes;
 
   await input.supabase.from("leads").update(patch).eq("id", input.lead.id);
+
+  const next = patch.next_followup_at as string | null | undefined;
+  await input.supabase.from("lead_activities").insert({
+    lead_id: input.lead.id,
+    created_by: input.userId ?? null,
+    activity_type: "contact",
+    summary: next
+      ? `Odeslán e-mail — další follow-up naplánován na ${formatPragueDate(next)}`
+      : "Odeslán e-mail",
+    meta: {
+      contactType: "email",
+      subject: input.subject,
+      nextFollowupAt: next ?? null,
+      resendId,
+    },
+  });
 
   return { resendId };
 }

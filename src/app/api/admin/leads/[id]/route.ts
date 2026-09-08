@@ -5,6 +5,8 @@ import {
   leadToScoreInput,
   scoredColumnsFromInput,
 } from "@/lib/leads/persist-scores";
+import { stopFollowupForTerminalStatus } from "@/lib/leads/followup-actions";
+import { isTerminalLeadStatus } from "@/lib/leads/followup";
 import type { Lead } from "@/lib/leads/types";
 
 export async function PATCH(
@@ -58,14 +60,31 @@ export async function PATCH(
 
   const scores = scoredColumnsFromInput(leadToScoreInput(merged));
 
+  let followupExtra: Record<string, unknown> = {};
+  if (patch.status && isTerminalLeadStatus(patch.status)) {
+    followupExtra = {
+      next_followup_at: null,
+      followup_stopped: true,
+      followup_paused: false,
+    };
+  }
+
   const { error } = await supabase
     .from("leads")
-    .update({ ...patch, ...scores })
+    .update({ ...patch, ...scores, ...followupExtra })
     .eq("id", id);
 
   if (error) {
     console.error("[admin] lead update", error);
     return NextResponse.json({ error: "Update failed" }, { status: 500 });
+  }
+
+  if (patch.status && isTerminalLeadStatus(patch.status)) {
+    await stopFollowupForTerminalStatus(supabase, {
+      lead: current,
+      userId: user.id,
+      status: patch.status,
+    }).catch(() => null);
   }
 
   return NextResponse.json({ ok: true, scores });

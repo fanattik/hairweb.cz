@@ -107,6 +107,19 @@ export type Lead = {
   notes: string | null;
   last_contact_at: string | null;
   next_followup_at: string | null;
+  /** Completed follow-ups in the sequence (0 = only initial contact). */
+  followup_count: number;
+  last_contact_type:
+    | "email"
+    | "phone"
+    | "sms"
+    | "whatsapp"
+    | "instagram"
+    | "other"
+    | null;
+  last_followup_at: string | null;
+  followup_paused: boolean;
+  followup_stopped: boolean;
   won_value: number | null;
   lost_reason: string | null;
 

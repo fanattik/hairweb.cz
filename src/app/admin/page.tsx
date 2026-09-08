@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { LeadsMap } from "@/components/admin/LeadsMap";
+import { TodayFollowupsSection } from "@/components/admin/TodayFollowupsSection";
 import { requireAdmin } from "@/lib/admin/auth";
+import {
+  endOfPragueDay,
+  startOfPragueDay,
+} from "@/lib/leads/followup";
 import type { Lead } from "@/lib/leads/types";
 
 type DashLead = Pick<
@@ -9,9 +14,15 @@ type DashLead = Pick<
   | "id"
   | "status"
   | "next_followup_at"
+  | "last_contact_at"
+  | "followup_count"
+  | "followup_paused"
+  | "followup_stopped"
   | "salon_name"
   | "name"
   | "city"
+  | "email"
+  | "phone"
   | "latitude"
   | "longitude"
   | "lead_score"
@@ -27,29 +38,69 @@ type DashLead = Pick<
   | "has_online_booking"
 >;
 
+function isActiveFollowup(lead: DashLead) {
+  return (
+    Boolean(lead.next_followup_at) &&
+    !lead.followup_paused &&
+    !lead.followup_stopped &&
+    !["won", "lost", "skip"].includes(lead.status)
+  );
+}
+
 export default async function AdminDashboardPage() {
   const { supabase, user } = await requireAdmin();
 
   const { data: leads } = await supabase
     .from("leads")
     .select(
-      "id, status, next_followup_at, salon_name, name, city, latitude, longitude, lead_score, opportunity_score, opportunity_grade, opportunity_summary, has_website, google_rating, google_reviews_count, instagram_url, discovery_status, created_at, has_online_booking",
+      "id, status, next_followup_at, last_contact_at, followup_count, followup_paused, followup_stopped, salon_name, name, city, email, phone, latitude, longitude, lead_score, opportunity_score, opportunity_grade, opportunity_summary, has_website, google_rating, google_reviews_count, instagram_url, discovery_status, created_at, has_online_booking",
     )
     .returns<DashLead[]>();
 
   const rows = leads ?? [];
-  const endOfToday = new Date();
-  endOfToday.setHours(23, 59, 59, 999);
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
+  const now = new Date();
+  const todayStart = startOfPragueDay(now);
+  const todayEnd = endOfPragueDay(now);
 
   const newCount = rows.filter((l) => l.status === "new").length;
-  const followUpDue = rows.filter(
+
+  const activeFollowups = rows.filter(isActiveFollowup);
+  const overdue = activeFollowups
+    .filter(
+      (l) =>
+        l.next_followup_at &&
+        new Date(l.next_followup_at) < todayStart,
+    )
+    .sort(
+      (a, b) =>
+        new Date(a.next_followup_at!).getTime() -
+        new Date(b.next_followup_at!).getTime(),
+    );
+  const dueToday = activeFollowups
+    .filter((l) => {
+      if (!l.next_followup_at) return false;
+      const t = new Date(l.next_followup_at).getTime();
+      return t >= todayStart.getTime() && t <= todayEnd.getTime();
+    })
+    .sort(
+      (a, b) =>
+        new Date(a.next_followup_at!).getTime() -
+        new Date(b.next_followup_at!).getTime(),
+    );
+  const followUpDue = overdue.length + dueToday.length;
+  const scheduled = activeFollowups.filter((l) => {
+    if (!l.next_followup_at) return false;
+    return new Date(l.next_followup_at) > todayEnd;
+  }).length;
+  const exhausted = rows.filter(
     (l) =>
-      l.next_followup_at &&
-      new Date(l.next_followup_at) <= endOfToday &&
-      !["won", "lost", "skip"].includes(l.status),
+      (l.followup_count ?? 0) >= 3 &&
+      !l.followup_stopped &&
+      !["won", "lost", "skip", "interested", "meeting", "proposal"].includes(
+        l.status,
+      ),
   ).length;
+
   const inProgress = rows.filter((l) =>
     ["interested", "meeting", "proposal"].includes(l.status),
   ).length;
@@ -58,7 +109,7 @@ export default async function AdminDashboardPage() {
   const newOpportunitiesToday = rows.filter(
     (l) =>
       l.created_at &&
-      new Date(l.created_at) >= startOfToday &&
+      new Date(l.created_at) >= todayStart &&
       (l.opportunity_score != null || l.discovery_status != null),
   ).length;
   const aGrade = rows.filter((l) => l.opportunity_grade === "A").length;
@@ -81,6 +132,21 @@ export default async function AdminDashboardPage() {
       label: "Dnes kontaktovat",
       value: followUpDue,
       href: "/admin/leads?followup=today",
+    },
+    {
+      label: "Po termínu",
+      value: overdue.length,
+      href: "/admin/leads?followup=overdue",
+    },
+    {
+      label: "Naplánováno",
+      value: scheduled,
+      href: "/admin/leads?followup=scheduled",
+    },
+    {
+      label: "Bez odpovědi po 3 FU",
+      value: exhausted,
+      href: "/admin/leads?followup=exhausted",
     },
     {
       label: "Rozjednané",
@@ -145,6 +211,11 @@ export default async function AdminDashboardPage() {
         ))}
       </div>
 
+      <TodayFollowupsSection
+        overdue={overdue as Lead[]}
+        dueToday={dueToday as Lead[]}
+      />
+
       <section className="mt-10">
         <div className="flex items-end justify-between gap-3">
           <h2 className="font-[family-name:var(--font-fraunces)] text-2xl">
@@ -199,60 +270,20 @@ export default async function AdminDashboardPage() {
                     ) : null}
                   </p>
                   <p className="mt-1 text-sm text-ink-soft">
-                    {lead.google_rating != null
-                      ? `${Number(lead.google_rating).toFixed(1)}★`
-                      : "—"}
-                    {lead.google_reviews_count != null
-                      ? ` · ${lead.google_reviews_count} reviews`
-                      : ""}
-                    {" · "}
-                    {lead.has_website === false ? "❌ Nemá web" : "✓ Web"}
-                    {lead.instagram_url ? " · ✓ Instagram" : ""}
-                    {lead.has_online_booking ? " · ✓ Booking" : ""}
-                  </p>
-                  {lead.opportunity_summary ? (
-                    <p className="mt-1 max-w-2xl text-sm text-ink">
-                      {lead.opportunity_summary}
-                    </p>
-                  ) : null}
-                </div>
-                <div className="text-right">
-                  <p className="font-[family-name:var(--font-fraunces)] text-3xl">
-                    {lead.opportunity_score}
-                  </p>
-                  <p className="text-xs uppercase tracking-[0.14em] text-ink-soft">
-                    Grade {lead.opportunity_grade}
+                    {lead.opportunity_summary || lead.city || "—"}
                   </p>
                 </div>
+                <p className="font-[family-name:var(--font-fraunces)] text-2xl">
+                  {lead.opportunity_score}
+                </p>
               </Link>
             ))
           )}
         </div>
       </section>
 
-      <div className="mt-8">
+      <div className="mt-10">
         <LeadsMap leads={rows} />
-      </div>
-
-      <div className="mt-8 flex gap-3">
-        <Link
-          href="/admin/leads"
-          className="bg-ink px-4 py-2.5 text-sm text-foam transition hover:bg-ink-soft"
-        >
-          Zobrazit leady
-        </Link>
-        <Link
-          href="/admin/leads/discovery"
-          className="border border-line px-4 py-2.5 text-sm transition hover:border-ink"
-        >
-          Discovery radar
-        </Link>
-        <Link
-          href="/admin/leads/new"
-          className="border border-line px-4 py-2.5 text-sm transition hover:border-ink"
-        >
-          Nový outbound
-        </Link>
       </div>
     </AdminShell>
   );

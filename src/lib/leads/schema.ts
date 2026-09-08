@@ -172,6 +172,14 @@ export const leadCrmUpdateSchema = z
     notes: z.string().max(5000).nullable().optional(),
     last_contact_at: z.string().datetime().nullable().optional(),
     next_followup_at: z.string().datetime().nullable().optional(),
+    followup_count: z.number().int().min(0).max(20).optional(),
+    last_contact_type: z
+      .enum(["email", "phone", "sms", "whatsapp", "instagram", "other"])
+      .nullable()
+      .optional(),
+    last_followup_at: z.string().datetime().nullable().optional(),
+    followup_paused: z.boolean().optional(),
+    followup_stopped: z.boolean().optional(),
     won_value: z.number().nonnegative().nullable().optional(),
     lost_reason: z.string().max(1000).nullable().optional(),
     name: z.string().trim().min(2).max(100).optional(),

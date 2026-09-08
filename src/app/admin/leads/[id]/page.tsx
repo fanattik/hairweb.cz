@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AnalyzeLeadButton } from "@/components/admin/AnalyzeLeadButton";
 import { LeadOutreachPanel } from "@/components/admin/LeadOutreachPanel";
+import { LeadFollowupPanel } from "@/components/admin/LeadFollowupPanel";
 import { OpportunityActions } from "@/components/admin/discovery/OpportunityActions";
 import { LeadCrmForm } from "@/components/admin/LeadCrmForm";
 import {
@@ -459,8 +460,9 @@ export default async function AdminLeadDetailPage({
         </section>
       </div>
 
-      <div className="mt-8">
+      <div className="mt-8 grid gap-4 lg:grid-cols-2">
         <LeadOutreachPanel lead={lead} />
+        <LeadFollowupPanel lead={lead} />
       </div>
 
       <section className="mt-8">

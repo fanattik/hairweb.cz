@@ -2,6 +2,10 @@ import Link from "next/link";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { LeadsBulkTable } from "@/components/admin/LeadsBulkTable";
 import { requireAdmin } from "@/lib/admin/auth";
+import {
+  endOfPragueDay,
+  startOfPragueDay,
+} from "@/lib/leads/followup";
 import type {
   Lead,
   LeadPriority,
@@ -91,12 +95,52 @@ export default async function AdminLeadsPage({
   if (pipeline === "1") {
     query = query.in("status", ["interested", "meeting", "proposal"]);
   }
+
+  const pragueStart = startOfPragueDay(new Date()).toISOString();
+  const pragueEnd = endOfPragueDay(new Date()).toISOString();
+  const weekEnd = endOfPragueDay(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  ).toISOString();
+
   if (followup === "today" || quick === "followup_today") {
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
     query = query
-      .lte("next_followup_at", end.toISOString())
+      .lte("next_followup_at", pragueEnd)
+      .eq("followup_paused", false)
+      .eq("followup_stopped", false)
       .not("status", "in", "(won,lost,skip)");
+  } else if (followup === "overdue") {
+    query = query
+      .lt("next_followup_at", pragueStart)
+      .eq("followup_paused", false)
+      .eq("followup_stopped", false)
+      .not("status", "in", "(won,lost,skip)");
+  } else if (followup === "due") {
+    query = query
+      .gte("next_followup_at", pragueStart)
+      .lte("next_followup_at", pragueEnd)
+      .eq("followup_paused", false)
+      .eq("followup_stopped", false)
+      .not("status", "in", "(won,lost,skip)");
+  } else if (followup === "week") {
+    query = query
+      .gte("next_followup_at", pragueStart)
+      .lte("next_followup_at", weekEnd)
+      .eq("followup_paused", false)
+      .eq("followup_stopped", false)
+      .not("status", "in", "(won,lost,skip)");
+  } else if (followup === "scheduled") {
+    query = query
+      .gt("next_followup_at", pragueEnd)
+      .eq("followup_paused", false)
+      .eq("followup_stopped", false)
+      .not("status", "in", "(won,lost,skip)");
+  } else if (followup === "none") {
+    query = query.is("next_followup_at", null);
+  } else if (followup === "exhausted") {
+    query = query
+      .gte("followup_count", 3)
+      .eq("followup_stopped", false)
+      .not("status", "in", "(won,lost,skip,interested,meeting,proposal)");
   }
   if (priority === "hot" || quick === "hot") {
     query = query.gte("lead_score", 80);
@@ -303,6 +347,26 @@ export default async function AdminLeadsPage({
           hrefWith(currentFilters, { quick: "followup_today", followup: "today" }),
           quick === "followup_today" || followup === "today",
         )}
+        {chip(
+          "Po termínu",
+          hrefWith(currentFilters, { followup: "overdue", quick: "" }),
+          followup === "overdue",
+        )}
+        {chip(
+          "Tento týden",
+          hrefWith(currentFilters, { followup: "week", quick: "" }),
+          followup === "week",
+        )}
+        {chip(
+          "Naplánované",
+          hrefWith(currentFilters, { followup: "scheduled", quick: "" }),
+          followup === "scheduled",
+        )}
+        {chip(
+          "Bez follow-upu",
+          hrefWith(currentFilters, { followup: "none", quick: "" }),
+          followup === "none",
+        )}
         {chip("Vyčistit filtry", "/admin/leads")}
       </div>
 
@@ -373,6 +437,20 @@ export default async function AdminLeadsPage({
               {STATUS_LABELS[s]}
             </option>
           ))}
+        </select>
+        <select
+          name="followup"
+          defaultValue={followup}
+          className="border border-line bg-mist px-3 py-2 text-sm"
+        >
+          <option value="">Follow-up</option>
+          <option value="today">Dnes (+ po termínu)</option>
+          <option value="due">Jen dnes</option>
+          <option value="overdue">Po termínu</option>
+          <option value="week">Tento týden</option>
+          <option value="scheduled">Naplánované</option>
+          <option value="none">Bez follow-upu</option>
+          <option value="exhausted">Bez odpovědi po 3 FU</option>
         </select>
         <select
           name="type"
