@@ -18,7 +18,26 @@ declare global {
   interface Window {
     dataLayer?: Array<Record<string, unknown>>;
     gtag?: (...args: unknown[]) => void;
-    fbq?: (...args: unknown[]) => void;
+    fbq?: ((...args: unknown[]) => void) & {
+      callMethod?: (...args: unknown[]) => void;
+      queue?: unknown[];
+      loaded?: boolean;
+      version?: string;
+    };
+    _fbq?: Window["fbq"];
+  }
+}
+
+function isMetaPixelDebug() {
+  if (typeof window === "undefined") {
+    return process.env.NODE_ENV === "development";
+  }
+  if (process.env.NODE_ENV === "development") return true;
+  if (process.env.NEXT_PUBLIC_META_PIXEL_DEBUG === "1") return true;
+  try {
+    return new URLSearchParams(window.location.search).get("meta_debug") === "1";
+  } catch {
+    return false;
   }
 }
 
@@ -54,19 +73,41 @@ export function trackEvent(event: AnalyticsEvent, payload?: AnalyticsPayload) {
 }
 
 /**
- * Meta Pixel standard Lead event via existing fbq (layout init).
- * No-op when Pixel blocked, missing, or fbq unavailable — never throws.
+ * Meta Pixel standard Lead via the existing layout fbq instance.
+ * Never throws. Returns whether fbq('track','Lead') was invoked.
  */
-export function trackMetaLead() {
-  if (typeof window === "undefined") return;
+export function trackMetaLead(options?: { eventId?: string }): boolean {
+  if (typeof window === "undefined") return false;
+  const debug = isMetaPixelDebug();
+
   try {
-    if (typeof window.fbq !== "function") return;
-    window.fbq("track", "Lead");
-    if (process.env.NODE_ENV === "development") {
-      console.debug("[meta-pixel] Lead");
+    const fbq = window.fbq || window._fbq;
+    if (typeof fbq !== "function") {
+      if (debug) {
+        console.warn("[Meta Pixel] Lead skipped — window.fbq not available", {
+          hasFbq: typeof window.fbq,
+          has_fbq: typeof window._fbq,
+        });
+      }
+      return false;
     }
-  } catch {
-    // Pixel blocked / consent / adblock — ignore
+
+    if (debug) {
+      console.log("[Meta Pixel] Sending Lead event");
+    }
+
+    // Prefer explicit window.fbq as required for Events Manager / Test events.
+    if (options?.eventId) {
+      window.fbq!("track", "Lead", {}, { eventID: options.eventId });
+    } else {
+      window.fbq!("track", "Lead");
+    }
+    return true;
+  } catch (error) {
+    if (debug) {
+      console.warn("[Meta Pixel] Lead track threw", error);
+    }
+    return false;
   }
 }
 

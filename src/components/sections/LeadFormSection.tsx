@@ -17,12 +17,8 @@ type FieldErrors = Partial<
 >;
 
 function isRealLeadId(id: unknown): id is string {
-  return (
-    typeof id === "string" &&
-    id.length > 10 &&
-    id !== "ignored" &&
-    /^[0-9a-f-]{20,}$/i.test(id)
-  );
+  // Any CRM id except honeypot placeholder — UUIDs may vary by generator.
+  return typeof id === "string" && id.length >= 8 && id !== "ignored";
 }
 
 function LeadFormFields() {
@@ -145,10 +141,21 @@ function LeadFormFields() {
         return;
       }
 
-      // Real CRM lead only — skip honeypot silent ok / missing id.
+      // Meta Lead only after CRM successfully created a real lead (never on click).
+      // Guard: honeypot returns { ok: true, id: "ignored" } without insert.
       if (data.ok && isRealLeadId(data.id) && !metaLeadSent.current) {
         metaLeadSent.current = true;
-        trackMetaLead();
+        // Fire before unmounting the form (success UI) so the beacon can flush.
+        trackMetaLead({ eventId: data.id });
+      } else if (
+        process.env.NODE_ENV === "development" ||
+        searchParams.get("meta_debug") === "1"
+      ) {
+        console.warn("[Meta Pixel] Lead not sent after form success", {
+          ok: data.ok,
+          id: data.id,
+          alreadySent: metaLeadSent.current,
+        });
       }
 
       trackEvent("generate_lead", {
