@@ -69,9 +69,24 @@ export async function PATCH(
     };
   }
 
+  // website is NOT NULL in DB — never persist null/empty.
+  const updateRow: Record<string, unknown> = {
+    ...patch,
+    ...scores,
+    ...followupExtra,
+  };
+  if (
+    updateRow.website === null ||
+    updateRow.website === undefined ||
+    (typeof updateRow.website === "string" &&
+      updateRow.website.trim().length === 0)
+  ) {
+    updateRow.website = "—";
+  }
+
   const { error } = await supabase
     .from("leads")
-    .update({ ...patch, ...scores, ...followupExtra })
+    .update(updateRow)
     .eq("id", id);
 
   if (error) {

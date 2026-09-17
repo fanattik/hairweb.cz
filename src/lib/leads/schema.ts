@@ -151,7 +151,15 @@ export const leadQualificationSchema = z.object({
   city: z.preprocess(emptyToNull, z.string().trim().max(100).nullable().optional()),
   region: z.preprocess(emptyToNull, z.string().trim().max(100).nullable().optional()),
   phone: z.preprocess(emptyToNull, z.string().trim().max(50).nullable().optional()),
-  website: z.preprocess(emptyToNull, z.string().trim().max(500).nullable().optional()),
+  // DB column is NOT NULL — empty CRM field maps to placeholder, never null.
+  website: z.preprocess((value) => {
+    if (value === "" || value === undefined || value === null) return "—";
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      return trimmed.length === 0 ? "—" : trimmed;
+    }
+    return value;
+  }, z.string().trim().max(500).optional()),
 
   google_rating: z.number().min(0).max(5).nullable().optional(),
   google_reviews_count: z.number().int().min(0).nullable().optional(),
