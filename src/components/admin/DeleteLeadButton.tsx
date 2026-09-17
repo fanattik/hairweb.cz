@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { getLeadsListUrl } from "@/lib/admin/leads-list-url";
 
 type Props = {
   leadId: string;
@@ -30,7 +31,7 @@ export function DeleteLeadButton({ leadId, leadLabel }: Props) {
         setBusy(false);
         return;
       }
-      router.push("/admin/leads");
+      router.push(getLeadsListUrl());
       router.refresh();
     } catch {
       setError("Smazání selhalo.");

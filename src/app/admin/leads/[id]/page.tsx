@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import type { ReactNode } from "react";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AnalyzeLeadButton } from "@/components/admin/AnalyzeLeadButton";
@@ -9,6 +8,7 @@ import { LeadFollowupPanel } from "@/components/admin/LeadFollowupPanel";
 import { OpportunityActions } from "@/components/admin/discovery/OpportunityActions";
 import { LeadCrmForm } from "@/components/admin/LeadCrmForm";
 import { LeadSourceSection } from "@/components/admin/LeadSourceSection";
+import { LeadsListLink } from "@/components/admin/LeadsListUrlPersistence";
 
 import {
   OpportunityBadge,
@@ -78,9 +78,9 @@ export default async function AdminLeadDetailPage({
   return (
     <AdminShell email={user.email}>
       <div className="mb-6">
-        <Link href="/admin/leads" className="text-sm text-copper hover:underline">
+        <LeadsListLink className="text-sm text-copper hover:underline">
           ← Zpět na leady
-        </Link>
+        </LeadsListLink>
 
         <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
           <div>

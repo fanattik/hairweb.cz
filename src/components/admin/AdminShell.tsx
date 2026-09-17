@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LeadsListLink } from "@/components/admin/LeadsListUrlPersistence";
 
 export function AdminShell({
   children,
@@ -22,9 +23,7 @@ export function AdminShell({
               <Link href="/admin" className="hover:text-ink">
                 Dashboard
               </Link>
-              <Link href="/admin/leads" className="hover:text-ink">
-                Leady
-              </Link>
+              <LeadsListLink className="hover:text-ink">Leady</LeadsListLink>
               <Link href="/admin/marketing" className="hover:text-ink">
                 Marketing
               </Link>

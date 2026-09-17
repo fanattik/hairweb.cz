@@ -1,6 +1,11 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { LeadsBulkTable } from "@/components/admin/LeadsBulkTable";
+import {
+  ClearLeadsFiltersLink,
+  PersistLeadsListUrl,
+} from "@/components/admin/LeadsListUrlPersistence";
 import { requireAdmin } from "@/lib/admin/auth";
 import {
   endOfPragueDay,
@@ -393,8 +398,12 @@ export default async function AdminLeadsPage({
           hrefWith(currentFilters, { followup: "none", quick: "" }),
           followup === "none",
         )}
-        {chip("Vyčistit filtry", "/admin/leads")}
+        <ClearLeadsFiltersLink className="inline-flex border border-line bg-foam px-3 py-1.5 text-xs tracking-wide text-ink transition hover:border-ink" />
       </div>
+
+      <Suspense fallback={null}>
+        <PersistLeadsListUrl />
+      </Suspense>
 
       <form className="mt-5 grid gap-3 border border-line bg-foam p-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
         <input
