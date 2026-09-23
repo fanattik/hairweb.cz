@@ -8,9 +8,16 @@ import type { SalonAuditRow } from "@/lib/audit/types";
 type Props = {
   audit: SalonAuditRow;
   className?: string;
+  label?: string;
+  location?: string;
 };
 
-export function AuditDiscussCta({ audit, className = "" }: Props) {
+export function AuditDiscussCta({
+  audit,
+  className = "",
+  label = "Domluvit konzultaci",
+  location = "result",
+}: Props) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [name, setName] = useState(audit.name || "");
@@ -47,7 +54,7 @@ export function AuditDiscussCta({ audit, className = "" }: Props) {
   function openModal() {
     trackEvent("audit_cta_clicked", {
       audit_id: audit.id,
-      location: "result",
+      location,
     });
     setStatus("idle");
     setError(null);
@@ -245,7 +252,7 @@ export function AuditDiscussCta({ audit, className = "" }: Props) {
         onClick={openModal}
         className={`inline-flex min-h-12 items-center justify-center rounded-full bg-ink px-8 py-[22px] text-[17px] font-medium tracking-tight text-foam transition duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:-translate-y-0.5 hover:bg-ink/90 ${className}`}
       >
-        Domluvit konzultaci{" "}
+        {label}{" "}
         <span className="cta-arrow" aria-hidden>
           →
         </span>

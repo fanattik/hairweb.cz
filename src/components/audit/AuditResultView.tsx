@@ -71,6 +71,40 @@ function formatTbt(ms: number | null): string {
   return `${Math.round(ms)} ms`;
 }
 
+function nedostatkyPhrase(count: number): string {
+  if (count === 1) {
+    return "1 nedostatek, který si můžete opravit sami — nebo to nechte na nás.";
+  }
+  if (count >= 2 && count <= 4) {
+    return `${count} nedostatky, které si můžete opravit sami — nebo to nechte na nás.`;
+  }
+  return `${count} nedostatků, které si můžete opravit sami — nebo to nechte na nás.`;
+}
+
+function PriorityCardCta({
+  audit,
+  count,
+  location,
+}: {
+  audit: SalonAuditRow;
+  count: number;
+  location: string;
+}) {
+  return (
+    <div className="mt-5 border-t border-ink/8 pt-4">
+      <p className="text-[13px] leading-relaxed text-ink-muted">
+        {nedostatkyPhrase(count)}
+      </p>
+      <AuditDiscussCta
+        audit={audit}
+        location={location}
+        label="Nechte to na nás"
+        className="mt-3 min-h-10 px-5 py-2.5 text-[14px]"
+      />
+    </div>
+  );
+}
+
 function pagespeedFromAudit(
   audit: SalonAuditRow,
 ): AuditPagespeedSnapshot | null {
@@ -676,11 +710,13 @@ export function AuditResultView({ audit }: { audit: SalonAuditRow }) {
                               <p className="mt-1 text-[15px] leading-relaxed text-ink-soft">
                                 {rec.recommendation}
                               </p>
-                              <p className="mt-2 text-[13px] leading-relaxed text-ink-muted">
-                                Uděláte sami, nebo to zařídí HAIRWEB.
-                              </p>
                             </div>
                           </div>
+                          <PriorityCardCta
+                            audit={audit}
+                            count={highRecs.length}
+                            location="result_priority_high"
+                          />
                         </Reveal>
                       );
                     })}
@@ -732,10 +768,12 @@ export function AuditResultView({ audit }: { audit: SalonAuditRow }) {
                                 {rec.recommendation}
                               </p>
                             </div>
-                            <p className="pl-[1.4rem] text-[13px] leading-relaxed text-ink-muted">
-                              Uděláte sami, nebo to zařídí HAIRWEB.
-                            </p>
                           </div>
+                          <PriorityCardCta
+                            audit={audit}
+                            count={midRecs.length}
+                            location="result_priority_mid"
+                          />
                         </Reveal>
                       );
                     })}
@@ -790,7 +828,7 @@ export function AuditResultView({ audit }: { audit: SalonAuditRow }) {
       {/* 07 CTA */}
       <section
         id="konzultace"
-        className="px-[clamp(1.25rem,4vw,3rem)] pb-[clamp(4rem,8vw,6.5rem)]"
+        className="px-[clamp(1.25rem,4vw,3rem)] pt-[clamp(3rem,6vw,5rem)] pb-[clamp(4rem,8vw,6.5rem)]"
       >
         <Reveal className="mx-auto flex max-w-[1360px] flex-wrap items-end justify-between gap-8 rounded-[36px] bg-copper px-[clamp(1.5rem,5vw,5rem)] py-[clamp(2.5rem,7vw,6.25rem)] text-white">
           <div className="max-w-[760px]">
