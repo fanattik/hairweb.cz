@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { buildWebAuditEnrichPatch } from "@/lib/web-audit/apply";
 import { normalizeAuditUrl } from "@/lib/web-audit/normalize-url";
-import { detectOpeningHours } from "@/lib/web-audit/fetch-page";
+import { detectAddressMention, detectOpeningHours } from "@/lib/web-audit/fetch-page";
 import {
   detectMobileProblem,
   mapMobileFromLighthouse,
@@ -141,5 +141,41 @@ describe("detectOpeningHours", () => {
       `<script type="application/ld+json">{"@type":"LocalBusiness","openingHours":"Mo-Fr 09:00-18:00"}</script>`,
     );
     assert.equal(hasOpeningHours, true);
+  });
+});
+
+describe("detectAddressMention", () => {
+  it("detects English Prague address (Kamikiri-style)", () => {
+    assert.equal(
+      detectAddressMention("Korunovacni 18, Letna, Prague 7 Monday - Friday"),
+      true,
+    );
+  });
+
+  it("detects Czech Praha + PSČ", () => {
+    assert.equal(
+      detectAddressMention("Salon na adrese Korunovační 18, 170 00 Praha 7"),
+      true,
+    );
+  });
+
+  it("ignores empty JSON-LD address", () => {
+    assert.equal(
+      detectAddressMention(
+        "Welcome to our salon",
+        `<script type="application/ld+json">{"@type":"LocalBusiness","address":""}</script>`,
+      ),
+      false,
+    );
+  });
+
+  it("accepts non-empty JSON-LD streetAddress", () => {
+    assert.equal(
+      detectAddressMention(
+        "Welcome",
+        `<script type="application/ld+json">{"@type":"LocalBusiness","address":{"@type":"PostalAddress","streetAddress":"Korunovacni 18","addressLocality":"Prague"}}</script>`,
+      ),
+      true,
+    );
   });
 });

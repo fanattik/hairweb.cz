@@ -34,6 +34,44 @@ function normalizeName(value: string | null | undefined): string {
     .trim();
 }
 
+/** True when distinctive address tokens from Google appear in page text. */
+export function addressTokensAppearOnPage(
+  formattedAddress: string,
+  pageText: string,
+): boolean {
+  const page = normalizeName(pageText);
+  if (!page) return false;
+
+  const tokens = normalizeName(formattedAddress)
+    .split(" ")
+    .filter(
+      (token) =>
+        token.length >= 4 &&
+        !/^\d+$/.test(token) &&
+        ![
+          "czech",
+          "cesko",
+          "czechia",
+          "republic",
+          "ceska",
+          "republika",
+        ].includes(token),
+    );
+
+  // Street / locality name present on the page
+  if (tokens.some((token) => page.includes(token))) return true;
+
+  // House number + city-ish token together
+  const houseNumbers = formattedAddress.match(/\b\d{1,4}[a-zA-Z]?\b/g) || [];
+  for (const num of houseNumbers) {
+    const n = num.toLowerCase();
+    if (page.includes(` ${n} `) || page.includes(` ${n},`) || page.endsWith(` ${n}`)) {
+      if (tokens.some((token) => page.includes(token))) return true;
+    }
+  }
+  return false;
+}
+
 function namesLooselyMatch(a: string, b: string): boolean {
   const left = normalizeName(a);
   const right = normalizeName(b);
@@ -217,25 +255,30 @@ export const analyzeConsistency: Analyzer = (ctx) => {
     );
   }
 
-  if (place?.formattedAddress && page && page.hasAddressMention === false) {
-    checks.push(
-      check({
-        checkId: "consistency_address_on_web",
-        category: "web",
-        status: "partial",
-        points: 1,
-        maxPoints: 4,
-        severity: "medium",
-        title: "Adresa je na Googlu, na webu ji nevidíme",
-        description:
-          "Google má adresu, ale na webu jsme nenašli jasnou zmínku o adrese / PSČ.",
-        recommendation:
-          "Doplňte na web kompletní adresu salonu (a ideálně mapu / odkaz na Google).",
-        source: "consistency",
-        ease: 4,
-        impact: 3,
-      }),
-    );
+  if (place?.formattedAddress && page && !page.fetchError) {
+    const addressOnPage =
+      page.hasAddressMention === true ||
+      addressTokensAppearOnPage(place.formattedAddress, page.textSample || "");
+    if (!addressOnPage && page.hasAddressMention === false) {
+      checks.push(
+        check({
+          checkId: "consistency_address_on_web",
+          category: "web",
+          status: "partial",
+          points: 1,
+          maxPoints: 4,
+          severity: "medium",
+          title: "Adresa je na Googlu, na webu ji nevidíme",
+          description:
+            "Google má adresu, ale na webu jsme nenašli jasnou zmínku o adrese / PSČ.",
+          recommendation:
+            "Doplňte na web kompletní adresu salonu (a ideálně mapu / odkaz na Google).",
+          source: "consistency",
+          ease: 4,
+          impact: 3,
+        }),
+      );
+    }
   }
 
   // --- Opening hours ---

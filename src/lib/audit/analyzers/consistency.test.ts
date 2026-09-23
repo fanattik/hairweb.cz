@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { normalizeHost, normalizePhone } from "@/lib/audit/analyzers/consistency";
+import {
+  addressTokensAppearOnPage,
+  normalizeHost,
+  normalizePhone,
+} from "@/lib/audit/analyzers/consistency";
 
 describe("consistency helpers", () => {
   it("normalizes czech phones", () => {
@@ -13,5 +17,15 @@ describe("consistency helpers", () => {
     assert.equal(normalizeHost("https://www.salon.cz/kontakt"), "salon.cz");
     assert.equal(normalizeHost("salon.cz"), "salon.cz");
     assert.equal(normalizeHost("https://Salon.CZ"), "salon.cz");
+  });
+
+  it("matches Google address tokens on English page text", () => {
+    assert.equal(
+      addressTokensAppearOnPage(
+        "Korunovační 18, 170 00 Praha 7-Bubeneč, Česko",
+        "Korunovacni 18, Letna, Prague 7",
+      ),
+      true,
+    );
   });
 });

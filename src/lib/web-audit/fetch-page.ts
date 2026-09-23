@@ -286,6 +286,87 @@ function hasJsonLdOpeningHours(html: string): boolean {
   return false;
 }
 
+function hasJsonLdAddress(html: string): boolean {
+  for (const match of html.matchAll(
+    /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
+  )) {
+    const raw = (match[1] || "").trim();
+    if (!raw) continue;
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      const stack: unknown[] = [parsed];
+      while (stack.length) {
+        const node = stack.pop();
+        if (!node || typeof node !== "object") continue;
+        if (Array.isArray(node)) {
+          stack.push(...node);
+          continue;
+        }
+        const record = node as Record<string, unknown>;
+        const address = record.address;
+        if (typeof address === "string" && address.trim().length >= 5) {
+          return true;
+        }
+        if (address && typeof address === "object" && !Array.isArray(address)) {
+          const addr = address as Record<string, unknown>;
+          const parts = [
+            addr.streetAddress,
+            addr.addressLocality,
+            addr.addressRegion,
+            addr.postalCode,
+          ]
+            .filter((v) => typeof v === "string" && v.trim().length > 0)
+            .join(" ");
+          if (parts.trim().length >= 5) return true;
+        }
+        for (const key of ["streetAddress", "addressLocality", "postalCode"] as const) {
+          const value = record[key];
+          if (typeof value === "string" && value.trim().length >= 3) {
+            return true;
+          }
+        }
+        if (record["@graph"] && Array.isArray(record["@graph"])) {
+          stack.push(...(record["@graph"] as unknown[]));
+        }
+      }
+    } catch {
+      if (
+        /"streetAddress"\s*:\s*"[^"]{3,}"/i.test(raw) ||
+        /"addressLocality"\s*:\s*"[^"]{2,}"/i.test(raw) ||
+        /"postalCode"\s*:\s*"\d{3}\s?\d{2}"/i.test(raw) ||
+        /"address"\s*:\s*"[^"]{5,}"/i.test(raw)
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * Detect visible / structured salon address mention.
+ * Covers Czech + English forms (e.g. "Korunovacni 18, Letna, Prague 7").
+ */
+export function detectAddressMention(text: string, html = ""): boolean {
+  if (hasJsonLdAddress(html)) return true;
+
+  return matchAny(text, [
+    /\bulice\b/i,
+    /\bul\.\s*[A-ZÁ-Ž]/u,
+    /\bnám(?:ěstí|\.)\b/i,
+    /\btřída\b|\btrida\b/i,
+    /\bps[čc]\b/i,
+    /\b\d{3}\s?\d{2}\b/,
+    /\bpraha(?:\s*\d{1,2})?\b/i,
+    /\bprague(?:\s*\d{1,2})?\b/i,
+    /\bbrno\b|\bostrava\b|\bplze[nň]\b|\bpilsen\b/i,
+    /\bolomouc\b|\bliberec\b|\bhradec\b|\bceske\s+budejovice\b|\bčeské\s+budějovice\b/i,
+    // Street name + house number, e.g. "Korunovacni 18" / "Korunovační 18a"
+    /\b[A-ZÁ-Ž][A-Za-zÁ-Žá-ž-]{2,}\s+\d{1,4}[a-zA-Z]?\b/u,
+    /\bstreet\b|\bavenue\b|\baddress\b/i,
+  ]);
+}
+
 /** Exported for unit tests — detects visible / structured opening hours. */
 export function detectOpeningHours(
   text: string,
@@ -410,12 +491,7 @@ export async function fetchPageSignals(url: string): Promise<PageSignals> {
     const social = extractSocialLinks(html);
     const { hasOpeningHours, snippet: openingHoursSnippet } =
       detectOpeningHours(text, html);
-    const hasAddressMention = matchAny(text, [
-      /\bulice\b/i,
-      /\bps[čc]\b/i,
-      /\b\d{3}\s?\d{2}\b/,
-      /\bpraha\b|\rbrno\b|\bostrava\b|\bplze[nň]\b/i,
-    ]);
+    const hasAddressMention = detectAddressMention(text, html);
     const hasServicesMention =
       hasPrices ||
       matchAny(text, [
