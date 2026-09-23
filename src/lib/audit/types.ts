@@ -167,6 +167,19 @@ export type AuditScoresPayload = {
   headline: string;
   /** Mobile PageSpeed Insights snapshot (null = not run / no website). */
   pagespeed?: AuditPagespeedSnapshot | null;
+  /** Instagram Business Discovery snapshot (null = not run / unavailable). */
+  instagram?: AuditInstagramSnapshot | null;
+};
+
+/** Stored on the audit result for CRM persist + result UI. */
+export type AuditInstagramSnapshot = {
+  handle: string;
+  url: string;
+  followers: number | null;
+  mediaCount: number | null;
+  suggestedActive: boolean;
+  suggestedQuality: "poor" | "average" | "good" | "excellent";
+  source: "meta_graph" | "normalize_only";
 };
 
 /** Stored on the audit result for the result-page UI. */

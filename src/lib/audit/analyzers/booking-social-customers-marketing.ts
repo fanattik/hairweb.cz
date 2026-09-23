@@ -1,4 +1,25 @@
 import { check, type Analyzer } from "@/lib/audit/analyzers/types";
+import type { InstagramSnapshot } from "@/lib/instagram/client";
+import { normalizeInstagramHandle } from "@/lib/instagram/parse";
+import { INSTAGRAM_QUALITY_LABELS } from "@/lib/leads/types";
+
+function formatCount(n: number): string {
+  return new Intl.NumberFormat("cs-CZ").format(n);
+}
+
+function resolveSocialHandle(ctx: {
+  answers: { instagramHandle?: string };
+  page: { instagramLinks: string[] } | null;
+  instagram: InstagramSnapshot | null;
+}): string | null {
+  return (
+    normalizeInstagramHandle(ctx.instagram?.handle) ||
+    normalizeInstagramHandle(ctx.answers.instagramHandle) ||
+    (ctx.page?.instagramLinks
+      .map((link) => normalizeInstagramHandle(link))
+      .find(Boolean) ?? null)
+  );
+}
 
 export const analyzeBooking: Analyzer = (ctx) => {
   const { answers } = ctx;
@@ -138,12 +159,16 @@ export const analyzeBooking: Analyzer = (ctx) => {
 };
 
 export const analyzeSocial: Analyzer = (ctx) => {
-  const { answers } = ctx;
+  const { answers, page, instagram } = ctx;
   const platforms = answers.socialPlatforms || [];
-  const none = platforms.includes("none") || platforms.length === 0;
+  const handle = resolveSocialHandle(ctx);
+  const foundOnWeb = Boolean(
+    page?.instagramLinks?.length || instagram?.handle,
+  );
+  const claimsNone = platforms.includes("none") || platforms.length === 0;
   const checks = [];
 
-  if (none) {
+  if (claimsNone && !foundOnWeb) {
     checks.push(
       check({
         checkId: "social_presence",
@@ -164,63 +189,315 @@ export const analyzeSocial: Analyzer = (ctx) => {
     return checks;
   }
 
-  const activeCount = platforms.filter((p) => p !== "none" && p !== "other").length;
-  checks.push(
-    check({
-      checkId: "social_presence",
-      category: "social",
-      status: activeCount >= 1 ? "pass" : "partial",
-      points: activeCount >= 2 ? 10 : 7,
-      maxPoints: 12,
-      severity: "none",
-      title: "Přítomnost na sociálních sítích",
-      description: `Salon je aktivní na: ${platforms.filter((p) => p !== "none").join(", ")}.`,
-      recommendation: null,
-      source: "answers",
-    }),
-  );
-
-  if (platforms.includes("instagram")) {
-    const hasHandle = Boolean(answers.instagramHandle?.trim());
+  if (claimsNone && foundOnWeb) {
     checks.push(
       check({
-        checkId: "social_instagram",
+        checkId: "social_presence",
         category: "social",
-        status: hasHandle ? "pass" : "partial",
-        points: hasHandle ? 6 : 2,
-        maxPoints: 6,
-        severity: hasHandle ? "none" : "low",
-        title: "Instagram",
-        description: hasHandle
-          ? `Instagram: ${answers.instagramHandle}`
-          : "Instagram používáte, ale nemáme handle pro další analýzu.",
-        recommendation: hasHandle
-          ? null
-          : "Doplňte @handle, ať můžeme později lépe vyhodnotit aktivitu.",
+        status: "partial",
+        points: 5,
+        maxPoints: 12,
+        severity: "low",
+        title: "Sociální sítě",
+        description: handle
+          ? `Uvádíte, že sítě nepoužíváte, ale na webu / v datech jsme našli Instagram @${handle}.`
+          : "Uvádíte, že sítě nepoužíváte, ale na webu jsme našli odkaz na sociální síť.",
+        recommendation:
+          "Sjednoťte prezentaci — Instagram patří na web i do komunikace se zákazníky.",
+        source: foundOnWeb ? "website_fetch" : "answers",
+        ease: 4,
+        impact: 3,
+        value: handle,
+      }),
+    );
+  } else {
+    const activeCount = platforms.filter(
+      (p) => p !== "none" && p !== "other",
+    ).length;
+    checks.push(
+      check({
+        checkId: "social_presence",
+        category: "social",
+        status: activeCount >= 1 ? "pass" : "partial",
+        points: activeCount >= 2 ? 10 : 7,
+        maxPoints: 12,
+        severity: "none",
+        title: "Přítomnost na sociálních sítích",
+        description: `Salon je aktivní na: ${platforms
+          .filter((p) => p !== "none")
+          .join(", ")}.`,
+        recommendation: null,
         source: "answers",
-        value: answers.instagramHandle || null,
-        ease: 5,
-        impact: 2,
       }),
     );
   }
 
-  // Future: Meta Graph activity, booking link in bio, etc.
-  checks.push(
-    check({
-      checkId: "social_activity",
-      category: "social",
-      status: "unknown",
-      points: 0,
-      maxPoints: 8,
-      severity: "none",
-      title: "Aktivita na sítích",
-      description:
-        "Frekvenci a aktuálnost příspěvků zatím automaticky neověřujeme.",
-      recommendation: null,
-      source: "future_api",
-    }),
-  );
+  const wantsInstagram =
+    platforms.includes("instagram") || Boolean(handle) || Boolean(instagram);
+
+  if (wantsInstagram) {
+    const displayHandle = handle
+      ? `@${handle}`
+      : answers.instagramHandle?.trim() || null;
+
+    if (instagram && displayHandle) {
+      const parts: string[] = [`Instagram ${displayHandle}`];
+      if (instagram.followers != null) {
+        parts.push(`${formatCount(instagram.followers)} sledujících`);
+      }
+      if (instagram.mediaCount != null) {
+        parts.push(`${formatCount(instagram.mediaCount)} příspěvků`);
+      }
+      checks.push(
+        check({
+          checkId: "social_instagram",
+          category: "social",
+          status: "pass",
+          points: 6,
+          maxPoints: 6,
+          severity: "none",
+          title: "Instagram",
+          description: parts.join(" · "),
+          recommendation: null,
+          source: "meta_graph",
+          value: displayHandle,
+        }),
+      );
+    } else if (displayHandle) {
+      checks.push(
+        check({
+          checkId: "social_instagram",
+          category: "social",
+          status: "partial",
+          points: 4,
+          maxPoints: 6,
+          severity: "low",
+          title: "Instagram",
+          description: `Instagram: ${displayHandle} — metriky profilu jsme teď neověřili.`,
+          recommendation:
+            "Ověřte, že jde o profesionální (Business/Creator) účet, ať můžeme doplnit sledující a aktivitu.",
+          source: "answers",
+          value: displayHandle,
+          ease: 4,
+          impact: 2,
+        }),
+      );
+    } else {
+      checks.push(
+        check({
+          checkId: "social_instagram",
+          category: "social",
+          status: "partial",
+          points: 2,
+          maxPoints: 6,
+          severity: "low",
+          title: "Instagram",
+          description:
+            "Instagram používáte, ale nemáme handle pro analýzu metrik.",
+          recommendation:
+            "Doplňte @handle, ať můžeme vyhodnotit sledující, příspěvky a kvalitu profilu.",
+          source: "answers",
+          value: null,
+          ease: 5,
+          impact: 2,
+        }),
+      );
+    }
+  }
+
+  if (instagram) {
+    const followers = instagram.followers;
+    if (followers != null) {
+      if (followers >= 800) {
+        checks.push(
+          check({
+            checkId: "social_instagram_followers",
+            category: "social",
+            status: "pass",
+            points: 8,
+            maxPoints: 8,
+            severity: "none",
+            title: "Sledující na Instagramu",
+            description: `${formatCount(followers)} sledujících — solidní dosah pro lokální salon.`,
+            recommendation: null,
+            source: "meta_graph",
+            value: followers,
+          }),
+        );
+      } else if (followers >= 250) {
+        checks.push(
+          check({
+            checkId: "social_instagram_followers",
+            category: "social",
+            status: "partial",
+            points: 4,
+            maxPoints: 8,
+            severity: "low",
+            title: "Sledující na Instagramu",
+            description: `${formatCount(followers)} sledujících — základ je, ale prostor pro růst.`,
+            recommendation:
+              "Pravidelné ukázky práce a story z salonu pomáhají organicky rostovat sledovanost.",
+            source: "meta_graph",
+            value: followers,
+            ease: 3,
+            impact: 3,
+          }),
+        );
+      } else {
+        checks.push(
+          check({
+            checkId: "social_instagram_followers",
+            category: "social",
+            status: "fail",
+            points: 1,
+            maxPoints: 8,
+            severity: "medium",
+            title: "Málo sledujících na Instagramu",
+            description: `${formatCount(followers)} sledujících — profil zatím nepřivádí silný organický dosah.`,
+            recommendation:
+              "Začněte konzistentním publikováním (2–3× týdně) a odkazem z webu i Google profilu.",
+            source: "meta_graph",
+            value: followers,
+            ease: 3,
+            impact: 3,
+          }),
+        );
+      }
+    }
+
+    const media = instagram.mediaCount;
+    if (media != null) {
+      if (media >= 20) {
+        checks.push(
+          check({
+            checkId: "social_instagram_posts",
+            category: "social",
+            status: "pass",
+            points: 8,
+            maxPoints: 8,
+            severity: "none",
+            title: "Příspěvky na Instagramu",
+            description: `${formatCount(media)} příspěvků — profil má dost obsahu k prohlédnutí.`,
+            recommendation: null,
+            source: "meta_graph",
+            value: media,
+          }),
+        );
+      } else if (media >= 8) {
+        checks.push(
+          check({
+            checkId: "social_instagram_posts",
+            category: "social",
+            status: "partial",
+            points: 4,
+            maxPoints: 8,
+            severity: "low",
+            title: "Příspěvky na Instagramu",
+            description: `${formatCount(media)} příspěvků — portfolio je tenčí, než bývá u aktivních salonů.`,
+            recommendation:
+              "Doplňte galerii o aktuální práce (střihy, barvy, před/po) aspoň 1–2× týdně.",
+            source: "meta_graph",
+            value: media,
+            ease: 4,
+            impact: 3,
+          }),
+        );
+      } else {
+        checks.push(
+          check({
+            checkId: "social_instagram_posts",
+            category: "social",
+            status: "fail",
+            points: 1,
+            maxPoints: 8,
+            severity: "medium",
+            title: "Málo příspěvků na Instagramu",
+            description: `${formatCount(media)} příspěvků — zákazník na profilu skoro nic neuvidí.`,
+            recommendation:
+              "Nahrajte ukázky práce a informace o salonu — prázdný profil snižuje důvěru.",
+            source: "meta_graph",
+            value: media,
+            ease: 4,
+            impact: 4,
+          }),
+        );
+      }
+    }
+
+    const quality = instagram.suggestedQuality;
+    const qualityLabel = INSTAGRAM_QUALITY_LABELS[quality];
+    if (quality === "excellent" || quality === "good") {
+      checks.push(
+        check({
+          checkId: "social_instagram_quality",
+          category: "social",
+          status: "pass",
+          points: quality === "excellent" ? 8 : 6,
+          maxPoints: 8,
+          severity: "none",
+          title: "Kvalita Instagram profilu",
+          description: `Hodnocení: ${qualityLabel.toLowerCase()} — kombinace sledujících a objemu obsahu.`,
+          recommendation: null,
+          source: "meta_graph",
+          value: quality,
+        }),
+      );
+    } else if (quality === "average") {
+      checks.push(
+        check({
+          checkId: "social_instagram_quality",
+          category: "social",
+          status: "partial",
+          points: 4,
+          maxPoints: 8,
+          severity: "low",
+          title: "Kvalita Instagram profilu",
+          description: `Hodnocení: ${qualityLabel.toLowerCase()} — profil funguje, ale nepřesvědčí na první pohled.`,
+          recommendation:
+            "Posilte vizuální konzistenci a pravidelnost příspěvků; v bio dejte jasný odkaz na rezervaci.",
+          source: "meta_graph",
+          value: quality,
+          ease: 3,
+          impact: 3,
+        }),
+      );
+    } else {
+      checks.push(
+        check({
+          checkId: "social_instagram_quality",
+          category: "social",
+          status: "fail",
+          points: 1,
+          maxPoints: 8,
+          severity: "medium",
+          title: "Slabý Instagram profil",
+          description: `Hodnocení: ${qualityLabel.toLowerCase()} — málo sledujících i obsahu pro důvěryhodnou prezentaci.`,
+          recommendation:
+            "Nejdřív doplňte portfolio a bio s rezervací; až pak řešte růst sledujících.",
+          source: "meta_graph",
+          value: quality,
+          ease: 3,
+          impact: 4,
+        }),
+      );
+    }
+  } else if (wantsInstagram && handle) {
+    checks.push(
+      check({
+        checkId: "social_instagram_metrics",
+        category: "social",
+        status: "unknown",
+        points: 0,
+        maxPoints: 8,
+        severity: "none",
+        title: "Metriky Instagramu",
+        description:
+          "Sledující, příspěvky a kvalitu profilu jsme teď neověřili (API nedostupné nebo účet nelze načíst).",
+        recommendation: null,
+        source: "meta_graph",
+      }),
+    );
+  }
 
   return checks;
 };

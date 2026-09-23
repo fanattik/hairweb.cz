@@ -73,7 +73,17 @@ export async function persistCompletedAudit(options: {
     has_website: answers.hasWebsite,
     has_online_booking: answers.bookingMethods.includes("online"),
     booking_provider: answers.bookingProvider || null,
-    instagram_handle: answers.instagramHandle || null,
+    instagram_handle:
+      result.scores.instagram?.handle
+        ? `@${result.scores.instagram.handle}`
+        : answers.instagramHandle || null,
+    instagram_url: result.scores.instagram?.url || null,
+    instagram_followers: result.scores.instagram?.followers ?? null,
+    instagram_media_count: result.scores.instagram?.mediaCount ?? null,
+    instagram_active: result.scores.instagram?.suggestedActive ?? null,
+    instagram_quality: result.scores.instagram?.suggestedQuality ?? null,
+    instagram_suggested_quality:
+      result.scores.instagram?.suggestedQuality ?? null,
     facebook_url: answers.facebookUrl || null,
     paid_marketing:
       answers.paidAds === "regular" || answers.paidAds === "occasional",

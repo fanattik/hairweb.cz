@@ -26,6 +26,12 @@ import {
   resolveGooglePlace,
   type GooglePlaceSnapshot,
 } from "@/lib/google-places/client";
+import {
+  isInstagramGraphConfigured,
+  resolveInstagramProfile,
+  type InstagramSnapshot,
+} from "@/lib/instagram/client";
+import { normalizeInstagramHandle } from "@/lib/instagram/parse";
 import { fetchPageSignals, probeLlmsTxt } from "@/lib/web-audit/fetch-page";
 import { normalizeAuditUrl } from "@/lib/web-audit/normalize-url";
 import {
@@ -127,6 +133,39 @@ async function tryPageSpeed(
   }
 }
 
+async function tryResolveInstagram(
+  handleOrUrl: string | null | undefined,
+): Promise<InstagramSnapshot | null> {
+  const handle = normalizeInstagramHandle(handleOrUrl);
+  if (!handle) return null;
+  if (!isInstagramGraphConfigured()) {
+    console.warn(
+      "[audit] Instagram Graph není nastavený — metriky IG se neověří.",
+    );
+    return null;
+  }
+  try {
+    return await resolveInstagramProfile({
+      handle,
+      requireGraph: true,
+    });
+  } catch (error) {
+    console.warn("[audit] Instagram resolve failed", error);
+    return null;
+  }
+}
+
+function firstInstagramHandleFromPage(
+  links: string[] | undefined,
+): string | null {
+  if (!links?.length) return null;
+  for (const link of links) {
+    const handle = normalizeInstagramHandle(link);
+    if (handle) return handle;
+  }
+  return null;
+}
+
 /**
  * Runs modular analyzers and builds a deterministic AuditResult.
  * Never invents values for checks marked unknown / future_api.
@@ -177,15 +216,35 @@ export async function runSalonAudit(
 
   // PageSpeed: listed URL first; if broken, still measure suggested ASCII for the UI.
   const psiUrl = fetchUrl || websiteProbe?.suggestedUrl || null;
+  const handleFromAnswers =
+    normalizeInstagramHandle(enriched.instagramHandle) || null;
 
-  const [page, lighthouseForUi, directoryProbes, llmsTxt] = await Promise.all([
-    fetchUrl ? tryFetchWebsite(fetchUrl) : Promise.resolve(null),
-    psiUrl ? tryPageSpeed(psiUrl) : Promise.resolve(null),
-    enriched.salonName.trim()
-      ? probeKeyDirectories(enriched.salonName, enriched.city)
-      : Promise.resolve(null),
-    fetchUrl ? probeLlmsTxt(fetchUrl) : Promise.resolve(null),
-  ]);
+  const [page, lighthouseForUi, directoryProbes, llmsTxt, instagramEarly] =
+    await Promise.all([
+      fetchUrl ? tryFetchWebsite(fetchUrl) : Promise.resolve(null),
+      psiUrl ? tryPageSpeed(psiUrl) : Promise.resolve(null),
+      enriched.salonName.trim()
+        ? probeKeyDirectories(enriched.salonName, enriched.city)
+        : Promise.resolve(null),
+      fetchUrl ? probeLlmsTxt(fetchUrl) : Promise.resolve(null),
+      handleFromAnswers
+        ? tryResolveInstagram(handleFromAnswers)
+        : Promise.resolve(null),
+    ]);
+
+  let instagram = instagramEarly;
+  if (!instagram) {
+    const handleFromWeb = firstInstagramHandleFromPage(page?.instagramLinks);
+    if (handleFromWeb && handleFromWeb !== handleFromAnswers) {
+      instagram = await tryResolveInstagram(handleFromWeb);
+    }
+    if (handleFromWeb && !enriched.instagramHandle) {
+      enriched.instagramHandle = `@${handleFromWeb}`;
+    }
+  }
+  if (instagram?.handle && !enriched.instagramHandle) {
+    enriched.instagramHandle = `@${instagram.handle}`;
+  }
 
   const ctx: AnalyzerContext = {
     answers: enriched,
@@ -196,6 +255,7 @@ export async function runSalonAudit(
     lighthouse: websiteProbe?.ok ? lighthouseForUi : null,
     directoryProbes,
     llmsTxt,
+    instagram,
   };
 
   const checkGroups = await Promise.all([
@@ -257,6 +317,19 @@ export async function runSalonAudit(
   } else {
     scores.pagespeed = null;
   }
+
+  scores.instagram = instagram
+    ? {
+        handle: instagram.handle,
+        url: instagram.url,
+        followers: instagram.followers,
+        mediaCount: instagram.mediaCount,
+        suggestedActive: instagram.suggestedActive,
+        suggestedQuality: instagram.suggestedQuality,
+        source: instagram.source,
+      }
+    : null;
+
   const strengths = extractStrengths(checks);
   const recommendations = extractRecommendations(checks);
   const quickWins = extractQuickWins(recommendations);

@@ -2,6 +2,7 @@ import type { AuditAnswers, AuditCheck } from "@/lib/audit/types";
 import type { DirectoryProbeResult } from "@/lib/audit/directories/probe";
 import type { WebsiteProbeResult } from "@/lib/audit/website-probe";
 import type { GooglePlaceSnapshot } from "@/lib/google-places/client";
+import type { InstagramSnapshot } from "@/lib/instagram/client";
 import type { PageSignals } from "@/lib/web-audit/fetch-page";
 import type { LighthouseSnapshot } from "@/lib/web-audit/pagespeed";
 
@@ -17,6 +18,8 @@ export type AnalyzerContext = {
   directoryProbes: DirectoryProbeResult[] | null;
   /** Whether origin/llms.txt exists (null = not checked). */
   llmsTxt: boolean | null;
+  /** Meta Business Discovery snapshot — null when skipped / not configured / failed. */
+  instagram: InstagramSnapshot | null;
 };
 
 export type Analyzer = (ctx: AnalyzerContext) => AuditCheck[] | Promise<AuditCheck[]>;
