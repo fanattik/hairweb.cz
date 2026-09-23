@@ -106,7 +106,7 @@ export function WebAuditButton({ lead }: Props) {
   }
 
   return (
-    <div className="border border-line bg-mist p-4">
+    <div className="rounded-[22px] bg-mist p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-soft">
@@ -153,7 +153,7 @@ export function WebAuditButton({ lead }: Props) {
       </label>
 
       {preview ? (
-        <div className="mt-3 space-y-2 border border-line bg-foam p-3 text-sm">
+        <div className="mt-3 space-y-2 rounded-[16px] bg-foam p-3 text-sm">
           <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
             Náhled · {preview.finalUrl}
           </p>

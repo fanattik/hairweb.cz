@@ -2,7 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { AdminButton } from "@/components/admin/ui";
 import type { Lead } from "@/lib/leads/types";
+
+const linkClass =
+  "inline-flex min-h-11 items-center justify-center rounded-full border border-ink/15 bg-transparent px-5 text-[14px] font-medium tracking-tight text-ink transition duration-300 hover:border-ink/35";
 
 export function OpportunityActions({ lead }: { lead: Lead }) {
   const router = useRouter();
@@ -33,20 +37,20 @@ export function OpportunityActions({ lead }: { lead: Lead }) {
 
   return (
     <div className="flex flex-wrap gap-2">
-      <button
+      <AdminButton
         type="button"
+        variant="secondary"
         disabled={loading}
         onClick={rescore}
-        className="border border-line px-3 py-2 text-sm hover:border-ink disabled:opacity-60"
       >
         Recalculate score
-      </button>
+      </AdminButton>
       {lead.google_maps_url ? (
         <a
           href={lead.google_maps_url}
           target="_blank"
           rel="noreferrer"
-          className="border border-line px-3 py-2 text-sm hover:border-ink"
+          className={linkClass}
         >
           Open Google Maps
         </a>
@@ -60,7 +64,7 @@ export function OpportunityActions({ lead }: { lead: Lead }) {
           }
           target="_blank"
           rel="noreferrer"
-          className="border border-line px-3 py-2 text-sm hover:border-ink"
+          className={linkClass}
         >
           Open website
         </a>
@@ -70,7 +74,7 @@ export function OpportunityActions({ lead }: { lead: Lead }) {
           href={lead.instagram_url}
           target="_blank"
           rel="noreferrer"
-          className="border border-line px-3 py-2 text-sm hover:border-ink"
+          className={linkClass}
         >
           Open Instagram
         </a>

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { AdminButton, AdminCard } from "@/components/admin/ui";
 import { businessTypeLabel } from "@/lib/discovery/business-types";
 import type { LeadDiscoveryJob, LeadDiscoveryRun } from "@/lib/discovery/types";
 
@@ -9,6 +10,9 @@ type Props = {
   job: LeadDiscoveryJob;
   lastRun?: LeadDiscoveryRun | null;
 };
+
+const dtClass =
+  "font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.12em] text-ink-muted uppercase";
 
 export function DiscoveryJobCard({ job, lastRun }: Props) {
   const router = useRouter();
@@ -56,10 +60,10 @@ export function DiscoveryJobCard({ job, lastRun }: Props) {
     : [];
 
   return (
-    <article className="border border-line bg-foam p-5">
+    <AdminCard>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="font-[family-name:var(--font-fraunces)] text-xl">
+          <h3 className="text-xl font-semibold tracking-tight text-ink">
             {job.name}
           </h3>
           <p className="mt-1 text-sm text-ink-soft">
@@ -71,7 +75,7 @@ export function DiscoveryJobCard({ job, lastRun }: Props) {
             {types.map((type) => (
               <span
                 key={type}
-                className="border border-line bg-mist px-2 py-0.5 text-[11px]"
+                className="rounded-full bg-mist px-2.5 py-0.5 text-[11px] font-medium tracking-tight text-ink-soft"
               >
                 {businessTypeLabel(type)}
               </span>
@@ -79,50 +83,43 @@ export function DiscoveryJobCard({ job, lastRun }: Props) {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button
+          <AdminButton
             type="button"
+            variant="secondary"
+            className="min-h-9 px-4 text-xs"
             onClick={toggleEnabled}
-            className="border border-line px-3 py-1.5 text-xs hover:border-ink"
           >
             {job.enabled ? "Zapnuto" : "Vypnuto"}
-          </button>
-          <button
+          </AdminButton>
+          <AdminButton
             type="button"
             disabled={loading}
+            className="min-h-9 px-4 text-xs"
             onClick={run}
-            className="bg-ink px-3 py-1.5 text-xs text-foam hover:bg-ink-soft disabled:opacity-60"
           >
             {loading ? "Skenuji…" : "Spustit teď"}
-          </button>
+          </AdminButton>
         </div>
       </div>
 
       {lastRun ? (
         <dl className="mt-4 grid gap-2 text-sm sm:grid-cols-4">
           <div>
-            <dt className="text-[10px] uppercase tracking-[0.14em] text-ink-soft">
-              Poslední scan
-            </dt>
+            <dt className={dtClass}>Poslední scan</dt>
             <dd>
               {new Date(lastRun.started_at).toLocaleString("cs-CZ")}
             </dd>
           </div>
           <div>
-            <dt className="text-[10px] uppercase tracking-[0.14em] text-ink-soft">
-              Nalezeno
-            </dt>
+            <dt className={dtClass}>Nalezeno</dt>
             <dd>{lastRun.found_count}</dd>
           </div>
           <div>
-            <dt className="text-[10px] uppercase tracking-[0.14em] text-ink-soft">
-              Nové leady
-            </dt>
+            <dt className={dtClass}>Nové leady</dt>
             <dd>{lastRun.new_leads_count}</dd>
           </div>
           <div>
-            <dt className="text-[10px] uppercase tracking-[0.14em] text-ink-soft">
-              Duplicity / review
-            </dt>
+            <dt className={dtClass}>Duplicity / review</dt>
             <dd>
               {lastRun.duplicate_count} / {lastRun.review_count}
             </dd>
@@ -138,6 +135,6 @@ export function DiscoveryJobCard({ job, lastRun }: Props) {
       {error ? (
         <p className="mt-3 text-sm text-copper-deep">{error}</p>
       ) : null}
-    </article>
+    </AdminCard>
   );
 }

@@ -67,7 +67,7 @@ export function InstagramEnrichButton({ lead }: Props) {
   const canRun = Boolean(lead.instagram_handle || lead.instagram_url);
 
   return (
-    <div className="border border-line bg-mist p-4">
+    <div className="rounded-[22px] bg-mist p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-soft">

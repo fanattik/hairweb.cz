@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { AdminButton, AdminCard } from "@/components/admin/ui";
 
 type ReviewRow = {
   id: string;
@@ -40,48 +41,50 @@ export function DiscoveryReviewList({ reviews }: { reviews: ReviewRow[] }) {
   return (
     <ul className="grid gap-3">
       {reviews.map((review) => (
-        <li
-          key={review.id}
-          className="flex flex-wrap items-center justify-between gap-3 border border-line bg-foam p-4"
-        >
-          <div>
-            <p className="font-medium">
-              {review.candidate?.name || "Neznámý salon"}
-            </p>
-            <p className="text-sm text-ink-soft">
-              {review.candidate?.city || "—"}
-              {review.candidate?.rating != null
-                ? ` · ${review.candidate.rating}★`
-                : ""}
-              {review.candidate?.reviewsCount != null
-                ? ` · ${review.candidate.reviewsCount} recenzí`
-                : ""}
-            </p>
-            <p className="mt-1 text-xs text-copper-deep">
-              {review.match_reason}
-              {review.matched_lead_id
-                ? ` → lead ${review.matched_lead_id.slice(0, 8)}…`
-                : ""}
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              disabled={busy === review.id}
-              onClick={() => act(review.id, "accept")}
-              className="bg-ink px-3 py-1.5 text-xs text-foam"
-            >
-              Přijmout
-            </button>
-            <button
-              type="button"
-              disabled={busy === review.id}
-              onClick={() => act(review.id, "reject")}
-              className="border border-line px-3 py-1.5 text-xs"
-            >
-              Zamítnout
-            </button>
-          </div>
+        <li key={review.id}>
+          <AdminCard padding="sm">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="font-medium">
+                  {review.candidate?.name || "Neznámý salon"}
+                </p>
+                <p className="text-sm text-ink-soft">
+                  {review.candidate?.city || "—"}
+                  {review.candidate?.rating != null
+                    ? ` · ${review.candidate.rating}★`
+                    : ""}
+                  {review.candidate?.reviewsCount != null
+                    ? ` · ${review.candidate.reviewsCount} recenzí`
+                    : ""}
+                </p>
+                <p className="mt-1 text-xs text-copper-deep">
+                  {review.match_reason}
+                  {review.matched_lead_id
+                    ? ` → lead ${review.matched_lead_id.slice(0, 8)}…`
+                    : ""}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <AdminButton
+                  type="button"
+                  disabled={busy === review.id}
+                  className="min-h-9 px-4 text-xs"
+                  onClick={() => act(review.id, "accept")}
+                >
+                  Přijmout
+                </AdminButton>
+                <AdminButton
+                  type="button"
+                  variant="secondary"
+                  disabled={busy === review.id}
+                  className="min-h-9 px-4 text-xs"
+                  onClick={() => act(review.id, "reject")}
+                >
+                  Zamítnout
+                </AdminButton>
+              </div>
+            </div>
+          </AdminCard>
         </li>
       ))}
     </ul>

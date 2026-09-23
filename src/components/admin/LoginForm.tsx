@@ -3,6 +3,11 @@
 import { FormEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import {
+  AdminButton,
+  AdminInput,
+  AdminLabel,
+} from "@/components/admin/ui";
 
 export function LoginForm() {
   const router = useRouter();
@@ -41,41 +46,35 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="border border-line bg-foam p-6 sm:p-8">
-      <label className="grid gap-2 text-sm">
-        <span className="font-medium">E-mail</span>
-        <input
+    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+      <label className="flex flex-col gap-1.5">
+        <AdminLabel>E-mail</AdminLabel>
+        <AdminInput
           type="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="border border-line bg-mist px-3 py-2.5 outline-none focus:border-copper"
           autoComplete="email"
         />
       </label>
-      <label className="mt-4 grid gap-2 text-sm">
-        <span className="font-medium">Heslo</span>
-        <input
+      <label className="flex flex-col gap-1.5">
+        <AdminLabel>Heslo</AdminLabel>
+        <AdminInput
           type="password"
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="border border-line bg-mist px-3 py-2.5 outline-none focus:border-copper"
           autoComplete="current-password"
         />
       </label>
       {error ? (
-        <p className="mt-4 text-sm text-copper-deep" role="alert">
+        <p className="text-sm text-[oklch(0.5_0.18_27)]" role="alert">
           {error}
         </p>
       ) : null}
-      <button
-        type="submit"
-        disabled={loading}
-        className="mt-6 inline-flex min-h-11 w-full items-center justify-center bg-ink px-4 text-sm font-medium text-foam transition hover:bg-ink-soft disabled:opacity-60"
-      >
+      <AdminButton type="submit" disabled={loading} className="mt-2 w-full">
         {loading ? "Přihlašuji…" : "Přihlásit se"}
-      </button>
+      </AdminButton>
     </form>
   );
 }

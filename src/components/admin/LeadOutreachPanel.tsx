@@ -4,14 +4,21 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Lead } from "@/lib/leads/types";
 import {
+  AdminButton,
+  AdminCard,
+  AdminInput,
+  AdminSelect,
+  AdminTextarea,
+} from "@/components/admin/ui";
+import {
   HAIRWEB_PACKAGES,
   OUTREACH_TEMPLATES,
   type HairwebPackageId,
   type OutreachTemplateKey,
 } from "@/lib/leads/outreach-templates";
 
-const field =
-  "border border-line bg-mist px-3 py-2 text-sm outline-none focus:border-copper w-full";
+const eyebrow =
+  "font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.12em] text-ink-muted uppercase";
 
 type EmailRow = {
   id: string;
@@ -166,12 +173,10 @@ export function LeadOutreachPanel({ lead }: { lead: Lead }) {
   }
 
   return (
-    <section className="border border-line bg-foam p-5">
+    <AdminCard>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-soft">
-            Odeslat e-mail
-          </h2>
+          <h2 className={eyebrow}>Odeslat e-mail</h2>
           <p className="mt-1 text-sm text-ink-soft">
             Personalizovaný outreach přímo z CRM přes Resend.
           </p>
@@ -192,9 +197,8 @@ export function LeadOutreachPanel({ lead }: { lead: Lead }) {
       <div className="mt-4 grid gap-3">
         <label className="grid gap-1 text-sm">
           <span className="font-medium">Komu</span>
-          <input
+          <AdminInput
             type="email"
-            className={field}
             value={toEmail}
             onChange={(e) => setToEmail(e.target.value)}
             placeholder="email@salon.cz"
@@ -203,8 +207,7 @@ export function LeadOutreachPanel({ lead }: { lead: Lead }) {
 
         <label className="grid gap-1 text-sm">
           <span className="font-medium">Šablona</span>
-          <select
-            className={field}
+          <AdminSelect
             value={templateKey}
             onChange={(e) =>
               void reloadDraft({
@@ -218,13 +221,12 @@ export function LeadOutreachPanel({ lead }: { lead: Lead }) {
                 {tpl.label}
               </option>
             ))}
-          </select>
+          </AdminSelect>
         </label>
 
         <label className="grid gap-1 text-sm">
           <span className="font-medium">Balíček</span>
-          <select
-            className={field}
+          <AdminSelect
             value={packageId}
             onChange={(e) =>
               void reloadDraft({
@@ -241,7 +243,7 @@ export function LeadOutreachPanel({ lead }: { lead: Lead }) {
                 </option>
               );
             })}
-          </select>
+          </AdminSelect>
           <span className="text-xs text-ink-soft">
             Mail je v přirozeném stylu (cena + rozsah), bez odrážek balíčku.
             Jednostránka → 9 900 Kč, SEO/vícestránka → 14 900 Kč.
@@ -249,19 +251,19 @@ export function LeadOutreachPanel({ lead }: { lead: Lead }) {
         </label>
 
         <div className="flex flex-wrap gap-2">
-          <button
+          <AdminButton
             type="button"
+            variant="secondary"
             disabled={loadingDraft || sending}
             onClick={() => void reloadDraft({ mode: "template" })}
-            className="border border-line px-3 py-2 text-sm hover:border-ink disabled:opacity-50"
           >
             Obnovit šablonu
-          </button>
-          <button
+          </AdminButton>
+          <AdminButton
             type="button"
+            variant="secondary"
             disabled={loadingDraft || sending || !aiAvailable}
             onClick={() => void reloadDraft({ mode: "ai" })}
-            className="border border-line px-3 py-2 text-sm hover:border-ink disabled:opacity-50"
             title={
               aiAvailable
                 ? "Vygenerovat personalizovaný draft přes OpenAI"
@@ -269,13 +271,12 @@ export function LeadOutreachPanel({ lead }: { lead: Lead }) {
             }
           >
             {loadingDraft ? "Generuji…" : "AI personalizace"}
-          </button>
+          </AdminButton>
         </div>
 
         <label className="grid gap-1 text-sm">
           <span className="font-medium">Předmět</span>
-          <input
-            className={field}
+          <AdminInput
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
           />
@@ -283,15 +284,14 @@ export function LeadOutreachPanel({ lead }: { lead: Lead }) {
 
         <label className="grid gap-1 text-sm">
           <span className="font-medium">Zpráva</span>
-          <textarea
+          <AdminTextarea
             rows={12}
-            className={field}
             value={body}
             onChange={(e) => setBody(e.target.value)}
           />
         </label>
 
-        <button
+        <AdminButton
           type="button"
           disabled={
             sending ||
@@ -301,23 +301,20 @@ export function LeadOutreachPanel({ lead }: { lead: Lead }) {
             !toEmail.trim()
           }
           onClick={() => void send()}
-          className="bg-ink px-4 py-2.5 text-sm text-foam hover:bg-ink-soft disabled:opacity-50"
         >
           {sending ? "Odesílám…" : "Odeslat e-mail"}
-        </button>
+        </AdminButton>
 
         {message ? <p className="text-sm text-ink">{message}</p> : null}
         {error ? <p className="text-sm text-copper-deep">{error}</p> : null}
       </div>
 
       {history.length ? (
-        <div className="mt-6 border-t border-line pt-4">
-          <h3 className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft">
-            Historie odeslaných
-          </h3>
+        <div className="mt-6 border-t border-ink/8 pt-4">
+          <h3 className={eyebrow}>Historie odeslaných</h3>
           <ul className="mt-3 space-y-3">
             {history.map((row) => (
-              <li key={row.id} className="border border-line bg-mist p-3 text-sm">
+              <li key={row.id} className="rounded-[14px] bg-mist p-3 text-sm">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="font-medium">{row.subject}</p>
                   <span
@@ -342,6 +339,6 @@ export function LeadOutreachPanel({ lead }: { lead: Lead }) {
           </ul>
         </div>
       ) : null}
-    </section>
+    </AdminCard>
   );
 }

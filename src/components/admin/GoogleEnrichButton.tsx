@@ -69,7 +69,7 @@ export function GoogleEnrichButton({ lead }: Props) {
   }
 
   return (
-    <div className="border border-line bg-mist p-4">
+    <div className="rounded-[22px] bg-mist p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-soft">
@@ -121,7 +121,7 @@ export function GoogleEnrichButton({ lead }: Props) {
               type="button"
               disabled={loading}
               onClick={() => enrich(candidate.placeId)}
-              className="flex w-full flex-col border border-line bg-foam px-3 py-2 text-left text-sm hover:border-ink"
+              className="flex w-full flex-col rounded-[14px] bg-foam px-3 py-2 text-left text-sm hover:border-ink"
             >
               <span className="font-medium">{candidate.name || candidate.placeId}</span>
               <span className="text-xs text-ink-soft">

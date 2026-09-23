@@ -1,5 +1,11 @@
 import Link from "next/link";
 import { AdminShell } from "@/components/admin/AdminShell";
+import {
+  AdminCard,
+  AdminEmpty,
+  AdminLinkButton,
+  AdminPageHeader,
+} from "@/components/admin/ui";
 import { requireAdmin } from "@/lib/admin/auth";
 
 type ImportRow = {
@@ -17,6 +23,9 @@ type ImportRow = {
   status: string;
 };
 
+const thClass =
+  "px-4 py-3 font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.12em] text-ink-muted uppercase";
+
 export default async function AdminLeadImportsPage() {
   const { supabase, user } = await requireAdmin();
 
@@ -33,48 +42,44 @@ export default async function AdminLeadImportsPage() {
 
   return (
     <AdminShell email={user.email}>
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <Link href="/admin/leads" className="text-sm text-copper hover:underline">
-            ← Leady
-          </Link>
-          <h1 className="mt-2 font-[family-name:var(--font-fraunces)] text-3xl tracking-tight">
-            Importy
-          </h1>
-        </div>
-        <Link
-          href="/admin/leads/import"
-          className="bg-ink px-4 py-2.5 text-sm text-foam"
-        >
-          Nový import
-        </Link>
+      <Link href="/admin/leads" className="text-sm text-copper hover:underline">
+        ← Leady
+      </Link>
+      <div className="mt-2">
+        <AdminPageHeader
+          eyebrow="CRM"
+          title="Importy"
+          actions={
+            <AdminLinkButton href="/admin/leads/import">Nový import</AdminLinkButton>
+          }
+        />
       </div>
 
-      <div className="mt-6 overflow-x-auto border border-line bg-foam">
-        <table className="min-w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-line text-xs uppercase tracking-wide text-ink-soft">
-              <th className="px-4 py-3">Datum</th>
-              <th className="px-4 py-3">Soubor / název</th>
-              <th className="px-4 py-3">Zdroj</th>
-              <th className="px-4 py-3">Řádků</th>
-              <th className="px-4 py-3">Nových</th>
-              <th className="px-4 py-3">Upd.</th>
-              <th className="px-4 py-3">Dup.</th>
-              <th className="px-4 py-3">Chyb</th>
-              <th className="px-4 py-3">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.length === 0 ? (
-              <tr>
-                <td colSpan={9} className="px-4 py-10 text-center text-ink-soft">
-                  Zatím žádné importy. Spusť první přes „Importovat leady“.
-                </td>
+      {rows.length === 0 ? (
+        <div className="mt-6">
+          <AdminEmpty>
+            Zatím žádné importy. Spusť první přes „Importovat leady“.
+          </AdminEmpty>
+        </div>
+      ) : (
+        <AdminCard padding="none" className="mt-6 overflow-x-auto">
+          <table className="min-w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-ink/10">
+                <th className={thClass}>Datum</th>
+                <th className={thClass}>Soubor / název</th>
+                <th className={thClass}>Zdroj</th>
+                <th className={thClass}>Řádků</th>
+                <th className={thClass}>Nových</th>
+                <th className={thClass}>Upd.</th>
+                <th className={thClass}>Dup.</th>
+                <th className={thClass}>Chyb</th>
+                <th className={thClass}>Status</th>
               </tr>
-            ) : (
-              rows.map((row) => (
-                <tr key={row.id} className="border-b border-line/60 hover:bg-mist">
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.id} className="border-b border-ink/6 hover:bg-mist/80">
                   <td className="px-4 py-3">
                     <Link
                       href={`/admin/leads/imports/${row.id}`}
@@ -94,15 +99,15 @@ export default async function AdminLeadImportsPage() {
                   <td className="px-4 py-3">{row.updated_count}</td>
                   <td className="px-4 py-3">{row.skipped_count}</td>
                   <td className="px-4 py-3">{row.invalid_count}</td>
-                  <td className="px-4 py-3 uppercase tracking-wide text-xs">
+                  <td className="px-4 py-3 text-xs uppercase tracking-wide">
                     {row.status}
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              ))}
+            </tbody>
+          </table>
+        </AdminCard>
+      )}
     </AdminShell>
   );
 }

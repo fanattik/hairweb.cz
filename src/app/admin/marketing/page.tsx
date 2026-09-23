@@ -1,5 +1,11 @@
 import Link from "next/link";
 import { AdminShell } from "@/components/admin/AdminShell";
+import {
+  AdminCard,
+  AdminLinkButton,
+  AdminPageHeader,
+  AdminSection,
+} from "@/components/admin/ui";
 import { requireAdmin } from "@/lib/admin/auth";
 import {
   MARKETING_CHANNEL_LABELS,
@@ -33,6 +39,9 @@ const QUALIFIED = new Set([
   "proposal",
   "won",
 ]);
+
+const thClass =
+  "px-4 py-3 font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.12em] text-ink-muted uppercase";
 
 function pct(part: number, whole: number) {
   if (!whole) return "—";
@@ -164,101 +173,107 @@ export default async function AdminMarketingPage({
 
   return (
     <AdminShell email={user.email}>
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="font-[family-name:var(--font-fraunces)] text-3xl tracking-tight">
-            Marketing / Acquisition
-          </h1>
-          <p className="mt-1 text-sm text-ink-soft">
-            First-touch attribution ze skutečných leadů · {rows.length} celkem
-          </p>
-        </div>
-        <Link href="/admin/leads?type=inbound" className="text-sm text-copper hover:underline">
-          Inbound leady →
-        </Link>
-      </div>
+      <AdminPageHeader
+        eyebrow="Marketing"
+        title="Acquisition"
+        description={`First-touch attribution ze skutečných leadů · ${rows.length} celkem`}
+        actions={
+          <AdminLinkButton href="/admin/leads?type=inbound" variant="ghost">
+            Inbound leady →
+          </AdminLinkButton>
+        }
+      />
 
-      <section className="mt-8 overflow-x-auto border border-line bg-foam">
-        <table className="min-w-full text-left text-sm">
-          <thead className="border-b border-line text-xs uppercase tracking-wide text-ink-soft">
-            <tr>
-              <th className="px-4 py-3">Zdroj</th>
-              <th className="px-4 py-3">Leady</th>
-              <th className="px-4 py-3">Kvalifikované</th>
-              <th className="px-4 py-3">Zakázky</th>
-              <th className="px-4 py-3">Hodnota</th>
-              <th className="px-4 py-3">Conv.</th>
-            </tr>
-          </thead>
-          <tbody>
-            {channelRows.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-6 text-ink-soft">
-                  Zatím žádná data.
-                </td>
-              </tr>
-            ) : (
-              channelRows.map((row) => (
-                <tr key={row.channel} className="border-b border-line/70">
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/admin/marketing?channel=${row.channel}`}
-                      className="font-medium hover:underline"
-                    >
-                      {MARKETING_CHANNEL_LABELS[row.channel]}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/admin/leads?mkt_channel=${row.channel}`}
-                      className="hover:underline"
-                    >
-                      {row.leads}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3">{row.qualified}</td>
-                  <td className="px-4 py-3">{row.won}</td>
-                  <td className="px-4 py-3">{money(row.wonValue)}</td>
-                  <td className="px-4 py-3">{pct(row.won, row.leads)}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </section>
-
-      <section className="mt-10">
-        <h2 className="font-[family-name:var(--font-fraunces)] text-2xl">
-          Kampaně / reklamy
-          {channelFilter
-            ? ` · ${MARKETING_CHANNEL_LABELS[channelFilter as MarketingChannel] || channelFilter}`
-            : ""}
-        </h2>
-        {channelFilter ? (
-          <Link
-            href="/admin/marketing"
-            className="mt-1 inline-block text-sm text-copper hover:underline"
-          >
-            Zrušit filtr zdroje
-          </Link>
-        ) : null}
-        <div className="mt-4 overflow-x-auto border border-line bg-foam">
+      <AdminSection title="Zdroje" className="mt-8">
+        <AdminCard padding="none" className="overflow-x-auto">
           <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-line text-xs uppercase tracking-wide text-ink-soft">
+            <thead className="border-b border-ink/10">
               <tr>
-                <th className="px-4 py-3">Zdroj</th>
-                <th className="px-4 py-3">Kampaň</th>
-                <th className="px-4 py-3">Content / Ad</th>
-                <th className="px-4 py-3">Leady</th>
-                <th className="px-4 py-3">Kvalif.</th>
-                <th className="px-4 py-3">Zakázky</th>
-                <th className="px-4 py-3">Hodnota</th>
-                <th className="px-4 py-3">Conv.</th>
+                <th className={thClass}>Zdroj</th>
+                <th className={thClass}>Leady</th>
+                <th className={thClass}>Kvalifikované</th>
+                <th className={thClass}>Zakázky</th>
+                <th className={thClass}>Hodnota</th>
+                <th className={thClass}>Conv.</th>
+              </tr>
+            </thead>
+            <tbody>
+              {channelRows.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-6 text-ink-soft">
+                    Zatím žádná data.
+                  </td>
+                </tr>
+              ) : (
+                channelRows.map((row) => (
+                  <tr key={row.channel} className="border-b border-ink/6">
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/admin/marketing?channel=${row.channel}`}
+                        className="font-medium hover:underline"
+                      >
+                        {MARKETING_CHANNEL_LABELS[row.channel]}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/admin/leads?mkt_channel=${row.channel}`}
+                        className="hover:underline"
+                      >
+                        {row.leads}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3">{row.qualified}</td>
+                    <td className="px-4 py-3">{row.won}</td>
+                    <td className="px-4 py-3">{money(row.wonValue)}</td>
+                    <td className="px-4 py-3">{pct(row.won, row.leads)}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </AdminCard>
+      </AdminSection>
+
+      <AdminSection
+        title="Kampaně / reklamy"
+        description={
+          channelFilter ? (
+            <>
+              {MARKETING_CHANNEL_LABELS[channelFilter as MarketingChannel] ||
+                channelFilter}
+              {channelFilter ? (
+                <>
+                  {" · "}
+                  <Link
+                    href="/admin/marketing"
+                    className="text-copper hover:underline"
+                  >
+                    Zrušit filtr zdroje
+                  </Link>
+                </>
+              ) : null}
+            </>
+          ) : undefined
+        }
+      >
+        <AdminCard padding="none" className="overflow-x-auto">
+          <table className="min-w-full text-left text-sm">
+            <thead className="border-b border-ink/10">
+              <tr>
+                <th className={thClass}>Zdroj</th>
+                <th className={thClass}>Kampaň</th>
+                <th className={thClass}>Content / Ad</th>
+                <th className={thClass}>Leady</th>
+                <th className={thClass}>Kvalif.</th>
+                <th className={thClass}>Zakázky</th>
+                <th className={thClass}>Hodnota</th>
+                <th className={thClass}>Conv.</th>
               </tr>
             </thead>
             <tbody>
               {campaignRows.slice(0, 50).map((row) => (
-                <tr key={row.key} className="border-b border-line/70">
+                <tr key={row.key} className="border-b border-ink/6">
                   <td className="px-4 py-3">
                     {MARKETING_CHANNEL_LABELS[row.channel]}
                   </td>
@@ -282,8 +297,8 @@ export default async function AdminMarketingPage({
               ))}
             </tbody>
           </table>
-        </div>
-      </section>
+        </AdminCard>
+      </AdminSection>
     </AdminShell>
   );
 }

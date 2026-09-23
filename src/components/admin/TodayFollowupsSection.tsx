@@ -5,6 +5,11 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import {
+  AdminButton,
+  AdminEmpty,
+  AdminSection,
+} from "@/components/admin/ui";
+import {
   daysOverdue,
   formatPragueDate,
   followupBadgeLabel,
@@ -42,24 +47,24 @@ function QuickRow({ lead, overdueDays }: { lead: Lead; overdueDays?: number }) {
     router.refresh();
   }
 
-  async function snooze(preset: "tomorrow" | "plus3" | "plus7") {
+  async function snooze() {
     setBusy(true);
     await fetch(`/api/admin/leads/${lead.id}/followup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "snooze", preset }),
+      body: JSON.stringify({ action: "snooze", preset: "tomorrow" }),
     });
     setBusy(false);
     router.refresh();
   }
 
   return (
-    <li className="border border-line bg-foam p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+    <li className="rounded-[20px] bg-foam px-5 py-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
           <Link
             href={`/admin/leads/${lead.id}`}
-            className="font-medium hover:underline"
+            className="font-medium tracking-tight text-ink hover:text-copper"
           >
             {title}
           </Link>
@@ -67,75 +72,55 @@ function QuickRow({ lead, overdueDays }: { lead: Lead; overdueDays?: number }) {
             {[lead.city, lead.email || lead.phone].filter(Boolean).join(" · ") ||
               "—"}
           </p>
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+          <div className="mt-2.5 flex flex-wrap items-center gap-2 text-xs">
             <StatusBadge status={lead.status} />
             <span
               className={
                 badge.tone === "danger"
                   ? "text-copper-deep"
                   : badge.tone === "warning"
-                    ? "text-amber-800"
-                    : "text-ink-soft"
+                    ? "text-ink"
+                    : "text-ink-muted"
               }
             >
               {badge.label}
             </span>
-            <span className="text-ink-soft">
+            <span className="text-ink-muted">
               FU {lead.followup_count ?? 0}/3 ·{" "}
               {formatPragueDate(lead.next_followup_at)}
               {overdueDays != null && overdueDays > 0
                 ? ` · +${overdueDays} d`
                 : ""}
             </span>
-            {lead.opportunity_grade ? (
-              <span className="text-ink-soft">Opp {lead.opportunity_grade}</span>
-            ) : null}
-            {lead.google_rating != null ? (
-              <span className="text-ink-soft">
-                {Number(lead.google_rating).toFixed(1)}★
-              </span>
-            ) : null}
           </div>
         </div>
-        <div className="flex flex-wrap gap-2 text-sm">
+        <div className="flex flex-wrap gap-2">
           {lead.email ? (
             <a
               href={`mailto:${lead.email}`}
-              className="border border-line px-3 py-1.5 hover:border-ink"
+              className="inline-flex min-h-9 items-center rounded-full border border-ink/12 px-3.5 text-[13px] font-medium"
             >
               E-mail
             </a>
           ) : null}
-          {lead.phone ? (
-            <a
-              href={`tel:${lead.phone}`}
-              className="border border-line px-3 py-1.5 hover:border-ink"
-            >
-              Telefon
-            </a>
-          ) : null}
-          <button
+          <AdminButton
             type="button"
+            variant="ghost"
             disabled={busy}
             onClick={() => void recordEmailFollowup()}
-            className="border border-line px-3 py-1.5 hover:border-ink disabled:opacity-50"
+            className="min-h-9 px-3.5 text-[13px]"
           >
             Zaznamenat
-          </button>
-          <button
+          </AdminButton>
+          <AdminButton
             type="button"
+            variant="ghost"
             disabled={busy}
-            onClick={() => void snooze("tomorrow")}
-            className="border border-line px-3 py-1.5 hover:border-ink disabled:opacity-50"
+            onClick={() => void snooze()}
+            className="min-h-9 px-3.5 text-[13px]"
           >
             Odložit
-          </button>
-          <Link
-            href={`/admin/leads/${lead.id}`}
-            className="border border-line px-3 py-1.5 hover:border-ink"
-          >
-            Detail
-          </Link>
+          </AdminButton>
         </div>
       </div>
     </li>
@@ -145,37 +130,34 @@ function QuickRow({ lead, overdueDays }: { lead: Lead; overdueDays?: number }) {
 export function TodayFollowupsSection({ overdue, dueToday }: Props) {
   if (!overdue.length && !dueToday.length) {
     return (
-      <section className="mt-10 border border-line bg-foam p-5">
-        <h2 className="font-[family-name:var(--font-fraunces)] text-2xl">
-          Dnes kontaktovat
-        </h2>
-        <p className="mt-2 text-sm text-ink-soft">
-          Nic na dnes — žádné due ani overdue follow-upy.
-        </p>
-      </section>
+      <AdminSection
+        title="Dnes kontaktovat"
+        description="Follow-upy, které mají jít ven dnes."
+      >
+        <AdminEmpty>Nic na dnes — žádné due ani overdue follow-upy.</AdminEmpty>
+      </AdminSection>
     );
   }
 
   return (
-    <section className="mt-10">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <h2 className="font-[family-name:var(--font-fraunces)] text-2xl">
-          Dnes kontaktovat
-        </h2>
+    <AdminSection
+      title="Dnes kontaktovat"
+      description="Follow-upy, které mají jít ven dnes."
+      action={
         <Link
           href="/admin/leads?followup=today"
-          className="text-sm text-copper hover:underline"
+          className="text-sm font-medium text-copper hover:underline"
         >
           Zobrazit vše →
         </Link>
-      </div>
-
+      }
+    >
       {overdue.length ? (
-        <div className="mt-5">
-          <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-copper-deep">
-            Po termínu ({overdue.length})
-          </h3>
-          <ul className="mt-3 grid gap-3">
+        <div>
+          <p className="mb-3 font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.12em] text-copper uppercase">
+            Po termínu · {overdue.length}
+          </p>
+          <ul className="grid gap-2.5">
             {overdue.map((lead) => (
               <QuickRow
                 key={lead.id}
@@ -192,17 +174,17 @@ export function TodayFollowupsSection({ overdue, dueToday }: Props) {
       ) : null}
 
       {dueToday.length ? (
-        <div className="mt-6">
-          <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-800">
-            Dnes ({dueToday.length})
-          </h3>
-          <ul className="mt-3 grid gap-3">
+        <div className={overdue.length ? "mt-8" : undefined}>
+          <p className="mb-3 font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.12em] text-ink-muted uppercase">
+            Dnes · {dueToday.length}
+          </p>
+          <ul className="grid gap-2.5">
             {dueToday.map((lead) => (
               <QuickRow key={lead.id} lead={lead} />
             ))}
           </ul>
         </div>
       ) : null}
-    </section>
+    </AdminSection>
   );
 }

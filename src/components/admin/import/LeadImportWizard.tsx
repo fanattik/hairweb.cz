@@ -1,8 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {
+  AdminButton,
+  AdminCard,
+  AdminInput,
+  AdminLinkButton,
+  AdminSelect,
+  AdminTextarea,
+} from "@/components/admin/ui";
 import {
   IMPORT_TARGET_FIELDS,
   IMPORT_TARGET_LABELS,
@@ -205,12 +212,12 @@ export function LeadImportWizard() {
               type="button"
               disabled={index > step || loading}
               onClick={() => index <= step && setStep(index)}
-              className={`border px-3 py-1.5 text-xs tracking-wide ${
+              className={`rounded-full px-3.5 py-1.5 text-xs font-medium tracking-tight transition ${
                 index === step
-                  ? "border-ink bg-ink text-foam"
+                  ? "bg-ink text-foam"
                   : index < step
-                    ? "border-ink/40 bg-foam text-ink"
-                    : "border-line bg-mist text-ink-soft"
+                    ? "bg-foam text-ink hover:bg-stone"
+                    : "bg-mist text-ink-soft"
               }`}
             >
               {index + 1}. {label}
@@ -220,18 +227,18 @@ export function LeadImportWizard() {
       </ol>
 
       {error ? (
-        <p className="border border-copper/40 bg-copper/10 px-4 py-3 text-sm text-copper-deep">
+        <p className="rounded-[14px] bg-copper/10 px-4 py-3 text-sm text-copper-deep">
           {error}
         </p>
       ) : null}
 
       {step === 0 ? (
         <section className="grid gap-6 lg:grid-cols-2">
-          <div className="border border-line bg-foam p-5">
-            <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-soft">
+          <AdminCard>
+            <h2 className="font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.12em] text-ink-muted uppercase">
               Soubor CSV / XLSX
             </h2>
-            <label className="mt-4 flex cursor-pointer flex-col items-center justify-center border border-dashed border-line bg-mist px-4 py-10 text-center hover:border-ink">
+            <label className="mt-4 flex cursor-pointer flex-col items-center justify-center rounded-[14px] border border-dashed border-ink/15 bg-mist px-4 py-10 text-center hover:border-ink/35">
               <span className="text-sm text-ink">
                 Přetáhni soubor nebo klikni pro výběr
               </span>
@@ -249,78 +256,78 @@ export function LeadImportWizard() {
                 }}
               />
             </label>
-          </div>
+          </AdminCard>
 
-          <div className="border border-line bg-foam p-5">
-            <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-soft">
+          <AdminCard>
+            <h2 className="font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.12em] text-ink-muted uppercase">
               Copy & paste
             </h2>
-            <textarea
+            <AdminTextarea
               value={paste}
               onChange={(e) => setPaste(e.target.value)}
               rows={8}
               placeholder="Vlož tabulku z Google Sheets / Excel (tab nebo |)"
-              className="mt-4 w-full border border-line bg-mist px-3 py-2 text-sm"
+              className="mt-4"
             />
-            <button
+            <AdminButton
               type="button"
               disabled={loading || !paste.trim()}
               onClick={() => void handlePaste()}
-              className="mt-3 bg-ink px-4 py-2 text-sm text-foam disabled:opacity-60"
+              className="mt-3"
             >
               {loading ? "Zpracovávám…" : "Načíst data"}
-            </button>
-          </div>
+            </AdminButton>
+          </AdminCard>
 
-          <div className="border border-line bg-foam p-5 lg:col-span-2">
-            <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-soft">
+          <AdminCard className="lg:col-span-2">
+            <h2 className="font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.12em] text-ink-muted uppercase">
               Zdroj dat (ne způsob importu)
             </h2>
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
               <label className="text-sm">
                 <span className="text-ink-soft">Typ zdroje</span>
-                <select
+                <AdminSelect
                   value={sourceType}
                   onChange={(e) =>
                     setSourceType(e.target.value as LeadSourceType)
                   }
-                  className="mt-1 w-full border border-line bg-mist px-3 py-2"
+                  className="mt-1"
                 >
                   {LEAD_SOURCE_TYPES.map((type) => (
                     <option key={type} value={type}>
                       {SOURCE_LABELS[type]}
                     </option>
                   ))}
-                </select>
+                </AdminSelect>
               </label>
               <label className="text-sm">
                 <span className="text-ink-soft">Název zdroje</span>
-                <input
+                <AdminInput
                   value={sourceName}
                   onChange={(e) => setSourceName(e.target.value)}
                   placeholder="Praha – Google Maps"
-                  className="mt-1 w-full border border-line bg-mist px-3 py-2"
+                  className="mt-1"
                 />
               </label>
               <label className="text-sm">
                 <span className="text-ink-soft">URL zdroje</span>
-                <input
+                <AdminInput
                   value={sourceUrl}
                   onChange={(e) => setSourceUrl(e.target.value)}
                   placeholder="https://…"
-                  className="mt-1 w-full border border-line bg-mist px-3 py-2"
+                  className="mt-1"
                 />
               </label>
             </div>
-          </div>
+          </AdminCard>
         </section>
       ) : null}
 
       {step === 1 && payload ? (
-        <section className="space-y-4 border border-line bg-foam p-5">
+        <AdminCard className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="font-[family-name:var(--font-fraunces)] text-xl">
+              <h2 className="text-xl font-semibold tracking-tight text-ink">
                 Mapování sloupců
               </h2>
               <p className="text-sm text-ink-soft">
@@ -329,24 +336,23 @@ export function LeadImportWizard() {
               </p>
             </div>
             {payload.sheets.length > 1 ? (
-              <select
+              <AdminSelect
                 value={payload.activeSheet}
                 onChange={(e) => void handleSheetChange(e.target.value)}
-                className="border border-line bg-mist px-3 py-2 text-sm"
               >
                 {payload.sheets.map((sheet) => (
                   <option key={sheet.name} value={sheet.name}>
                     {sheet.name}
                   </option>
                 ))}
-              </select>
+              </AdminSelect>
             ) : null}
           </div>
 
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-line text-xs uppercase tracking-wide text-ink-soft">
+                <tr className="border-b border-ink/10 text-xs uppercase tracking-wide text-ink-soft">
                   {headers.map((header) => (
                     <th key={header} className="px-2 py-2 align-bottom">
                       <div className="mb-1 font-medium normal-case text-ink">
@@ -360,7 +366,7 @@ export function LeadImportWizard() {
                             [header]: e.target.value as ImportTargetField,
                           }))
                         }
-                        className="w-full min-w-[140px] border border-line bg-mist px-2 py-1 text-xs"
+                        className="w-full min-w-[140px] rounded-[14px] border border-ink/10 bg-mist px-2 py-1 text-xs"
                       >
                         {IMPORT_TARGET_FIELDS.map((field) => (
                           <option key={field} value={field}>
@@ -374,7 +380,7 @@ export function LeadImportWizard() {
               </thead>
               <tbody>
                 {previewTable?.map((row) => (
-                  <tr key={row.rowNumber} className="border-b border-line/60">
+                  <tr key={row.rowNumber} className="border-b border-ink/6">
                     {headers.map((header) => (
                       <td key={header} className="px-2 py-2 text-ink-soft">
                         {row.raw[header] || "—"}
@@ -387,28 +393,23 @@ export function LeadImportWizard() {
           </div>
 
           <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setStep(0)}
-              className="border border-line px-4 py-2 text-sm"
-            >
+            <AdminButton type="button" variant="secondary" onClick={() => setStep(0)}>
               Zpět
-            </button>
-            <button
+            </AdminButton>
+            <AdminButton
               type="button"
               disabled={loading}
               onClick={() => void runPreview()}
-              className="bg-ink px-4 py-2 text-sm text-foam disabled:opacity-60"
             >
               {loading ? "Kontroluji…" : "Pokračovat na kontrolu"}
-            </button>
+            </AdminButton>
           </div>
-        </section>
+        </AdminCard>
       ) : null}
 
       {step === 2 && summary ? (
-        <section className="space-y-4 border border-line bg-foam p-5">
-          <h2 className="font-[family-name:var(--font-fraunces)] text-xl">
+        <AdminCard className="space-y-4">
+          <h2 className="text-xl font-semibold tracking-tight text-ink">
             Kontrola a validace
           </h2>
           <div className="grid gap-3 sm:grid-cols-5">
@@ -422,28 +423,20 @@ export function LeadImportWizard() {
             <PreviewRowsTable rows={prepared.slice(0, 200)} actions={null} />
           </div>
           <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setStep(1)}
-              className="border border-line px-4 py-2 text-sm"
-            >
+            <AdminButton type="button" variant="secondary" onClick={() => setStep(1)}>
               Zpět
-            </button>
-            <button
-              type="button"
-              onClick={() => setStep(3)}
-              className="bg-ink px-4 py-2 text-sm text-foam"
-            >
+            </AdminButton>
+            <AdminButton type="button" onClick={() => setStep(3)}>
               Řešit duplicity
-            </button>
+            </AdminButton>
           </div>
-        </section>
+        </AdminCard>
       ) : null}
 
       {step === 3 && summary ? (
-        <section className="space-y-4 border border-line bg-foam p-5">
+        <AdminCard className="space-y-4">
           <div className="flex flex-wrap items-end justify-between gap-3">
-            <h2 className="font-[family-name:var(--font-fraunces)] text-xl">
+            <h2 className="text-xl font-semibold tracking-tight text-ink">
               Duplicity
             </h2>
             <label className="text-sm text-ink-soft">
@@ -466,7 +459,7 @@ export function LeadImportWizard() {
                     return next;
                   });
                 }}
-                className="ml-2 border border-line bg-mist px-2 py-1 text-ink"
+                className="ml-2 rounded-[14px] border border-ink/10 bg-mist px-2 py-1 text-ink"
               >
                 <option value="fill_blank">Sloučit jen prázdná pole</option>
                 <option value="skip">Přeskočit</option>
@@ -489,37 +482,32 @@ export function LeadImportWizard() {
             />
           </div>
           <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setStep(2)}
-              className="border border-line px-4 py-2 text-sm"
-            >
+            <AdminButton type="button" variant="secondary" onClick={() => setStep(2)}>
               Zpět
-            </button>
-            <button
+            </AdminButton>
+            <AdminButton
               type="button"
               disabled={loading}
               onClick={() => void runImport()}
-              className="bg-ink px-4 py-2 text-sm text-foam disabled:opacity-60"
             >
               Spustit import
-            </button>
+            </AdminButton>
           </div>
-        </section>
+        </AdminCard>
       ) : null}
 
       {step === 4 ? (
-        <section className="border border-line bg-foam p-10 text-center">
+        <AdminCard className="p-10 text-center">
           <p className="text-sm text-ink-soft">Importuji leady…</p>
-          <p className="mt-2 font-[family-name:var(--font-fraunces)] text-2xl">
+          <p className="mt-2 text-2xl font-semibold tracking-tight text-ink">
             {loading ? "Zpracovávám dávky" : "Dokončuji"}
           </p>
-        </section>
+        </AdminCard>
       ) : null}
 
       {step === 5 && result ? (
-        <section className="space-y-5 border border-line bg-foam p-6">
-          <h2 className="font-[family-name:var(--font-fraunces)] text-2xl">
+        <AdminCard className="space-y-5">
+          <h2 className="text-2xl font-semibold tracking-tight text-ink">
             Import dokončen
           </h2>
           <p className="text-ink-soft">{result.total} zpracovaných řádků</p>
@@ -530,32 +518,26 @@ export function LeadImportWizard() {
             <Stat label="Chyb" value={result.invalidCount} />
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link
-              href={`/admin/leads?import_id=${result.importId}`}
-              className="bg-ink px-4 py-2 text-sm text-foam"
-            >
+            <AdminLinkButton href={`/admin/leads?import_id=${result.importId}`}>
               Zobrazit importované
-            </Link>
-            <Link
+            </AdminLinkButton>
+            <AdminLinkButton
               href={`/admin/leads?import_id=${result.importId}&grade=A`}
-              className="border border-line px-4 py-2 text-sm"
+              variant="secondary"
             >
               Zobrazit A leady
-            </Link>
-            <Link
+            </AdminLinkButton>
+            <AdminLinkButton
               href={`/admin/leads/imports/${result.importId}`}
-              className="border border-line px-4 py-2 text-sm"
+              variant="secondary"
             >
               Detail importu
-            </Link>
-            <Link
-              href="/admin/leads"
-              className="border border-line px-4 py-2 text-sm"
-            >
+            </AdminLinkButton>
+            <AdminLinkButton href="/admin/leads" variant="ghost">
               Zpět na leady
-            </Link>
+            </AdminLinkButton>
           </div>
-        </section>
+        </AdminCard>
       ) : null}
     </div>
   );
@@ -563,11 +545,11 @@ export function LeadImportWizard() {
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="border border-line bg-mist px-3 py-3">
-      <p className="text-[10px] uppercase tracking-[0.16em] text-ink-soft">
+    <div className="rounded-[14px] bg-mist px-3 py-3">
+      <p className="font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.12em] text-ink-muted uppercase">
         {label}
       </p>
-      <p className="mt-1 font-[family-name:var(--font-fraunces)] text-2xl">
+      <p className="mt-1 text-2xl font-semibold tracking-tight text-ink">
         {value}
       </p>
     </div>
@@ -589,7 +571,7 @@ function statusBadge(status: PreparedImportRow["status"]) {
   };
   return (
     <span
-      className={`inline-flex px-2 py-0.5 text-[10px] font-semibold tracking-wide ${styles[status]}`}
+      className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-semibold tracking-wide ${styles[status]}`}
     >
       {labels[status]}
     </span>
@@ -611,7 +593,7 @@ function PreviewRowsTable({
   return (
     <table className="min-w-full text-left text-sm">
       <thead>
-        <tr className="border-b border-line text-xs uppercase tracking-wide text-ink-soft">
+        <tr className="border-b border-ink/10 text-xs uppercase tracking-wide text-ink-soft">
           <th className="px-2 py-2">#</th>
           <th className="px-2 py-2">Název</th>
           <th className="px-2 py-2">Město</th>
@@ -624,7 +606,7 @@ function PreviewRowsTable({
       </thead>
       <tbody>
         {rows.map((row) => (
-          <tr key={row.rowNumber} className="border-b border-line/50">
+          <tr key={row.rowNumber} className="border-b border-ink/6">
             <td className="px-2 py-2 text-ink-soft">{row.rowNumber}</td>
             <td className="px-2 py-2">{row.normalized.salon_name || "—"}</td>
             <td className="px-2 py-2">{row.normalized.city || "—"}</td>
@@ -661,7 +643,7 @@ function PreviewRowsTable({
                         e.target.value as DuplicateAction,
                       )
                     }
-                    className="border border-line bg-mist px-2 py-1 text-xs"
+                    className="rounded-[14px] border border-ink/10 bg-mist px-2 py-1 text-xs"
                   >
                     <option value="fill_blank">Sloučit prázdná</option>
                     <option value="skip">Přeskočit</option>

@@ -99,7 +99,7 @@ export function GoogleEnrichPreviewButton({
         type="button"
         disabled={loading}
         onClick={lookup}
-        className="border border-line bg-mist px-3 py-2 text-sm hover:border-ink disabled:opacity-60"
+        className="rounded-full bg-mist px-3.5 py-2 text-sm hover:border-ink disabled:opacity-60"
       >
         {loading ? "Hledám v Google…" : "Načíst z Google Places"}
       </button>
@@ -111,7 +111,7 @@ export function GoogleEnrichPreviewButton({
               key={candidate.placeId}
               type="button"
               onClick={() => applyPlace(candidate)}
-              className="flex w-full flex-col border border-line bg-foam px-3 py-2 text-left text-sm hover:border-ink"
+              className="flex w-full flex-col rounded-[14px] bg-foam px-3 py-2 text-left text-sm hover:border-ink"
             >
               <span className="font-medium">
                 {candidate.name || candidate.placeId}

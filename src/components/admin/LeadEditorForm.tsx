@@ -11,6 +11,14 @@ import { useRouter } from "next/navigation";
 import { GoogleEnrichPreviewButton } from "@/components/admin/GoogleEnrichPreviewButton";
 import { InstagramEnrichPreviewButton } from "@/components/admin/InstagramEnrichPreviewButton";
 import { ScoreSummaryCard } from "@/components/admin/ScoreBadges";
+import {
+  AdminButton,
+  AdminCard,
+  AdminInput,
+  AdminLabel,
+  AdminSelect,
+  AdminTextarea,
+} from "@/components/admin/ui";
 import { calculateLeadScores } from "@/lib/leads/scoring";
 import {
   scoresToWebFlags,
@@ -29,8 +37,8 @@ import {
   type LeadStatus,
 } from "@/lib/leads/types";
 
-const field =
-  "border border-line bg-mist px-3 py-2 text-sm outline-none focus:border-copper w-full";
+const sectionEyebrow =
+  "font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.12em] text-ink-muted uppercase";
 
 type Mode = "create" | "edit";
 
@@ -180,12 +188,10 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <section className="border border-line bg-foam p-5">
-      <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-soft">
-        {title}
-      </h2>
+    <AdminCard>
+      <h2 className={sectionEyebrow}>{title}</h2>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">{children}</div>
-    </section>
+    </AdminCard>
   );
 }
 
@@ -199,20 +205,19 @@ function TriBool({
   onChange: (value: boolean | null) => void;
 }) {
   return (
-    <label className="grid gap-1 text-sm">
-      <span className="font-medium">{label}</span>
-      <select
+    <label className="grid gap-1.5 text-sm">
+      <AdminLabel>{label}</AdminLabel>
+      <AdminSelect
         value={value === null ? "" : value ? "true" : "false"}
         onChange={(e) => {
           if (e.target.value === "") onChange(null);
           else onChange(e.target.value === "true");
         }}
-        className={field}
       >
         <option value="">—</option>
         <option value="true">Ano</option>
         <option value="false">Ne</option>
-      </select>
+      </AdminSelect>
     </label>
   );
 }
@@ -407,66 +412,58 @@ export function LeadEditorForm({
         <Section title="Základní údaje">
           <label className="grid gap-1 text-sm">
             <span className="font-medium">Název salonu</span>
-            <input
-              className={field}
+            <AdminInput
               value={state.salon_name}
               onChange={(e) => patch("salon_name", e.target.value)}
             />
           </label>
           <label className="grid gap-1 text-sm">
             <span className="font-medium">Kontaktní osoba</span>
-            <input
-              className={field}
+            <AdminInput
               value={state.contact_person}
               onChange={(e) => patch("contact_person", e.target.value)}
             />
           </label>
           <label className="grid gap-1 text-sm">
             <span className="font-medium">Jméno v CRM *</span>
-            <input
+            <AdminInput
               required
-              className={field}
               value={state.name}
               onChange={(e) => patch("name", e.target.value)}
             />
           </label>
           <label className="grid gap-1 text-sm">
             <span className="font-medium">E-mail</span>
-            <input
+            <AdminInput
               type="email"
-              className={field}
               value={state.email}
               onChange={(e) => patch("email", e.target.value)}
             />
           </label>
           <label className="grid gap-1 text-sm">
             <span className="font-medium">Telefon</span>
-            <input
-              className={field}
+            <AdminInput
               value={state.phone}
               onChange={(e) => patch("phone", e.target.value)}
             />
           </label>
           <label className="grid gap-1 text-sm">
             <span className="font-medium">Město</span>
-            <input
-              className={field}
+            <AdminInput
               value={state.city}
               onChange={(e) => patch("city", e.target.value)}
             />
           </label>
           <label className="grid gap-1 text-sm">
             <span className="font-medium">Region</span>
-            <input
-              className={field}
+            <AdminInput
               value={state.region}
               onChange={(e) => patch("region", e.target.value)}
             />
           </label>
           <label className="grid gap-1 text-sm">
             <span className="font-medium">Web</span>
-            <input
-              className={field}
+            <AdminInput
               value={state.website}
               onChange={(e) => patch("website", e.target.value)}
               disabled={!state.has_website}
@@ -474,16 +471,14 @@ export function LeadEditorForm({
           </label>
           <label className="grid gap-1 text-sm">
             <span className="font-medium">Instagram URL</span>
-            <input
-              className={field}
+            <AdminInput
               value={state.instagram_url}
               onChange={(e) => patch("instagram_url", e.target.value)}
             />
           </label>
           <label className="grid gap-1 text-sm">
             <span className="font-medium">Google Maps URL</span>
-            <input
-              className={field}
+            <AdminInput
               value={state.google_maps_url}
               onChange={(e) => patch("google_maps_url", e.target.value)}
             />
@@ -519,22 +514,20 @@ export function LeadEditorForm({
           />
           <label className="grid gap-1 text-sm">
             <span className="font-medium">Google rating (0–5)</span>
-            <input
+            <AdminInput
               type="number"
               min={0}
               max={5}
               step={0.1}
-              className={field}
               value={state.google_rating}
               onChange={(e) => patch("google_rating", e.target.value)}
             />
           </label>
           <label className="grid gap-1 text-sm">
             <span className="font-medium">Počet Google recenzí</span>
-            <input
+            <AdminInput
               type="number"
               min={0}
-              className={field}
               value={state.google_reviews_count}
               onChange={(e) => patch("google_reviews_count", e.target.value)}
             />
@@ -576,8 +569,7 @@ export function LeadEditorForm({
           />
           <label className="grid gap-1 text-sm">
             <span className="font-medium">Handle</span>
-            <input
-              className={field}
+            <AdminInput
               value={state.instagram_handle}
               onChange={(e) => patch("instagram_handle", e.target.value)}
               placeholder="@salon"
@@ -590,18 +582,16 @@ export function LeadEditorForm({
           />
           <label className="grid gap-1 text-sm">
             <span className="font-medium">Followers</span>
-            <input
+            <AdminInput
               type="number"
               min={0}
-              className={field}
               value={state.instagram_followers}
               onChange={(e) => patch("instagram_followers", e.target.value)}
             />
           </label>
           <label className="grid gap-1 text-sm">
             <span className="font-medium">Kvalita Instagramu</span>
-            <select
-              className={field}
+            <AdminSelect
               value={state.instagram_quality}
               onChange={(e) =>
                 patch(
@@ -616,7 +606,7 @@ export function LeadEditorForm({
                   {INSTAGRAM_QUALITY_LABELS[q]}
                 </option>
               ))}
-            </select>
+            </AdminSelect>
           </label>
         </Section>
 
@@ -629,7 +619,6 @@ export function LeadEditorForm({
           <label className="grid gap-1 text-sm">
             <span className="font-medium">Rezervační systém</span>
             <input
-              className={field}
               list="booking-providers"
               value={state.booking_provider}
               onChange={(e) => patch("booking_provider", e.target.value)}
@@ -646,8 +635,7 @@ export function LeadEditorForm({
           </label>
           <label className="grid gap-1 text-sm sm:col-span-2">
             <span className="font-medium">Rezervační URL</span>
-            <input
-              className={field}
+            <AdminInput
               value={state.booking_url}
               onChange={(e) => patch("booking_url", e.target.value)}
             />
@@ -657,8 +645,7 @@ export function LeadEditorForm({
         <Section title="Business">
           <label className="grid gap-1 text-sm">
             <span className="font-medium">Velikost salonu</span>
-            <select
-              className={field}
+            <AdminSelect
               value={state.business_size}
               onChange={(e) =>
                 patch("business_size", e.target.value as BusinessSize | "")
@@ -670,7 +657,7 @@ export function LeadEditorForm({
                   {BUSINESS_SIZE_LABELS[size]}
                 </option>
               ))}
-            </select>
+            </AdminSelect>
           </label>
           <label className="flex items-center gap-2 text-sm sm:col-span-1">
             <input
@@ -815,18 +802,16 @@ export function LeadEditorForm({
           />
           <label className="grid gap-1 text-sm sm:col-span-2">
             <span className="font-medium">Audit webu</span>
-            <textarea
+            <AdminTextarea
               rows={4}
-              className={field}
               value={state.website_audit}
               onChange={(e) => patch("website_audit", e.target.value)}
             />
           </label>
           <label className="grid gap-1 text-sm sm:col-span-2">
             <span className="font-medium">Obchodní příležitost</span>
-            <textarea
+            <AdminTextarea
               rows={4}
-              className={field}
               value={state.opportunity_note}
               onChange={(e) => patch("opportunity_note", e.target.value)}
             />
@@ -838,8 +823,7 @@ export function LeadEditorForm({
             <>
               <label className="grid gap-1 text-sm">
                 <span className="font-medium">Status</span>
-                <select
-                  className={field}
+                <AdminSelect
                   value={state.status}
                   onChange={(e) =>
                     patch("status", e.target.value as LeadStatus)
@@ -850,22 +834,20 @@ export function LeadEditorForm({
                       {STATUS_LABELS[s]}
                     </option>
                   ))}
-                </select>
+                </AdminSelect>
               </label>
               <label className="grid gap-1 text-sm">
                 <span className="font-medium">Poslední kontakt</span>
-                <input
-                  type="datetime-local"
-                  className={field}
+            <AdminInput
+              type="datetime-local"
                   value={state.last_contact_at}
                   onChange={(e) => patch("last_contact_at", e.target.value)}
                 />
               </label>
               <label className="grid gap-1 text-sm">
                 <span className="font-medium">Další follow-up</span>
-                <input
-                  type="datetime-local"
-                  className={field}
+            <AdminInput
+              type="datetime-local"
                   value={state.next_followup_at}
                   onChange={(e) => patch("next_followup_at", e.target.value)}
                 />
@@ -875,7 +857,6 @@ export function LeadEditorForm({
                 <input
                   type="number"
                   min={0}
-                  className={field}
                   value={state.won_value}
                   onChange={(e) => patch("won_value", e.target.value)}
                 />
@@ -883,7 +864,6 @@ export function LeadEditorForm({
               <label className="grid gap-1 text-sm sm:col-span-2">
                 <span className="font-medium">Důvod lost</span>
                 <input
-                  className={field}
                   value={state.lost_reason}
                   onChange={(e) => patch("lost_reason", e.target.value)}
                 />
@@ -892,9 +872,8 @@ export function LeadEditorForm({
           ) : null}
           <label className="grid gap-1 text-sm sm:col-span-2">
             <span className="font-medium">Interní poznámky</span>
-            <textarea
+            <AdminTextarea
               rows={4}
-              className={field}
               value={state.notes}
               onChange={(e) => patch("notes", e.target.value)}
             />
@@ -902,17 +881,13 @@ export function LeadEditorForm({
         </Section>
 
         <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="submit"
-            disabled={saving}
-            className="bg-ink px-4 py-2.5 text-sm text-foam hover:bg-ink-soft disabled:opacity-60"
-          >
+          <AdminButton type="submit" disabled={saving}>
             {saving
               ? "Ukládám…"
               : mode === "create"
                 ? "Vytvořit outbound lead"
                 : "Uložit lead"}
-          </button>
+          </AdminButton>
           {message ? <p className="text-sm text-ink-soft">{message}</p> : null}
         </div>
       </div>
@@ -929,7 +904,7 @@ export function LeadEditorForm({
         <p className="mt-3 text-xs leading-relaxed text-ink-soft">
           Live náhled. Finální score se vždy přepočítá na serveru při uložení.
         </p>
-        <p className="mt-3 border border-line bg-mist p-3 text-xs leading-relaxed text-ink">
+        <p className="mt-3 rounded-[22px] bg-mist p-4 text-xs leading-relaxed text-ink">
           <span className="font-semibold">Doporučení: </span>
           {liveScores.recommendedAction}
         </p>

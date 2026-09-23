@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { AdminButton } from "@/components/admin/ui";
 import { getLeadsListUrl } from "@/lib/admin/leads-list-url";
 
 type Props = {
@@ -41,13 +42,9 @@ export function DeleteLeadButton({ leadId, leadLabel }: Props) {
 
   if (!confirming) {
     return (
-      <button
-        type="button"
-        onClick={() => setConfirming(true)}
-        className="border border-copper/40 px-3 py-2 text-copper-deep hover:border-copper-deep disabled:opacity-50"
-      >
+      <AdminButton type="button" variant="danger" onClick={() => setConfirming(true)}>
         Smazat lead
-      </button>
+      </AdminButton>
     );
   }
 
@@ -58,25 +55,20 @@ export function DeleteLeadButton({ leadId, leadLabel }: Props) {
         Tuto akci nelze vrátit.
       </p>
       <div className="flex flex-wrap justify-end gap-2">
-        <button
+        <AdminButton
           type="button"
+          variant="secondary"
           disabled={busy}
           onClick={() => {
             setConfirming(false);
             setError(null);
           }}
-          className="border border-line px-3 py-2 hover:border-ink disabled:opacity-50"
         >
           Zrušit
-        </button>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={handleDelete}
-          className="bg-copper-deep px-3 py-2 text-foam hover:bg-copper disabled:opacity-50"
-        >
+        </AdminButton>
+        <AdminButton type="button" variant="danger" disabled={busy} onClick={handleDelete}>
           {busy ? "Mazání…" : "Ano, smazat"}
-        </button>
+        </AdminButton>
       </div>
       {error ? <p className="text-xs text-copper-deep">{error}</p> : null}
     </div>

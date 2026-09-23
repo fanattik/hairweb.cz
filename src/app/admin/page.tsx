@@ -2,6 +2,13 @@ import Link from "next/link";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { LeadsMap } from "@/components/admin/LeadsMap";
 import { TodayFollowupsSection } from "@/components/admin/TodayFollowupsSection";
+import {
+  AdminEmpty,
+  AdminLinkButton,
+  AdminMetricCard,
+  AdminPageHeader,
+  AdminSection,
+} from "@/components/admin/ui";
 import { requireAdmin } from "@/lib/admin/auth";
 import {
   endOfPragueDay,
@@ -88,97 +95,36 @@ export default async function AdminDashboardPage() {
         new Date(b.next_followup_at!).getTime(),
     );
   const followUpDue = overdue.length + dueToday.length;
-  const scheduled = activeFollowups.filter((l) => {
-    if (!l.next_followup_at) return false;
-    return new Date(l.next_followup_at) > todayEnd;
-  }).length;
-  const exhausted = rows.filter(
-    (l) =>
-      (l.followup_count ?? 0) >= 3 &&
-      !l.followup_stopped &&
-      !["won", "lost", "skip", "interested", "meeting", "proposal"].includes(
-        l.status,
-      ),
-  ).length;
 
   const inProgress = rows.filter((l) =>
     ["interested", "meeting", "proposal"].includes(l.status),
   ).length;
-  const won = rows.filter((l) => l.status === "won").length;
-
-  const newOpportunitiesToday = rows.filter(
-    (l) =>
-      l.created_at &&
-      new Date(l.created_at) >= todayStart &&
-      (l.opportunity_score != null || l.discovery_status != null),
-  ).length;
   const aGrade = rows.filter((l) => l.opportunity_grade === "A").length;
-  const noWebsite = rows.filter((l) => l.has_website === false).length;
-  const highRatingBadWeb = rows.filter(
-    (l) =>
-      (l.google_rating ?? 0) >= 4.7 &&
-      (l.google_reviews_count ?? 0) >= 50 &&
-      l.has_website === false,
-  ).length;
 
   const { count: needsReview } = await supabase
     .from("lead_discovery_reviews")
     .select("id", { count: "exact", head: true })
     .eq("status", "pending");
 
-  const cards = [
-    { label: "Nové leady", value: newCount, href: "/admin/leads?status=new" },
+  const metrics = [
+    { label: "Nové", value: newCount, href: "/admin/leads?status=new" },
     {
       label: "Dnes kontaktovat",
       value: followUpDue,
       href: "/admin/leads?followup=today",
     },
     {
-      label: "Po termínu",
-      value: overdue.length,
-      href: "/admin/leads?followup=overdue",
-    },
-    {
-      label: "Naplánováno",
-      value: scheduled,
-      href: "/admin/leads?followup=scheduled",
-    },
-    {
-      label: "Bez odpovědi po 3 FU",
-      value: exhausted,
-      href: "/admin/leads?followup=exhausted",
-    },
-    {
       label: "Rozjednané",
       value: inProgress,
       href: "/admin/leads?pipeline=1",
     },
-    { label: "Vyhráno", value: won, href: "/admin/leads?status=won" },
-  ];
-
-  const opportunityCards = [
     {
-      label: "New opportunities today",
-      value: newOpportunitiesToday,
-      href: "/admin/leads?sort=opportunity_desc",
-    },
-    {
-      label: "A-grade leads",
+      label: "A-grade",
       value: aGrade,
       href: "/admin/leads?opp_grade=A",
     },
     {
-      label: "Leads without website",
-      value: noWebsite,
-      href: "/admin/leads?has_website=no",
-    },
-    {
-      label: "High rating / bad website",
-      value: highRatingBadWeb,
-      href: "/admin/leads?quick=high_rating_no_web",
-    },
-    {
-      label: "Needs review",
+      label: "K review",
       value: needsReview ?? 0,
       href: "/admin/leads/discovery",
     },
@@ -191,30 +137,31 @@ export default async function AdminDashboardPage() {
 
   return (
     <AdminShell email={user.email}>
-      <h1 className="font-[family-name:var(--font-fraunces)] text-3xl tracking-tight">
-        Dashboard
-      </h1>
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {cards.map((card) => (
-          <Link
-            key={card.label}
-            href={card.href}
-            className="border border-line bg-foam p-5 transition hover:border-ink/30"
-          >
-            <p className="text-xs uppercase tracking-[0.16em] text-ink-soft">
-              {card.label}
-            </p>
-            <p className="mt-3 font-[family-name:var(--font-fraunces)] text-4xl">
-              {card.value}
-            </p>
-          </Link>
-        ))}
-      </div>
+      <AdminPageHeader
+        eyebrow="Přehled"
+        title="Dashboard"
+        description="Co je dnes důležité — follow-upy, nové leady a nejlepší příležitosti."
+        actions={
+          <>
+            <AdminLinkButton href="/admin/leads" variant="secondary">
+              Všechny leady
+            </AdminLinkButton>
+            <AdminLinkButton href="/admin/leads/new">
+              Nový outbound
+            </AdminLinkButton>
+          </>
+        }
+      />
 
-      <div className="mt-4 flex flex-wrap gap-3 text-sm">
-        <Link href="/admin/marketing" className="text-copper hover:underline">
-          Marketing / Acquisition →
-        </Link>
+      <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        {metrics.map((card) => (
+          <AdminMetricCard
+            key={card.label}
+            label={card.label}
+            value={card.value}
+            href={card.href}
+          />
+        ))}
       </div>
 
       <TodayFollowupsSection
@@ -222,56 +169,36 @@ export default async function AdminDashboardPage() {
         dueToday={dueToday as Lead[]}
       />
 
-      <section className="mt-10">
-        <div className="flex items-end justify-between gap-3">
-          <h2 className="font-[family-name:var(--font-fraunces)] text-2xl">
-            Nové příležitosti
-          </h2>
+      <AdminSection
+        title="Nejlepší příležitosti"
+        description="Top opportunity skóre z discovery a inboundu."
+        action={
           <Link
             href="/admin/leads/discovery"
-            className="text-sm text-copper hover:underline"
+            className="text-sm font-medium text-copper hover:underline"
           >
-            Otevřít Discovery →
+            Discovery →
           </Link>
-        </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          {opportunityCards.map((card) => (
-            <Link
-              key={card.label}
-              href={card.href}
-              className="border border-line bg-foam p-4 transition hover:border-ink/30"
-            >
-              <p className="text-[10px] uppercase tracking-[0.14em] text-ink-soft">
-                {card.label}
-              </p>
-              <p className="mt-2 font-[family-name:var(--font-fraunces)] text-3xl">
-                {card.value}
-              </p>
-            </Link>
-          ))}
-        </div>
-
-        <div className="mt-6 grid gap-3">
-          <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-soft">
-            TOP opportunities
-          </h3>
-          {topOpportunities.length === 0 ? (
-            <p className="text-sm text-ink-soft">
-              Zatím žádné opportunity skóre — spusť Discovery.
-            </p>
-          ) : (
-            topOpportunities.map((lead) => (
+        }
+      >
+        {topOpportunities.length === 0 ? (
+          <AdminEmpty>
+            Zatím žádné opportunity skóre — spusť Discovery.
+          </AdminEmpty>
+        ) : (
+          <div className="grid gap-2.5">
+            {topOpportunities.map((lead) => (
               <Link
                 key={lead.id}
                 href={`/admin/leads/${lead.id}`}
-                className="flex flex-wrap items-center justify-between gap-3 border border-line bg-foam p-4 transition hover:border-ink/30"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-[20px] bg-foam px-5 py-4 transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)]"
               >
                 <div>
-                  <p className="font-medium">
+                  <p className="font-medium tracking-tight text-ink">
                     {lead.salon_name || lead.name}
                     {lead.opportunity_grade === "A" ? (
-                      <span className="ml-2 text-xs text-copper-deep">
-                        Hot opportunity
+                      <span className="ml-2 text-[11px] font-medium text-copper">
+                        A-grade
                       </span>
                     ) : null}
                   </p>
@@ -279,18 +206,18 @@ export default async function AdminDashboardPage() {
                     {lead.opportunity_summary || lead.city || "—"}
                   </p>
                 </div>
-                <p className="font-[family-name:var(--font-fraunces)] text-2xl">
+                <p className="text-2xl font-semibold tracking-[-0.04em] text-ink">
                   {lead.opportunity_score}
                 </p>
               </Link>
-            ))
-          )}
-        </div>
-      </section>
+            ))}
+          </div>
+        )}
+      </AdminSection>
 
-      <div className="mt-10">
+      <AdminSection title="Mapa leadů" description="Kde máte pokrytí.">
         <LeadsMap leads={rows} />
-      </div>
+      </AdminSection>
     </AdminShell>
   );
 }

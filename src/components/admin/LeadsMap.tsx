@@ -121,10 +121,10 @@ export function LeadsMap({ leads }: Props) {
   const missing = leads.length - mapLeads.length;
 
   return (
-    <section className="border border-line bg-foam">
-      <div className="flex flex-wrap items-end justify-between gap-3 border-b border-line px-5 py-4">
+    <section className="overflow-hidden rounded-[22px] bg-foam">
+      <div className="flex flex-wrap items-end justify-between gap-3 border-b border-ink/6 px-5 py-4">
         <div>
-          <h2 className="font-[family-name:var(--font-fraunces)] text-xl tracking-tight">
+          <h2 className="text-xl font-semibold tracking-tight">
             Mapa leadů
           </h2>
           <p className="mt-1 text-sm text-ink-soft">

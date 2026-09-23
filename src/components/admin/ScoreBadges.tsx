@@ -8,17 +8,17 @@ import {
 } from "@/lib/leads/types";
 
 const priorityStyles: Record<LeadPriority, string> = {
-  hot: "bg-copper text-foam",
+  hot: "bg-copper text-white",
   good: "bg-ink text-foam",
   warm: "bg-stone text-ink",
-  low: "bg-mist text-ink-soft border border-line",
+  low: "bg-mist text-ink-soft border border-ink/10",
 };
 
 const opportunityStyles: Record<LeadOpportunity, string> = {
-  very_high: "bg-copper text-foam",
+  very_high: "bg-copper text-white",
   high: "bg-ink text-foam",
   medium: "bg-stone text-ink",
-  low: "bg-mist text-ink-soft border border-line",
+  low: "bg-mist text-ink-soft border border-ink/10",
 };
 
 const webBandStyles: Record<WebScoreBand, string> = {
@@ -28,11 +28,12 @@ const webBandStyles: Record<WebScoreBand, string> = {
   strong: "bg-ink text-foam",
 };
 
+const badgeBase =
+  "inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold tracking-[0.06em] uppercase";
+
 export function PriorityBadge({ priority }: { priority: LeadPriority }) {
   return (
-    <span
-      className={`inline-flex px-2 py-0.5 text-[10px] font-semibold tracking-wide ${priorityStyles[priority]}`}
-    >
+    <span className={`${badgeBase} ${priorityStyles[priority]}`}>
       {PRIORITY_LABELS[priority]}
     </span>
   );
@@ -44,9 +45,7 @@ export function OpportunityBadge({
   opportunity: LeadOpportunity;
 }) {
   return (
-    <span
-      className={`inline-flex px-2 py-0.5 text-[10px] font-semibold tracking-wide ${opportunityStyles[opportunity]}`}
-    >
+    <span className={`${badgeBase} ${opportunityStyles[opportunity]}`}>
       {OPPORTUNITY_LABELS[opportunity]}
     </span>
   );
@@ -54,9 +53,7 @@ export function OpportunityBadge({
 
 export function WebBandBadge({ band }: { band: WebScoreBand }) {
   return (
-    <span
-      className={`inline-flex px-1.5 py-0.5 text-[9px] font-semibold tracking-wide ${webBandStyles[band]}`}
-    >
+    <span className={`${badgeBase} ${webBandStyles[band]}`}>
       {WEB_BAND_LABELS[band]}
     </span>
   );
@@ -80,14 +77,12 @@ export function ScoreSummaryCard({
   compact?: boolean;
 }) {
   return (
-    <div
-      className={`border border-line bg-foam ${compact ? "p-4" : "p-5"}`}
-    >
-      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-soft">
+    <div className={`rounded-[22px] bg-foam ${compact ? "p-4" : "p-5"}`}>
+      <p className="font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.12em] text-ink-muted uppercase">
         Hairweb Score
       </p>
       <div className="mt-3 flex items-end justify-between gap-3">
-        <p className="font-[family-name:var(--font-fraunces)] text-4xl tracking-tight text-ink">
+        <p className="text-4xl font-semibold tracking-[-0.05em] text-ink">
           {leadScore}
           <span className="text-lg text-ink-soft"> / 100</span>
         </p>

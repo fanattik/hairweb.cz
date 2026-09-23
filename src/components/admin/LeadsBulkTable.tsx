@@ -9,6 +9,7 @@ import {
 } from "@/components/admin/ScoreBadges";
 import { MarketingChannelBadge } from "@/components/admin/MarketingChannelBadge";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { AdminButton } from "@/components/admin/ui";
 import { planLeadAnalysis } from "@/lib/leads/analyze-plan";
 import { followupBadgeLabel } from "@/lib/leads/followup";
 import {
@@ -204,7 +205,7 @@ export function LeadsBulkTable({ leads }: Props) {
 
   return (
     <div className="mt-6 space-y-3">
-      <div className="flex flex-wrap items-center gap-3 border border-line bg-foam p-3">
+      <div className="flex flex-wrap items-center gap-2.5 rounded-full bg-foam px-4 py-3">
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
@@ -214,17 +215,18 @@ export function LeadsBulkTable({ leads }: Props) {
           />
           Vybrat vše ({allIds.length})
         </label>
-        <button
+        <AdminButton
           type="button"
+          variant="ghost"
           disabled={running || analyzableIds.length === 0}
           onClick={() => {
             setConfirmDelete(false);
             setSelected(new Set(analyzableIds));
           }}
-          className="border border-line px-3 py-2 text-sm hover:border-ink disabled:opacity-50"
+          className="min-h-9 px-3.5 text-[13px]"
         >
           Jen analyzovatelné ({analyzableIds.length})
-        </button>
+        </AdminButton>
         <label className="flex items-center gap-2 text-sm text-ink-soft">
           <input
             type="checkbox"
@@ -232,58 +234,62 @@ export function LeadsBulkTable({ leads }: Props) {
             onChange={(e) => setOverwrite(e.target.checked)}
             disabled={running}
           />
-          Přepsat existující data
+          Přepsat data
         </label>
-        <button
+        <AdminButton
           type="button"
           disabled={running || selectedAnalyzable.length === 0}
           onClick={() => runBulk(selectedAnalyzable)}
-          className="bg-ink px-3 py-2 text-sm text-foam hover:bg-ink-soft disabled:opacity-50"
+          className="min-h-9 px-3.5 text-[13px]"
         >
           {running && !confirmDelete
             ? `Analyzuji… ${progress?.done ?? 0}/${progress?.total ?? 0}`
-            : `Analyzovat vybrané (${selectedAnalyzable.length})`}
-        </button>
-        <button
+            : `Analyzovat (${selectedAnalyzable.length})`}
+        </AdminButton>
+        <AdminButton
           type="button"
+          variant="secondary"
           disabled={running || analyzableIds.length === 0}
           onClick={() => runBulk(analyzableIds)}
-          className="border border-line px-3 py-2 text-sm hover:border-ink disabled:opacity-50"
+          className="min-h-9 px-3.5 text-[13px]"
         >
-          Analyzovat všechny na stránce ({analyzableIds.length})
-        </button>
+          Všechny na stránce ({analyzableIds.length})
+        </AdminButton>
         {!confirmDelete ? (
-          <button
+          <AdminButton
             type="button"
+            variant="danger"
             disabled={running || selectedCount === 0}
             onClick={() => setConfirmDelete(true)}
-            className="border border-copper/40 px-3 py-2 text-sm text-copper-deep hover:border-copper-deep disabled:opacity-50"
+            className="min-h-9 px-3.5 text-[13px]"
           >
-            Smazat vybrané ({selectedCount})
-          </button>
+            Smazat ({selectedCount})
+          </AdminButton>
         ) : (
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm text-ink-soft">
-              Opravdu smazat {selectedCount}? Nelze vrátit.
+              Opravdu smazat {selectedCount}?
             </span>
-            <button
+            <AdminButton
               type="button"
+              variant="ghost"
               disabled={running}
               onClick={() => setConfirmDelete(false)}
-              className="border border-line px-3 py-2 text-sm hover:border-ink disabled:opacity-50"
+              className="min-h-9 px-3.5 text-[13px]"
             >
               Zrušit
-            </button>
-            <button
+            </AdminButton>
+            <AdminButton
               type="button"
+              variant="danger"
               disabled={running || selectedCount === 0}
               onClick={() => runDelete([...selected])}
-              className="bg-copper-deep px-3 py-2 text-sm text-foam hover:bg-copper disabled:opacity-50"
+              className="min-h-9 px-3.5 text-[13px]"
             >
               {running
                 ? `Mazání… ${progress?.done ?? 0}/${progress?.total ?? 0}`
-                : `Ano, smazat (${selectedCount})`}
-            </button>
+                : `Ano, smazat`}
+            </AdminButton>
           </div>
         )}
       </div>
@@ -299,7 +305,7 @@ export function LeadsBulkTable({ leads }: Props) {
       ) : null}
       {error ? <p className="text-sm text-copper-deep">{error}</p> : null}
       {failures.length ? (
-        <ul className="max-h-40 overflow-auto border border-line bg-mist p-3 text-xs text-ink-soft">
+        <ul className="max-h-40 overflow-auto rounded-[16px] bg-mist p-4 text-xs text-ink-soft">
           {failures.map((row) => (
             <li key={row.id}>
               <Link href={`/admin/leads/${row.id}`} className="underline">
@@ -311,21 +317,21 @@ export function LeadsBulkTable({ leads }: Props) {
         </ul>
       ) : null}
 
-      <div className="overflow-x-auto border border-line bg-foam">
+      <div className="overflow-x-auto rounded-[22px] bg-foam">
         <table className="min-w-full text-left text-sm">
-          <thead className="border-b border-line text-xs uppercase tracking-wide text-ink-soft">
+          <thead className="border-b border-ink/6 font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.1em] text-ink-muted uppercase">
             <tr>
-              <th className="px-3 py-3 w-10" />
-              <th className="px-3 py-3">Opp / Score</th>
-              <th className="px-3 py-3">Salon</th>
-              <th className="hidden px-3 py-3 md:table-cell">Město</th>
-              <th className="px-3 py-3">Google</th>
-              <th className="hidden px-3 py-3 lg:table-cell">Recenze</th>
-              <th className="px-3 py-3">Web</th>
-              <th className="hidden px-3 py-3 xl:table-cell">Booking</th>
-              <th className="px-3 py-3">Status</th>
-              <th className="hidden px-3 py-3 xl:table-cell">Zdroj</th>
-              <th className="hidden px-3 py-3 lg:table-cell">Follow-up</th>
+              <th className="w-10 px-4 py-4" />
+              <th className="px-4 py-4">Opp</th>
+              <th className="px-4 py-4">Salon</th>
+              <th className="hidden px-4 py-4 md:table-cell">Město</th>
+              <th className="px-4 py-4">Google</th>
+              <th className="hidden px-4 py-4 lg:table-cell">Recenze</th>
+              <th className="px-4 py-4">Web</th>
+              <th className="hidden px-4 py-4 xl:table-cell">Booking</th>
+              <th className="px-4 py-4">Status</th>
+              <th className="hidden px-4 py-4 xl:table-cell">Zdroj</th>
+              <th className="hidden px-4 py-4 lg:table-cell">Follow-up</th>
             </tr>
           </thead>
           <tbody>
@@ -347,9 +353,9 @@ export function LeadsBulkTable({ leads }: Props) {
               return (
                 <tr
                   key={lead.id}
-                  className="border-b border-line/70 hover:bg-mist/60"
+                  className="border-b border-ink/5 last:border-0 hover:bg-mist/50"
                 >
-                  <td className="px-3 py-3">
+                  <td className="px-4 py-4">
                     <input
                       type="checkbox"
                       checked={selected.has(lead.id)}
@@ -362,14 +368,14 @@ export function LeadsBulkTable({ leads }: Props) {
                       }
                     />
                   </td>
-                  <td className="px-3 py-3">
+                  <td className="px-4 py-4">
                     <Link
                       href={`/admin/leads/${lead.id}`}
                       className="block min-w-[4.5rem]"
                     >
                       {score != null ? (
                         <div>
-                          <p className="font-[family-name:var(--font-fraunces)] text-xl leading-none text-ink">
+                          <p className="text-xl font-semibold leading-none tracking-tight text-ink">
                             {score}
                           </p>
                           <div className="mt-1.5 flex flex-wrap items-center gap-1">
@@ -388,10 +394,10 @@ export function LeadsBulkTable({ leads }: Props) {
                       )}
                     </Link>
                   </td>
-                  <td className="px-3 py-3">
+                  <td className="px-4 py-4">
                     <Link
                       href={`/admin/leads/${lead.id}`}
-                      className="font-medium hover:underline"
+                      className="font-medium tracking-tight hover:text-copper"
                     >
                       {lead.salon_name || lead.name}
                     </Link>
@@ -399,10 +405,10 @@ export function LeadsBulkTable({ leads }: Props) {
                       {lead.city || "—"}
                     </p>
                   </td>
-                  <td className="hidden px-3 py-3 md:table-cell">
+                  <td className="hidden px-4 py-4 md:table-cell">
                     {lead.city || "—"}
                   </td>
-                  <td className="px-3 py-3 whitespace-nowrap">
+                  <td className="whitespace-nowrap px-4 py-4">
                     {lead.google_rating != null ? (
                       <span>{Number(lead.google_rating).toFixed(1)} ★</span>
                     ) : (
@@ -414,10 +420,10 @@ export function LeadsBulkTable({ leads }: Props) {
                         : ""}
                     </span>
                   </td>
-                  <td className="hidden px-3 py-3 lg:table-cell">
+                  <td className="hidden px-4 py-4 lg:table-cell">
                     {lead.google_reviews_count ?? "—"}
                   </td>
-                  <td className="px-3 py-3">
+                  <td className="px-4 py-4">
                     {lead.has_website === false ? (
                       <span className="text-xs text-ink-soft">NO WEB</span>
                     ) : web != null ? (
@@ -426,15 +432,15 @@ export function LeadsBulkTable({ leads }: Props) {
                       "—"
                     )}
                   </td>
-                  <td className="hidden px-3 py-3 xl:table-cell">
+                  <td className="hidden px-4 py-4 xl:table-cell">
                     {lead.has_online_booking
                       ? lead.booking_provider || "Ano"
                       : "—"}
                   </td>
-                  <td className="px-3 py-3">
+                  <td className="px-4 py-4">
                     <StatusBadge status={lead.status} />
                   </td>
-                  <td className="hidden px-3 py-3 xl:table-cell">
+                  <td className="hidden px-4 py-4 xl:table-cell">
                     <MarketingChannelBadge
                       lead={{
                         type: lead.type,
@@ -456,13 +462,13 @@ export function LeadsBulkTable({ leads }: Props) {
                       </p>
                     ) : null}
                   </td>
-                  <td className="hidden px-3 py-3 lg:table-cell whitespace-nowrap">
+                  <td className="hidden whitespace-nowrap px-4 py-4 lg:table-cell">
                     <span
                       className={
                         fu.tone === "danger"
                           ? "text-xs font-medium text-copper-deep"
                           : fu.tone === "warning"
-                            ? "text-xs font-medium text-amber-800"
+                            ? "text-xs font-medium text-ink"
                             : fu.tone === "muted"
                               ? "text-xs text-ink-soft"
                               : "text-xs text-ink"

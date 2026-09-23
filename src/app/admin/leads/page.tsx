@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Suspense } from "react";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { LeadsBulkTable } from "@/components/admin/LeadsBulkTable";
@@ -6,6 +5,12 @@ import {
   ClearLeadsFiltersLink,
   PersistLeadsListUrl,
 } from "@/components/admin/LeadsListUrlPersistence";
+import {
+  AdminChip,
+  AdminEmpty,
+  AdminLinkButton,
+  AdminPageHeader,
+} from "@/components/admin/ui";
 import { requireAdmin } from "@/lib/admin/auth";
 import {
   endOfPragueDay,
@@ -293,46 +298,36 @@ export default async function AdminLeadsPage({
   };
 
   const chip = (label: string, href: string, active = false) => (
-    <Link
-      href={href}
-      className={`inline-flex border px-3 py-1.5 text-xs tracking-wide transition ${
-        active
-          ? "border-ink bg-ink text-foam"
-          : "border-line bg-foam text-ink hover:border-ink"
-      }`}
-    >
+    <AdminChip href={href} active={active}>
       {label}
-    </Link>
+    </AdminChip>
   );
+
+  const fieldClass =
+    "w-full rounded-[14px] border border-ink/10 bg-mist px-3.5 py-2.5 text-sm outline-none focus:border-copper";
 
   return (
     <AdminShell email={user.email}>
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="font-[family-name:var(--font-fraunces)] text-3xl tracking-tight">
-            Leady
-          </h1>
-          <p className="mt-1 text-sm text-ink-soft">
-            {leads.length} záznamů · prioritizace podle Lead Score
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            href="/admin/leads/import"
-            className="border border-line px-4 py-2.5 text-sm hover:border-ink"
-          >
-            Importovat leady
-          </Link>
-          <Link
-            href="/admin/leads/new"
-            className="bg-ink px-4 py-2.5 text-sm text-foam hover:bg-ink-soft"
-          >
-            Nový outbound
-          </Link>
-        </div>
-      </div>
+      <AdminPageHeader
+        eyebrow="CRM"
+        title="Leady"
+        description={`${leads.length} záznamů · prioritizace podle skóre`}
+        actions={
+          <>
+            <AdminLinkButton href="/admin/leads/import" variant="secondary">
+              Import
+            </AdminLinkButton>
+            <AdminLinkButton href="/admin/leads/imports" variant="ghost">
+              Importy
+            </AdminLinkButton>
+            <AdminLinkButton href="/admin/leads/new">
+              Nový outbound
+            </AdminLinkButton>
+          </>
+        }
+      />
 
-      <div className="mt-5 flex flex-wrap gap-2">
+      <div className="mt-6 flex flex-wrap gap-2">
         {chip(
           "Hot leads",
           hrefWith(currentFilters, { quick: "hot", priority: "hot" }),
@@ -359,7 +354,7 @@ export default async function AdminLeadsPage({
           quick === "needs_analyze",
         )}
         {chip(
-          "A-grade opportunity",
+          "A-grade",
           hrefWith(currentFilters, { opp_grade: "A" }),
           oppGrade === "A",
         )}
@@ -383,251 +378,184 @@ export default async function AdminLeadsPage({
           hrefWith(currentFilters, { followup: "overdue", quick: "" }),
           followup === "overdue",
         )}
-        {chip(
-          "Tento týden",
-          hrefWith(currentFilters, { followup: "week", quick: "" }),
-          followup === "week",
-        )}
-        {chip(
-          "Naplánované",
-          hrefWith(currentFilters, { followup: "scheduled", quick: "" }),
-          followup === "scheduled",
-        )}
-        {chip(
-          "Bez follow-upu",
-          hrefWith(currentFilters, { followup: "none", quick: "" }),
-          followup === "none",
-        )}
-        <ClearLeadsFiltersLink className="inline-flex border border-line bg-foam px-3 py-1.5 text-xs tracking-wide text-ink transition hover:border-ink" />
+        <ClearLeadsFiltersLink className="inline-flex min-h-9 items-center rounded-full px-3.5 text-[12px] font-medium text-ink-muted transition hover:bg-foam hover:text-ink" />
       </div>
 
       <Suspense fallback={null}>
         <PersistLeadsListUrl />
       </Suspense>
 
-      <form className="mt-5 grid gap-3 border border-line bg-foam p-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
-        <input
-          name="q"
-          defaultValue={q}
-          placeholder="Hledat salon / město / e-mail / IG…"
-          className="border border-line bg-mist px-3 py-2 text-sm outline-none focus:border-copper sm:col-span-2"
-        />
-        <select
-          name="priority"
-          defaultValue={priority}
-          className="border border-line bg-mist px-3 py-2 text-sm"
-        >
-          <option value="">Priorita</option>
-          <option value="hot">HOT</option>
-          <option value="good">GOOD</option>
-          <option value="warm">WARM</option>
-          <option value="low">LOW</option>
-        </select>
-        <select
-          name="opp_grade"
-          defaultValue={oppGrade}
-          className="border border-line bg-mist px-3 py-2 text-sm"
-        >
-          <option value="">Opportunity grade</option>
-          <option value="A">A</option>
-          <option value="B">B</option>
-          <option value="C">C</option>
-          <option value="D">D</option>
-        </select>
-        <select
-          name="has_website"
-          defaultValue={hasWebsite}
-          className="border border-line bg-mist px-3 py-2 text-sm"
-        >
-          <option value="">Web</option>
-          <option value="yes">Má web</option>
-          <option value="no">Bez webu</option>
-        </select>
-        <select
-          name="discovery_status"
-          defaultValue={discoveryStatus}
-          className="border border-line bg-mist px-3 py-2 text-sm"
-        >
-          <option value="">Discovery status</option>
-          <option value="ready">Připraveno</option>
-          <option value="needs_review">Ke kontrole</option>
-          <option value="discovered">Nalezeno</option>
-          <option value="enriching">Obohacování</option>
-          <option value="rejected">Zamítnuto</option>
-        </select>
-        <input
-          name="discovery_source"
-          defaultValue={discoverySource}
-          placeholder="Discovery source"
-          className="border border-line bg-mist px-3 py-2 text-sm"
-        />
-        <select
-          name="status"
-          defaultValue={status}
-          className="border border-line bg-mist px-3 py-2 text-sm"
-        >
-          <option value="">Sales status</option>
-          {LEAD_STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {STATUS_LABELS[s]}
-            </option>
-          ))}
-        </select>
-        <select
-          name="followup"
-          defaultValue={followup}
-          className="border border-line bg-mist px-3 py-2 text-sm"
-        >
-          <option value="">Follow-up</option>
-          <option value="today">Dnes (+ po termínu)</option>
-          <option value="due">Jen dnes</option>
-          <option value="overdue">Po termínu</option>
-          <option value="week">Tento týden</option>
-          <option value="scheduled">Naplánované</option>
-          <option value="none">Bez follow-upu</option>
-          <option value="exhausted">Bez odpovědi po 3 FU</option>
-        </select>
-        <select
-          name="type"
-          defaultValue={type}
-          className="border border-line bg-mist px-3 py-2 text-sm"
-        >
-          <option value="">Type (vše)</option>
-          {(["inbound", "outbound"] as LeadType[]).map((t) => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
-        </select>
-        <input
-          name="city"
-          defaultValue={city}
-          placeholder="Město"
-          className="border border-line bg-mist px-3 py-2 text-sm"
-        />
-        <select
-          name="grade"
-          defaultValue={grade}
-          className="border border-line bg-mist px-3 py-2 text-sm"
-        >
-          <option value="">Grade</option>
-          <option value="A">A</option>
-          <option value="B">B</option>
-          <option value="C">C</option>
-          <option value="D">D</option>
-        </select>
-        <select
-          name="source_type"
-          defaultValue={sourceType}
-          className="border border-line bg-mist px-3 py-2 text-sm"
-        >
-          <option value="">CRM zdroj</option>
-          <option value="google_maps">Google Maps</option>
-          <option value="firmy_cz">Firmy.cz</option>
-          <option value="instagram">Instagram</option>
-          <option value="manual">Manual</option>
-          <option value="other">Other</option>
-        </select>
-        <select
-          name="mkt_channel"
-          defaultValue={mktChannel}
-          className="border border-line bg-mist px-3 py-2 text-sm"
-        >
-          <option value="">Marketing zdroj</option>
-          <option value="meta_ads">Meta Ads</option>
-          <option value="google_ads">Google Ads</option>
-          <option value="google_organic">Google Organic</option>
-          <option value="organic_social">Organic Social</option>
-          <option value="referral">Referral</option>
-          <option value="direct">Direct</option>
-          <option value="outbound">Outbound</option>
-          <option value="other">Other</option>
-        </select>
-        <input
-          name="campaign"
-          defaultValue={campaign}
-          placeholder="utm_campaign"
-          className="border border-line bg-mist px-3 py-2 text-sm"
-        />
-        <input
-          name="import_id"
-          defaultValue={importId}
-          placeholder="Import ID"
-          className="border border-line bg-mist px-3 py-2 text-sm"
-        />
-        <select
-          name="google_min"
-          defaultValue={googleMin}
-          className="border border-line bg-mist px-3 py-2 text-sm"
-        >
-          <option value="">Google rating</option>
-          <option value="4.8">4.8+</option>
-          <option value="4.6">4.6+</option>
-          <option value="4.4">4.4+</option>
-        </select>
-        <select
-          name="reviews_min"
-          defaultValue={reviewsMin}
-          className="border border-line bg-mist px-3 py-2 text-sm"
-        >
-          <option value="">Recenze</option>
-          <option value="200">200+</option>
-          <option value="100">100+</option>
-          <option value="50">50+</option>
-          <option value="20">20+</option>
-        </select>
-        <select
-          name="web_band"
-          defaultValue={webBand}
-          className="border border-line bg-mist px-3 py-2 text-sm"
-        >
-          <option value="">Web Score</option>
-          <option value="0-39">0–39 POOR</option>
-          <option value="40-59">40–59 WEAK</option>
-          <option value="60-79">60–79 GOOD</option>
-          <option value="80+">80+ STRONG</option>
-        </select>
-        <select
-          name="booking"
-          defaultValue={booking}
-          className="border border-line bg-mist px-3 py-2 text-sm"
-        >
-          <option value="">Booking</option>
-          <option value="yes">Ano</option>
-          <option value="no">Ne</option>
-        </select>
-        <select
-          name="ig_active"
-          defaultValue={igActive}
-          className="border border-line bg-mist px-3 py-2 text-sm"
-        >
-          <option value="">Instagram active</option>
-          <option value="yes">Ano</option>
-          <option value="no">Ne</option>
-        </select>
-        <select
-          name="sort"
-          defaultValue={sort}
-          className="border border-line bg-mist px-3 py-2 text-sm"
-        >
-          {SORT_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-        <button
-          type="submit"
-          className="bg-copper px-4 py-2 text-sm text-foam hover:bg-copper-deep"
-        >
-          Filtrovat
-        </button>
-      </form>
+      <details className="mt-5 rounded-[22px] bg-foam open:pb-1">
+        <summary className="cursor-pointer list-none px-5 py-4 text-sm font-medium tracking-tight text-ink marker:content-none [&::-webkit-details-marker]:hidden">
+          <span className="inline-flex items-center gap-2">
+            Více filtrů
+            <span className="text-ink-muted">· hledání, status, Google, sort…</span>
+          </span>
+        </summary>
+        <form className="grid gap-3 border-t border-ink/6 px-5 py-5 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
+          <input
+            name="q"
+            defaultValue={q}
+            placeholder="Hledat salon / město / e-mail / IG…"
+            className={`${fieldClass} sm:col-span-2`}
+          />
+          <select name="priority" defaultValue={priority} className={fieldClass}>
+            <option value="">Priorita</option>
+            <option value="hot">HOT</option>
+            <option value="good">GOOD</option>
+            <option value="warm">WARM</option>
+            <option value="low">LOW</option>
+          </select>
+          <select name="opp_grade" defaultValue={oppGrade} className={fieldClass}>
+            <option value="">Opportunity grade</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+          </select>
+          <select name="has_website" defaultValue={hasWebsite} className={fieldClass}>
+            <option value="">Web</option>
+            <option value="yes">Má web</option>
+            <option value="no">Bez webu</option>
+          </select>
+          <select
+            name="discovery_status"
+            defaultValue={discoveryStatus}
+            className={fieldClass}
+          >
+            <option value="">Discovery status</option>
+            <option value="ready">Připraveno</option>
+            <option value="needs_review">Ke kontrole</option>
+            <option value="discovered">Nalezeno</option>
+            <option value="enriching">Obohacování</option>
+            <option value="rejected">Zamítnuto</option>
+          </select>
+          <input
+            name="discovery_source"
+            defaultValue={discoverySource}
+            placeholder="Discovery source"
+            className={fieldClass}
+          />
+          <select name="status" defaultValue={status} className={fieldClass}>
+            <option value="">Sales status</option>
+            {LEAD_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {STATUS_LABELS[s]}
+              </option>
+            ))}
+          </select>
+          <select name="followup" defaultValue={followup} className={fieldClass}>
+            <option value="">Follow-up</option>
+            <option value="today">Dnes (+ po termínu)</option>
+            <option value="due">Jen dnes</option>
+            <option value="overdue">Po termínu</option>
+            <option value="week">Tento týden</option>
+            <option value="scheduled">Naplánované</option>
+            <option value="none">Bez follow-upu</option>
+            <option value="exhausted">Bez odpovědi po 3 FU</option>
+          </select>
+          <select name="type" defaultValue={type} className={fieldClass}>
+            <option value="">Type (vše)</option>
+            {(["inbound", "outbound"] as LeadType[]).map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+          <input
+            name="city"
+            defaultValue={city}
+            placeholder="Město"
+            className={fieldClass}
+          />
+          <select name="grade" defaultValue={grade} className={fieldClass}>
+            <option value="">Grade</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+          </select>
+          <select name="source_type" defaultValue={sourceType} className={fieldClass}>
+            <option value="">CRM zdroj</option>
+            <option value="google_maps">Google Maps</option>
+            <option value="firmy_cz">Firmy.cz</option>
+            <option value="instagram">Instagram</option>
+            <option value="manual">Manual</option>
+            <option value="other">Other</option>
+          </select>
+          <select name="mkt_channel" defaultValue={mktChannel} className={fieldClass}>
+            <option value="">Marketing zdroj</option>
+            <option value="meta_ads">Meta Ads</option>
+            <option value="google_ads">Google Ads</option>
+            <option value="google_organic">Google Organic</option>
+            <option value="organic_social">Organic Social</option>
+            <option value="referral">Referral</option>
+            <option value="direct">Direct</option>
+            <option value="outbound">Outbound</option>
+            <option value="other">Other</option>
+          </select>
+          <input
+            name="campaign"
+            defaultValue={campaign}
+            placeholder="utm_campaign"
+            className={fieldClass}
+          />
+          <input
+            name="import_id"
+            defaultValue={importId}
+            placeholder="Import ID"
+            className={fieldClass}
+          />
+          <select name="google_min" defaultValue={googleMin} className={fieldClass}>
+            <option value="">Google rating</option>
+            <option value="4.8">4.8+</option>
+            <option value="4.6">4.6+</option>
+            <option value="4.4">4.4+</option>
+          </select>
+          <select name="reviews_min" defaultValue={reviewsMin} className={fieldClass}>
+            <option value="">Recenze</option>
+            <option value="200">200+</option>
+            <option value="100">100+</option>
+            <option value="50">50+</option>
+            <option value="20">20+</option>
+          </select>
+          <select name="web_band" defaultValue={webBand} className={fieldClass}>
+            <option value="">Web Score</option>
+            <option value="0-39">0–39 POOR</option>
+            <option value="40-59">40–59 WEAK</option>
+            <option value="60-79">60–79 GOOD</option>
+            <option value="80+">80+ STRONG</option>
+          </select>
+          <select name="booking" defaultValue={booking} className={fieldClass}>
+            <option value="">Booking</option>
+            <option value="yes">Ano</option>
+            <option value="no">Ne</option>
+          </select>
+          <select name="ig_active" defaultValue={igActive} className={fieldClass}>
+            <option value="">Instagram active</option>
+            <option value="yes">Ano</option>
+            <option value="no">Ne</option>
+          </select>
+          <select name="sort" defaultValue={sort} className={fieldClass}>
+            {SORT_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <button
+            type="submit"
+            className="inline-flex min-h-11 items-center justify-center rounded-full bg-ink px-5 text-sm font-medium text-foam transition hover:bg-copper"
+          >
+            Filtrovat
+          </button>
+        </form>
+      </details>
 
       {leads.length === 0 ? (
-        <p className="mt-6 border border-line bg-foam px-3 py-8 text-center text-ink-soft">
-          Žádné leady.
-        </p>
+        <div className="mt-6">
+          <AdminEmpty>Žádné leady.</AdminEmpty>
+        </div>
       ) : (
         <LeadsBulkTable leads={leads} />
       )}

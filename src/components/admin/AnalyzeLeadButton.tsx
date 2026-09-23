@@ -6,6 +6,7 @@ import type { GooglePlaceSnapshot } from "@/lib/google-places/client";
 import { planLeadAnalysis } from "@/lib/leads/analyze-plan";
 import type { Lead } from "@/lib/leads/types";
 import { WebAuditGauges } from "@/components/admin/WebAuditGauges";
+import { AdminButton, AdminCard } from "@/components/admin/ui";
 import type { MergedWebAuditScores } from "@/lib/web-audit/apply";
 
 type Props = {
@@ -127,10 +128,10 @@ export function AnalyzeLeadButton({ lead }: Props) {
   }
 
   return (
-    <div className="border border-line bg-mist p-4">
+    <AdminCard className="bg-mist">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-soft">
+          <p className="font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.12em] text-ink-muted uppercase">
             Analýza
           </p>
           <p className="mt-1 text-sm text-ink-soft">
@@ -152,14 +153,13 @@ export function AnalyzeLeadButton({ lead }: Props) {
               : ""}
           </p>
         </div>
-        <button
+        <AdminButton
           type="button"
           disabled={loading || !canRun}
           onClick={() => analyze()}
-          className="bg-ink px-5 py-2.5 text-sm text-foam hover:bg-ink-soft disabled:opacity-60"
         >
           {loading ? "Analyzuji…" : "Analyzovat"}
-        </button>
+        </AdminButton>
       </div>
 
       {!canRun ? (
@@ -188,7 +188,7 @@ export function AnalyzeLeadButton({ lead }: Props) {
               type="button"
               disabled={loading}
               onClick={() => analyze(candidate.placeId)}
-              className="flex w-full flex-col border border-line bg-foam px-3 py-2 text-left text-sm hover:border-ink"
+              className="flex w-full flex-col rounded-[14px] bg-foam px-3 py-2 text-left text-sm transition hover:bg-stone"
             >
               <span className="font-medium">
                 {candidate.name || candidate.placeId}
@@ -212,7 +212,7 @@ export function AnalyzeLeadButton({ lead }: Props) {
       ) : null}
 
       {webPreview ? (
-        <div className="mt-4 border border-line bg-foam p-4">
+        <AdminCard className="mt-4">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink-soft">
             Web audit · {webPreview.finalUrl}
             {webPreview.aiSource === "heuristic" ? " · heuristiky" : " · AI"}
@@ -224,11 +224,11 @@ export function AnalyzeLeadButton({ lead }: Props) {
             opportunityNote={webPreview.scores.opportunity_note}
             warnings={webPreview.warnings}
           />
-        </div>
+        </AdminCard>
       ) : null}
 
       {error ? <p className="mt-2 text-sm text-copper-deep">{error}</p> : null}
       {message ? <p className="mt-2 text-sm text-ink">{message}</p> : null}
-    </div>
+    </AdminCard>
   );
 }

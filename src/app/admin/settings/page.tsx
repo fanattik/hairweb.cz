@@ -1,5 +1,6 @@
 import { AdminShell } from "@/components/admin/AdminShell";
 import { DiscoverySettingsForm } from "@/components/admin/discovery/DiscoverySettingsForm";
+import { AdminPageHeader } from "@/components/admin/ui";
 import { requireAdmin } from "@/lib/admin/auth";
 import { getDiscoverySettings } from "@/lib/discovery/budget";
 
@@ -9,12 +10,11 @@ export default async function AdminSettingsPage() {
 
   return (
     <AdminShell email={user.email}>
-      <h1 className="font-[family-name:var(--font-fraunces)] text-3xl tracking-tight">
-        Nastavení
-      </h1>
-      <p className="mt-2 text-sm text-ink-soft">
-        Lead Discovery a limity Google Places API.
-      </p>
+      <AdminPageHeader
+        eyebrow="Admin"
+        title="Nastavení"
+        description="Lead Discovery a limity Google Places API."
+      />
       <div className="mt-8 max-w-2xl">
         <DiscoverySettingsForm
           settings={settings}

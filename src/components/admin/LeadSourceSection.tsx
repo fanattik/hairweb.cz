@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import { AdminCard } from "@/components/admin/ui";
 import {
   leadMarketingChannel,
   marketingChannelLabel,
@@ -8,14 +9,17 @@ import {
 import { formatPragueDateTime } from "@/lib/leads/followup";
 import type { Lead } from "@/lib/leads/types";
 
-function Row({ label, value }: { label: string; value: React.ReactNode }) {
+function Row({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="flex justify-between gap-4 border-b border-line/60 py-2 text-sm last:border-0">
+    <div className="flex justify-between gap-4 border-b border-ink/6 py-2 text-sm last:border-0">
       <dt className="text-ink-soft">{label}</dt>
       <dd className="text-right text-ink">{value ?? "—"}</dd>
     </div>
   );
 }
+
+const eyebrow =
+  "font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.12em] text-ink-muted uppercase";
 
 export function LeadSourceSection({ lead }: { lead: Lead }) {
   const [openTech, setOpenTech] = useState(false);
@@ -51,11 +55,9 @@ export function LeadSourceSection({ lead }: { lead: Lead }) {
       lead.last_touch_content !== lead.first_touch_content);
 
   return (
-    <section className="border border-line bg-foam p-5">
-      <h2 className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-ink-soft">
-        Zdroj leadu
-      </h2>
-      <dl>
+    <AdminCard>
+      <h2 className={eyebrow}>Zdroj leadu</h2>
+      <dl className="mt-2">
         <Row label="Zdroj" value={marketingChannelLabel(channel)} />
         <Row label="Kampaň" value={campaign} />
         <Row label="Reklama" value={content} />
@@ -99,7 +101,7 @@ export function LeadSourceSection({ lead }: { lead: Lead }) {
         {openTech ? "Skrýt technické údaje" : "Technické údaje"}
       </button>
       {openTech ? (
-        <dl className="mt-2 border border-line bg-mist p-3">
+        <dl className="mt-2 rounded-[14px] bg-mist p-3">
           <Row label="utm_source" value={lead.first_touch_source || lead.utm_source} />
           <Row label="utm_medium" value={lead.first_touch_medium || lead.utm_medium} />
           <Row
@@ -119,6 +121,6 @@ export function LeadSourceSection({ lead }: { lead: Lead }) {
           <Row label="type / source" value={`${lead.type} / ${lead.source || "—"}`} />
         </dl>
       ) : null}
-    </section>
+    </AdminCard>
   );
 }

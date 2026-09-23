@@ -65,7 +65,7 @@ body {
 }
 
 @media (max-width: 767px) {
-  body {
+  body:not(:has([data-admin])) {
     padding-bottom: 4.75rem;
   }
 }

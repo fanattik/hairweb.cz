@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AdminCard } from "@/components/admin/ui";
 import type { Lead } from "@/lib/leads/types";
 
 type AuditResultLite = {
@@ -32,13 +33,13 @@ export function OnlineAuditPanel({ lead }: { lead: Lead }) {
       : null;
 
   return (
-    <section className="border border-line bg-foam p-5">
+    <AdminCard>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft">
+          <p className="font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.12em] text-ink-muted uppercase">
             HAIRWEB Online Audit
           </p>
-          <p className="mt-2 font-[family-name:var(--font-geist-sans)] text-3xl font-semibold tracking-tight">
+          <p className="mt-2 text-3xl font-semibold tracking-tight">
             {lead.audit_score != null ? `${lead.audit_score} / 100` : "—"}
           </p>
           {potential ? (
@@ -55,8 +56,9 @@ export function OnlineAuditPanel({ lead }: { lead: Lead }) {
         {auditHref ? (
           <Link
             href={auditHref}
-            className="border border-line px-3 py-2 text-sm hover:border-ink"
             target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-11 items-center justify-center rounded-full border border-ink/15 px-5 text-[14px] font-medium tracking-tight transition hover:border-ink/35"
           >
             Otevřít výsledek
           </Link>
@@ -75,7 +77,7 @@ export function OnlineAuditPanel({ lead }: { lead: Lead }) {
           ["Zákazníci", lead.audit_customers_score],
           ["Marketing", lead.audit_marketing_score],
         ].map(([label, score]) => (
-          <div key={String(label)} className="rounded-lg bg-mist px-3 py-2">
+          <div key={String(label)} className="rounded-[14px] bg-mist px-3 py-2.5">
             <p className="text-[11px] text-ink-muted">{label}</p>
             <p className="text-sm font-medium tabular-nums">
               {score != null ? `${score}` : "—"}
@@ -86,7 +88,7 @@ export function OnlineAuditPanel({ lead }: { lead: Lead }) {
 
       {topProblems.length > 0 ? (
         <div className="mt-5">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft">
+          <p className="font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.12em] text-ink-muted uppercase">
             Největší problémy
           </p>
           <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-ink">
@@ -106,11 +108,11 @@ export function OnlineAuditPanel({ lead }: { lead: Lead }) {
       {lead.email ? (
         <a
           href={`mailto:${lead.email}?subject=${encodeURIComponent(`HAIRWEB — audit ${lead.salon_name || ""}`)}`}
-          className="mt-5 inline-flex border border-ink bg-ink px-4 py-2 text-sm text-foam hover:bg-copper"
+          className="mt-5 inline-flex min-h-11 items-center justify-center rounded-full bg-ink px-5 text-[14px] font-medium text-foam transition hover:bg-copper"
         >
           Kontaktovat lead
         </a>
       ) : null}
-    </section>
+    </AdminCard>
   );
 }

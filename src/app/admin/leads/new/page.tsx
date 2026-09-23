@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { OutboundLeadForm } from "@/components/admin/OutboundLeadForm";
+import { AdminPageHeader } from "@/components/admin/ui";
 import { requireAdmin } from "@/lib/admin/auth";
 
 export default async function NewOutboundLeadPage() {
@@ -11,12 +12,13 @@ export default async function NewOutboundLeadPage() {
       <Link href="/admin/leads" className="text-sm text-copper hover:underline">
         ← Zpět
       </Link>
-      <h1 className="mt-3 font-[family-name:var(--font-fraunces)] text-3xl tracking-tight">
-        Nový outbound lead
-      </h1>
-      <p className="mt-2 text-sm text-ink-soft">
-        Manuální prospect. Type = outbound, status = new.
-      </p>
+      <div className="mt-3">
+        <AdminPageHeader
+          eyebrow="CRM"
+          title="Nový outbound lead"
+          description="Manuální prospect. Type = outbound, status = new."
+        />
+      </div>
       <div className="mt-8">
         <OutboundLeadForm />
       </div>

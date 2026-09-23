@@ -2,11 +2,18 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import {
+  AdminButton,
+  AdminCard,
+  AdminInput,
+  AdminLabel,
+  AdminSelect,
+} from "@/components/admin/ui";
 import { DISCOVERY_BUSINESS_TYPES } from "@/lib/discovery/business-types";
 import type { DiscoverySchedule } from "@/lib/discovery/types";
 
-const field =
-  "border border-line bg-mist px-3 py-2 text-sm outline-none focus:border-copper w-full";
+const eyebrow =
+  "font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.12em] text-ink-muted uppercase";
 
 export function DiscoveryJobForm() {
   const router = useRouter();
@@ -61,109 +68,103 @@ export function DiscoveryJobForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="border border-line bg-foam p-5">
-      <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-soft">
-        Nové vyhledávání
-      </h2>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <label className="grid gap-1 text-sm sm:col-span-2">
-          <span className="font-medium">Název jobu</span>
-          <input
-            className={field}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Praha – Hair salons"
-          />
-        </label>
-        <label className="grid gap-1 text-sm">
-          <span className="font-medium">Město</span>
-          <input
-            className={field}
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            required
-            placeholder="Praha"
-          />
-        </label>
-        <label className="grid gap-1 text-sm">
-          <span className="font-medium">Kraj</span>
-          <input
-            className={field}
-            value={region}
-            onChange={(e) => setRegion(e.target.value)}
-            placeholder="Hlavní město Praha"
-          />
-        </label>
-        <label className="grid gap-1 text-sm">
-          <span className="font-medium">Radius (m)</span>
-          <input
-            type="number"
-            min={500}
-            max={50000}
-            className={field}
-            value={radius}
-            onChange={(e) => setRadius(Number(e.target.value))}
-          />
-        </label>
-        <label className="grid gap-1 text-sm">
-          <span className="font-medium">Max výsledků</span>
-          <input
-            type="number"
-            min={1}
-            max={60}
-            className={field}
-            value={maxResults}
-            onChange={(e) => setMaxResults(Number(e.target.value))}
-          />
-        </label>
-        <label className="grid gap-1 text-sm sm:col-span-2">
-          <span className="font-medium">Schedule</span>
-          <select
-            className={field}
-            value={schedule}
-            onChange={(e) =>
-              setSchedule(e.target.value as DiscoverySchedule)
-            }
-          >
-            <option value="manual">Manuálně</option>
-            <option value="daily">Denně</option>
-            <option value="weekly">Týdně</option>
-            <option value="monthly">Měsíčně</option>
-          </select>
-        </label>
-        <div className="sm:col-span-2">
-          <p className="mb-2 text-sm font-medium">Typ firmy</p>
-          <div className="flex flex-wrap gap-2">
-            {DISCOVERY_BUSINESS_TYPES.map((type) => {
-              const active = types.includes(type.id);
-              return (
-                <button
-                  key={type.id}
-                  type="button"
-                  onClick={() => toggleType(type.id)}
-                  className={`border px-3 py-1.5 text-xs ${
-                    active
-                      ? "border-ink bg-ink text-foam"
-                      : "border-line bg-mist text-ink"
-                  }`}
-                >
-                  {type.label}
-                </button>
-              );
-            })}
+    <form onSubmit={onSubmit}>
+      <AdminCard>
+        <h2 className={eyebrow}>Nové vyhledávání</h2>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <label className="grid gap-1.5 text-sm sm:col-span-2">
+            <AdminLabel>Název jobu</AdminLabel>
+            <AdminInput
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Praha – Hair salons"
+            />
+          </label>
+          <label className="grid gap-1.5 text-sm">
+            <AdminLabel>Město</AdminLabel>
+            <AdminInput
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              required
+              placeholder="Praha"
+            />
+          </label>
+          <label className="grid gap-1.5 text-sm">
+            <AdminLabel>Kraj</AdminLabel>
+            <AdminInput
+              value={region}
+              onChange={(e) => setRegion(e.target.value)}
+              placeholder="Hlavní město Praha"
+            />
+          </label>
+          <label className="grid gap-1.5 text-sm">
+            <AdminLabel>Radius (m)</AdminLabel>
+            <AdminInput
+              type="number"
+              min={500}
+              max={50000}
+              value={radius}
+              onChange={(e) => setRadius(Number(e.target.value))}
+            />
+          </label>
+          <label className="grid gap-1.5 text-sm">
+            <AdminLabel>Max výsledků</AdminLabel>
+            <AdminInput
+              type="number"
+              min={1}
+              max={60}
+              value={maxResults}
+              onChange={(e) => setMaxResults(Number(e.target.value))}
+            />
+          </label>
+          <label className="grid gap-1.5 text-sm sm:col-span-2">
+            <AdminLabel>Schedule</AdminLabel>
+            <AdminSelect
+              value={schedule}
+              onChange={(e) =>
+                setSchedule(e.target.value as DiscoverySchedule)
+              }
+            >
+              <option value="manual">Manuálně</option>
+              <option value="daily">Denně</option>
+              <option value="weekly">Týdně</option>
+              <option value="monthly">Měsíčně</option>
+            </AdminSelect>
+          </label>
+          <div className="sm:col-span-2">
+            <p className="mb-2 text-sm font-medium text-ink">Typ firmy</p>
+            <div className="flex flex-wrap gap-2">
+              {DISCOVERY_BUSINESS_TYPES.map((type) => {
+                const active = types.includes(type.id);
+                return (
+                  <button
+                    key={type.id}
+                    type="button"
+                    onClick={() => toggleType(type.id)}
+                    className={`rounded-full px-3.5 py-1.5 text-xs font-medium tracking-tight transition ${
+                      active
+                        ? "bg-ink text-foam"
+                        : "bg-mist text-ink-soft hover:bg-stone hover:text-ink"
+                    }`}
+                  >
+                    {type.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
-      </div>
-      {error ? (
-        <p className="mt-3 text-sm text-copper-deep">{error}</p>
-      ) : null}
-      <button
-        type="submit"
-        disabled={loading || types.length === 0}
-        className="mt-4 bg-ink px-4 py-2.5 text-sm text-foam hover:bg-ink-soft disabled:opacity-60"
-      >
-        {loading ? "Ukládám…" : "Vytvořit discovery job"}
-      </button>
+        {error ? (
+          <p className="mt-3 text-sm text-copper-deep">{error}</p>
+        ) : null}
+        <AdminButton
+          type="submit"
+          disabled={loading || types.length === 0}
+          className="mt-4"
+        >
+          {loading ? "Ukládám…" : "Vytvořit discovery job"}
+        </AdminButton>
+      </AdminCard>
     </form>
   );
 }

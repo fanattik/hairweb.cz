@@ -1,7 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
+import {
+  AdminCard,
+  AdminLinkButton,
+  AdminPageHeader,
+} from "@/components/admin/ui";
 import { requireAdmin } from "@/lib/admin/auth";
+
+const thClass =
+  "px-3 py-2 font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.12em] text-ink-muted uppercase";
 
 export default async function AdminLeadImportDetailPage({
   params,
@@ -34,14 +42,13 @@ export default async function AdminLeadImportDetailPage({
       >
         ← Historie importů
       </Link>
-      <h1 className="mt-3 font-[family-name:var(--font-fraunces)] text-3xl tracking-tight">
-        {session.source_name || session.file_name || "Import"}
-      </h1>
-      <p className="mt-1 text-sm text-ink-soft">
-        {new Date(session.created_at).toLocaleString("cs-CZ")} ·{" "}
-        {session.import_method} · {session.source_type || "—"} ·{" "}
-        {session.status}
-      </p>
+      <div className="mt-3">
+        <AdminPageHeader
+          eyebrow="Import"
+          title={session.source_name || session.file_name || "Import"}
+          description={`${new Date(session.created_at).toLocaleString("cs-CZ")} · ${session.import_method} · ${session.source_type || "—"} · ${session.status}`}
+        />
+      </div>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-5">
         {[
@@ -51,49 +58,46 @@ export default async function AdminLeadImportDetailPage({
           ["Přeskočeno", session.skipped_count],
           ["Chyb", session.invalid_count],
         ].map(([label, value]) => (
-          <div key={String(label)} className="border border-line bg-foam p-4">
-            <p className="text-[10px] uppercase tracking-[0.16em] text-ink-soft">
+          <AdminCard key={String(label)} padding="sm">
+            <p className="font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.12em] text-ink-muted uppercase">
               {label}
             </p>
-            <p className="mt-1 font-[family-name:var(--font-fraunces)] text-2xl">
+            <p className="mt-2 text-2xl font-semibold tracking-tight text-ink">
               {value as number}
             </p>
-          </div>
+          </AdminCard>
         ))}
       </div>
 
-      <div className="mt-4 flex gap-2">
-        <Link
-          href={`/admin/leads?import_id=${id}`}
-          className="bg-ink px-4 py-2 text-sm text-foam"
-        >
+      <div className="mt-4 flex flex-wrap gap-2">
+        <AdminLinkButton href={`/admin/leads?import_id=${id}`}>
           Zobrazit leady z importu
-        </Link>
-        <Link
+        </AdminLinkButton>
+        <AdminLinkButton
           href={`/admin/leads?import_id=${id}&grade=A`}
-          className="border border-line px-4 py-2 text-sm"
+          variant="secondary"
         >
           Jen grade A
-        </Link>
+        </AdminLinkButton>
       </div>
 
-      <div className="mt-8 overflow-x-auto border border-line bg-foam">
+      <AdminCard padding="none" className="mt-8 overflow-x-auto">
         <table className="min-w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-line text-xs uppercase tracking-wide text-ink-soft">
-              <th className="px-3 py-2">Řádek</th>
-              <th className="px-3 py-2">Status</th>
-              <th className="px-3 py-2">Akce</th>
-              <th className="px-3 py-2">Match</th>
-              <th className="px-3 py-2">Lead</th>
-              <th className="px-3 py-2">Chyba</th>
+            <tr className="border-b border-ink/10">
+              <th className={thClass}>Řádek</th>
+              <th className={thClass}>Status</th>
+              <th className={thClass}>Akce</th>
+              <th className={thClass}>Match</th>
+              <th className={thClass}>Lead</th>
+              <th className={thClass}>Chyba</th>
             </tr>
           </thead>
           <tbody>
             {(items || []).map((item) => (
-              <tr key={item.id} className="border-b border-line/50">
+              <tr key={item.id} className="border-b border-ink/6">
                 <td className="px-3 py-2">{item.row_number}</td>
-                <td className="px-3 py-2 uppercase tracking-wide text-xs">
+                <td className="px-3 py-2 text-xs uppercase tracking-wide">
                   {item.status}
                 </td>
                 <td className="px-3 py-2">{item.action || "—"}</td>
@@ -119,7 +123,7 @@ export default async function AdminLeadImportDetailPage({
             ))}
           </tbody>
         </table>
-      </div>
+      </AdminCard>
     </AdminShell>
   );
 }

@@ -28,9 +28,11 @@ export function PersistLeadsListUrl() {
 export function LeadsListLink({
   children,
   className,
+  onClick,
 }: {
   children: ReactNode;
   className?: string;
+  onClick?: () => void;
 }) {
   const [href, setHref] = useState(LEADS_LIST_DEFAULT_PATH);
 
@@ -39,7 +41,7 @@ export function LeadsListLink({
   }, []);
 
   return (
-    <Link href={href} className={className}>
+    <Link href={href} className={className} onClick={onClick}>
       {children}
     </Link>
   );
