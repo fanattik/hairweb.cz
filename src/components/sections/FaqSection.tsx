@@ -3,44 +3,28 @@ import faqSchema from "@/lib/faq-schema.json";
 
 const faqs = [
   {
-    q: "Kolik web stojí?",
-    a: "START od 9 900 Kč, PRO od 14 900 Kč — jednorázově. Finální cena závisí na rozsahu.",
+    q: "Co je HAIRWEB, když to není jen tvorba webů?",
+    a: "Jsme online partner pro salony. Nejdřív zjistíme současný stav, doporučíme jen to, co dává smysl, propojíme nástroje a dlouhodobě se o online prostředí staráme.",
   },
   {
-    q: "Jak dlouho vytvoření webu trvá?",
-    a: "U většiny projektů jednotky týdnů od schválení směru. Rychlost ovlivní podklady a zpětná vazba.",
-  },
-  {
-    q: "Co když už web mám?",
-    a: "To je běžné. Podívám se na současný stav a navrhnu, co dává smysl předělat.",
+    q: "Musím měnit web, který už mám?",
+    a: "Ne. Pokud web funguje, klidně ho ponecháme. Nový web navrhujeme jen tehdy, když současný salonu skutečně brzdí.",
   },
   {
     q: "Musím měnit rezervační systém?",
-    a: "Ne. Napojím nebo odkážu na systém, který už používáte — Reservio, Fresha, Bookio, Noona i jiné.",
+    a: "Ne. Pokud vám vyhovuje, připojíme ho. Pokud systém chybí nebo nefunguje, pomůžeme s vhodným řešením.",
   },
   {
-    q: "Budu si moct upravovat ceník?",
-    a: "Ano. Domluvíme jednoduchý způsob úprav služeb a cen bez čekání na vývojáře.",
+    q: "Co obsahuje online audit?",
+    a: "Podíváme se na web, rezervace, Google, recenze, sociální sítě a další oblasti — a zároveň na to, s čím jste spokojení a co chcete zachovat.",
   },
   {
-    q: "Musím mít profesionální fotografie?",
-    a: "Ideálně ano — vaše práce prodává nejsilněji. Pokud je zatím nemáte, domluvíme dočasné řešení.",
+    q: "Co je HAIRWEB Hub?",
+    a: "Centrální přehled online fungování salonu. Budujeme ho postupně jako součást dlouhodobé spolupráce.",
   },
   {
-    q: "Co potřebuji dodat?",
-    a: "Nejčastěji stačí web nebo Instagram, služby, otevírací doba, kontakt a fotografie.",
-  },
-  {
-    q: "Co znamená nezávazný návrh?",
-    a: "Podívám se na vaši prezentaci a navrhnu směr dalšího postupu. Bez závazku pokračovat.",
-  },
-  {
-    q: "Pomůžete mi s doménou?",
-    a: "Ano. Pomůžu s výběrem, nastavením i nasměrováním domény.",
-  },
-  {
-    q: "Je web připravený pro Google?",
-    a: "Ano. Dostanete solidní základ pro lokální SEO, rychlé načítání a přehlednou strukturu.",
+    q: "Budete se o salon starat i po nastavení?",
+    a: "Ano. Nastavením to nekončí. Podle potřeby pravidelně kontrolujeme, spravujeme a zlepšujeme jednotlivé části.",
   },
 ] as const;
 
@@ -48,44 +32,37 @@ export function FaqSection() {
   return (
     <section
       id="faq"
-      className="scroll-mt-24 border-t border-line bg-mist px-5 py-16 sm:px-8 sm:py-20 lg:py-24"
+      className="scroll-mt-24 px-[clamp(1.25rem,4vw,3rem)] pb-[clamp(5rem,10vw,8.75rem)]"
     >
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
-      <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[0.75fr_1.25fr] lg:gap-12">
-        <Reveal>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-copper">
-            FAQ
-          </p>
-          <h2 className="mt-4 font-[family-name:var(--font-fraunces)] text-3xl tracking-tight text-ink sm:text-4xl">
+      <div className="mx-auto grid max-w-[1360px] gap-[clamp(2rem,5vw,5rem)] lg:grid-cols-2">
+        <Reveal className="flex flex-col gap-6">
+          <p className="eyebrow">FAQ</p>
+          <h2 className="display-title text-[clamp(2.75rem,6vw,5.75rem)]">
             Časté otázky
           </h2>
-          <p className="mt-4 text-base leading-relaxed text-ink-soft">
-            Krátké odpovědi na to, co majitele salonů zajímá nejčastěji.
-          </p>
         </Reveal>
 
         <Reveal delay={1}>
-          <div>
+          <div className="border-t border-ink/14">
             {faqs.map((item) => (
               <details
                 key={item.q}
-                className="group border-b border-line"
+                className="group border-b border-ink/14"
               >
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-4 text-left text-ink transition hover:text-copper [&::-webkit-details-marker]:hidden">
-                  <h3 className="text-[15px] font-medium leading-snug sm:text-base">
-                    {item.q}
-                  </h3>
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-5 py-[26px] text-left text-xl font-medium tracking-tight text-ink transition hover:pl-3 hover:text-copper [&::-webkit-details-marker]:hidden">
+                  <span>{item.q}</span>
                   <span
-                    className="shrink-0 text-xl leading-none text-copper transition duration-200 group-open:rotate-45"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foam text-xl font-normal transition group-open:rotate-45"
                     aria-hidden
                   >
                     +
                   </span>
                 </summary>
-                <div className="pb-4 text-sm leading-relaxed text-ink-soft">
+                <div className="pb-6 pr-12 text-[15px] leading-relaxed text-ink-soft">
                   {item.a}
                 </div>
               </details>

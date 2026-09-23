@@ -119,7 +119,8 @@ export const leadSubmitSchema = z.object({
           referrer: z.string().max(1000).optional().nullable(),
           at: z.string().max(40).optional().nullable(),
         })
-        .optional(),
+        .optional()
+        .nullable(),
       last: z
         .object({
           utm_source: z.string().max(200).optional().nullable(),
@@ -132,7 +133,8 @@ export const leadSubmitSchema = z.object({
           referrer: z.string().max(1000).optional().nullable(),
           at: z.string().max(40).optional().nullable(),
         })
-        .optional(),
+        .optional()
+        .nullable(),
     })
     .optional(),
   companyWebsite: z.string().max(200).optional().nullable(),

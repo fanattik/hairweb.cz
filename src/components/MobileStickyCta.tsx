@@ -13,7 +13,7 @@ export function MobileStickyCta() {
     const onScroll = () => {
       const menuOpen = document.body.style.overflow === "hidden";
       const hero = document.getElementById("top");
-      const form = document.getElementById("poptavka");
+      const form = document.getElementById("audit");
       const heroBottom = hero?.getBoundingClientRect().bottom ?? 0;
       const formRect = form?.getBoundingClientRect();
       const formInView =
@@ -35,19 +35,19 @@ export function MobileStickyCta() {
 
   return (
     <div
-      className={`fixed inset-x-0 bottom-0 z-30 border-t border-line bg-foam p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] transition-transform duration-200 md:hidden ${
+      className={`fixed inset-x-0 bottom-0 z-30 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] transition-transform duration-200 md:hidden ${
         visible ? "translate-y-0" : "translate-y-full pointer-events-none"
       }`}
       aria-hidden={!visible}
     >
       <a
-        href="#poptavka"
+        href="/audit"
         tabIndex={visible ? 0 : -1}
-        className="flex min-h-12 w-full items-center justify-center bg-copper text-sm font-medium text-foam transition hover:bg-copper-deep"
+        className="flex min-h-12 w-full items-center justify-center rounded-full bg-copper text-sm font-medium text-white shadow-[var(--shadow-lift)] transition hover:brightness-110"
         data-track="mobile_cta_click"
         data-source="mobile_sticky"
       >
-        Chci nezávazný návrh
+        Zjistit, jak si vede můj salon →
       </a>
     </div>
   );

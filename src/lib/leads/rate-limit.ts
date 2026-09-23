@@ -11,7 +11,7 @@ type Bucket = {
 const buckets = new Map<string, Bucket>();
 
 const WINDOW_MS = 60_000;
-const MAX_REQUESTS = 8;
+const MAX_REQUESTS = 20;
 
 export function checkRateLimit(key: string): {
   ok: boolean;

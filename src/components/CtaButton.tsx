@@ -1,16 +1,18 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-type CtaVariant = "primary" | "secondary" | "dark" | "light";
+type CtaVariant = "primary" | "secondary" | "dark" | "light" | "accent";
 
 const variants: Record<CtaVariant, string> = {
   primary:
-    "bg-copper text-foam hover:bg-copper-deep active:bg-copper-deep focus-visible:outline-offset-2",
+    "bg-ink text-foam hover:bg-copper active:bg-copper-deep",
+  accent:
+    "bg-copper text-white hover:brightness-110 active:bg-copper-deep",
   secondary:
-    "border border-ink/20 bg-transparent text-ink hover:border-ink/45 hover:bg-ink/[0.03] active:bg-ink/[0.05]",
-  dark: "bg-ink text-foam hover:bg-ink-soft active:bg-ink-soft",
+    "border border-ink/18 bg-transparent text-ink hover:border-ink/40 hover:shadow-[var(--shadow-lift)]",
+  dark: "bg-ink text-foam hover:bg-copper",
   light:
-    "border border-foam/40 bg-transparent text-foam hover:border-foam hover:bg-foam/10",
+    "bg-foam text-ink hover:bg-white",
 };
 
 type CtaButtonProps = {
@@ -32,7 +34,10 @@ export function CtaButton({
   "data-source": dataSource,
   "data-track-payload": dataTrackPayload,
 }: CtaButtonProps) {
-  const classes = `inline-flex min-h-11 items-center justify-center px-6 py-3 text-sm font-medium tracking-wide transition duration-200 ${variants[variant]} ${className}`;
+  const hasDisplay = /\b(hidden|block|inline-block|inline-flex|flex)\b/.test(
+    className,
+  );
+  const classes = `${hasDisplay ? "" : "inline-flex "}min-h-12 items-center justify-center rounded-full px-7 py-3.5 text-[15px] font-medium tracking-tight transition duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:-translate-y-0.5 ${variants[variant]} ${className}`;
   const tracking = {
     "data-track": dataTrack,
     "data-source": dataSource,

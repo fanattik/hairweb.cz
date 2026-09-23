@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test src/lib/leads/scoring.test.ts src/lib/leads/web-flags.test.ts src/lib/leads/outreach-templates.test.ts src/lib/discovery/opportunity-scoring.test.ts src/lib/google-places/parse-url.test.ts src/lib/instagram/parse.test.ts src/lib/web-audit/web-audit.test.ts src/lib/leads/import/import.test.ts",
+    "test": "tsx --test src/lib/leads/scoring.test.ts src/lib/leads/web-flags.test.ts src/lib/leads/outreach-templates.test.ts src/lib/discovery/opportunity-scoring.test.ts src/lib/google-places/parse-url.test.ts src/lib/instagram/parse.test.ts src/lib/web-audit/web-audit.test.ts src/lib/leads/import/import.test.ts src/lib/audit/scoring.test.ts src/lib/audit/analyzers/consistency.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -15,6 +15,7 @@
     "@supabase/ssr": "^0.12.6",
     "@supabase/supabase-js": "^2.115.0",
     "ai": "^7.0.93",
+    "geist": "^1.7.2",
     "leaflet": "^1.9.4",
     "next": "16.3.4",
     "papaparse": "^5.7.0",

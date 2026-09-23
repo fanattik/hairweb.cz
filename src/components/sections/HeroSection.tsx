@@ -1,107 +1,91 @@
 import Image from "next/image";
-import { BrowserMockup, PhoneMockup } from "@/components/BrowserMockup";
+import { HubDashboardMockup } from "@/components/HubDashboardMockup";
 import { TrackedCta } from "@/components/TrackedCta";
 
-const trustItems = [
-  "Nezávazný návrh",
-  "Online rezervace",
-  "SEO",
-  "Web na míru",
+const benefits = [
+  "Nezávazně",
+  "Individuální doporučení",
+  "Žádné zbytečnosti",
 ] as const;
-
-const COLOR_STUDIO = {
-  url: "color.studio",
-  desktop: "/hero/color-studio-desktop.webp",
-  mobile: "/hero/color-studio-mobile.webp",
-} as const;
 
 export function HeroSection() {
   return (
     <section
       id="top"
-      className="relative overflow-x-clip border-b border-line bg-[linear-gradient(165deg,#f7f7f5_0%,#eceeea_55%,#e5e8e4_100%)]"
+      className="overflow-x-clip px-[clamp(1.25rem,4vw,3rem)] pb-[clamp(4rem,8vw,7.5rem)] pt-[clamp(3rem,8vw,6.875rem)]"
     >
-      <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_80%_10%,rgba(154,91,60,0.1),transparent_45%)]"
-        aria-hidden
-      />
-
-      <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-5 pb-24 pt-16 sm:gap-12 sm:px-8 sm:pb-28 sm:pt-20 lg:grid-cols-[0.92fr_1.08fr] lg:gap-6 lg:pb-32 lg:pt-24 xl:gap-4">
-        <div className="relative z-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-copper">
-            Weby pro kadeřnictví &amp; barbershopy
-          </p>
-          <h1 className="mt-4 max-w-xl font-[family-name:var(--font-fraunces)] text-[2.25rem] leading-[1.08] tracking-tight text-ink sm:text-5xl lg:text-[3.2rem]">
-            Web, který promění návštěvníky v rezervace.
-          </h1>
-          <p className="mt-5 max-w-lg text-base leading-relaxed text-ink-soft sm:text-lg">
-            Moderní webové stránky vytvořené speciálně pro kadeřnictví, hair
-            salony a barbershopy. Prezentujte svou práci profesionálně a
-            usnadněte klientům cestu k rezervaci.
-          </p>
-
-          <div className="mt-7 flex flex-wrap gap-3">
-            <TrackedCta
-              href="#poptavka"
-              event="hero_cta_click"
-              eventPayload={{ location: "hero_primary" }}
-              sourceDetail="hero"
-            >
-              Chci nezávazný návrh
-            </TrackedCta>
-            <TrackedCta
-              href="#ukazky"
-              variant="secondary"
-              event="portfolio_click"
-              eventPayload={{ location: "hero" }}
-            >
-              Prohlédnout ukázky
-            </TrackedCta>
-          </div>
-
-          <ul className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-sm text-ink-soft">
-            {trustItems.map((item) => (
-              <li key={item} className="flex items-center gap-2">
-                <span className="text-copper" aria-hidden>
-                  ✓
-                </span>
-                {item}
-              </li>
-            ))}
-          </ul>
+      <div className="mx-auto max-w-[1360px]">
+        <div className="animate-fade-rise mb-8 flex items-center gap-3 font-[family-name:var(--font-geist-mono)] text-xs uppercase tracking-[0.12em] text-ink-soft">
+          <span className="h-2 w-2 rounded-full bg-copper" aria-hidden />
+          Online partner pro salony
         </div>
 
-        <div className="relative mx-auto w-full max-w-[22rem] pb-14 sm:max-w-md lg:max-w-none lg:origin-left lg:scale-[1.12] lg:pb-10 xl:scale-[1.22] xl:translate-x-4">
-          <BrowserMockup
-            url={COLOR_STUDIO.url}
-            className="relative z-10"
-            aspectClass="aspect-[1024/728]"
-          >
-            {/* Static WebP + preload in layout — skips /_next/image on LCP */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={COLOR_STUDIO.desktop}
-              alt="Ukázkový koncept Color Studio — desktop"
-              width={1024}
-              height={728}
-              fetchPriority="high"
-              decoding="async"
-              className="absolute inset-0 h-full w-full object-cover object-top"
-            />
-          </BrowserMockup>
+        <h1 className="animate-fade-rise-delay-1 max-w-[18ch] text-[clamp(3.25rem,9.4vw,9.5rem)] font-semibold leading-[0.9] tracking-[-0.055em] text-ink">
+          Váš salon.
+          <br />
+          <span className="text-ink-faint">Online pod</span> kontrolou.
+        </h1>
 
-          <div className="absolute -bottom-2 right-2 z-20 w-[42%] max-w-[170px] sm:-bottom-4 sm:right-0 sm:w-[38%] lg:-bottom-6 lg:-right-2 xl:max-w-[190px]">
-            <PhoneMockup className="ring-1 ring-black/5">
+        <div className="mt-[clamp(3rem,6vw,5rem)] grid items-end gap-[clamp(2.5rem,5vw,5rem)] lg:grid-cols-2">
+          <div className="animate-fade-rise-delay-2 flex max-w-[520px] flex-col gap-8">
+            <p className="text-[clamp(1.125rem,1.5vw,1.3125rem)] leading-relaxed text-[#3d3b37] text-pretty">
+              Propojíme vše, co je důležité. Zjistíme, co vám funguje, doplníme,
+              co chybí, a dlouhodobě se staráme o váš online svět, aby k vám
+              přicházelo více zákazníků.
+            </p>
+
+            <div className="flex w-full flex-col gap-2.5 sm:w-auto sm:flex-row sm:flex-wrap">
+              <TrackedCta
+                href="/audit"
+                variant="accent"
+                className="w-full sm:w-auto"
+                event="hero_cta_click"
+                eventPayload={{ location: "hero_primary" }}
+                sourceDetail="hero"
+              >
+                Zjistit, jak si vede můj salon{" "}
+                <span className="cta-arrow" aria-hidden>
+                  →
+                </span>
+              </TrackedCta>
+              <TrackedCta
+                href="#jak-to-funguje"
+                variant="secondary"
+                className="w-full sm:w-auto"
+                event="portfolio_click"
+                eventPayload={{ location: "hero_process" }}
+              >
+                Jak HAIRWEB funguje
+              </TrackedCta>
+            </div>
+
+            <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-ink-soft">
+              {benefits.map((item) => (
+                <li key={item} className="flex items-center gap-2">
+                  <span className="text-copper" aria-hidden>
+                    ✓
+                  </span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="animate-mockup-enter relative pb-2 sm:pb-10">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-md">
               <Image
-                src={COLOR_STUDIO.mobile}
-                alt="Ukázkový koncept Color Studio — mobil"
+                src="/design/hero.jpg"
+                alt="Interiér moderního kadeřnického salonu"
                 fill
-                loading="lazy"
-                className="object-cover object-top"
-                sizes="140px"
-                quality={60}
+                priority
+                className="animate-soft-zoom object-cover object-[center_92%]"
+                sizes="(max-width: 1024px) 100vw, 640px"
+                quality={80}
               />
-            </PhoneMockup>
+            </div>
+            <div className="relative z-10 mx-auto -mt-10 w-[min(100%,22rem)] px-2 sm:absolute sm:bottom-0 sm:left-3 sm:mx-0 sm:mt-0 sm:w-[min(340px,90%)] sm:px-0 sm:animate-float lg:-left-8">
+              <HubDashboardMockup variant="hero" />
+            </div>
           </div>
         </div>
       </div>

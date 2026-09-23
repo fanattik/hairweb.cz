@@ -10,8 +10,16 @@ export const site = {
 } as const;
 
 export const navLinks = [
-  { href: "#ukazky", label: "Ukázky" },
-  { href: "#co-ziskate", label: "Co získáte" },
-  { href: "#jak-to-funguje", label: "Jak to funguje" },
-  { href: "#cenik", label: "Ceník" },
+  { href: "/#jak-to-funguje", label: "Jak to funguje" },
+  { href: "/#co-resime", label: "Služby" },
+  { href: "/#hub", label: "HAIRWEB Hub" },
+  { href: "/#ukazky", label: "Reference" },
+  { href: "/#o-hairweb", label: "O nás" },
 ] as const;
+
+/**
+ * Real social-proof entries only. Leave empty until genuine salon references exist.
+ * Shape: { name: string; href?: string }
+ */
+export const socialProofSalons: readonly { name: string; href?: string }[] =
+  [] as const;

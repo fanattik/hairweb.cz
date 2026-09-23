@@ -93,6 +93,8 @@ function explainPageSpeedError(message: string | undefined, status: number) {
   );
 }
 
+const PSI_TIMEOUT_MS = 55_000;
+
 async function requestPageSpeed(url: string, apiKey: string | null) {
   const endpoint = new URL(
     "https://www.googleapis.com/pagespeedonline/v5/runPagespeed",
@@ -105,16 +107,24 @@ async function requestPageSpeed(url: string, apiKey: string | null) {
   endpoint.searchParams.append("category", "best-practices");
   if (apiKey) endpoint.searchParams.set("key", apiKey);
 
-  const response = await fetch(endpoint, { cache: "no-store" });
-  const json = (await response.json()) as {
-    error?: { message?: string };
-    lighthouseResult?: {
-      categories?: Record<string, { score?: number | null }>;
-      audits?: Record<string, { numericValue?: number }>;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), PSI_TIMEOUT_MS);
+  try {
+    const response = await fetch(endpoint, {
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    const json = (await response.json()) as {
+      error?: { message?: string };
+      lighthouseResult?: {
+        categories?: Record<string, { score?: number | null }>;
+        audits?: Record<string, { numericValue?: number }>;
+      };
     };
-  };
-
-  return { response, json };
+    return { response, json };
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 /**
@@ -160,8 +170,15 @@ export async function fetchPageSpeedMobile(
       error: null,
     };
   } catch (error) {
+    const aborted =
+      error instanceof Error &&
+      (error.name === "AbortError" || /aborted/i.test(error.message));
     return emptyLighthouse(
-      error instanceof Error ? error.message : "PageSpeed fetch failed",
+      aborted
+        ? "PageSpeed Insights nestihlo doběhnout (timeout)."
+        : error instanceof Error
+          ? error.message
+          : "PageSpeed fetch failed",
     );
   }
 }

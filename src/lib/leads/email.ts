@@ -49,7 +49,7 @@ export async function sendAdminNotification(lead: Lead) {
   const { error } = await resend.emails.send({
     from,
     to,
-    subject: `Nový lead – Hairweb.cz – ${subjectName}`,
+    subject: `Nový audit – HAIRWEB – ${subjectName}`,
     text,
   });
 
@@ -77,26 +77,90 @@ export async function sendCustomerConfirmation(lead: Lead) {
   const text = [
     `Dobrý den ${lead.name},`,
     "",
-    "děkuji za zprávu.",
+    "děkuji za zájem o online audit salonu.",
     "",
-    "Podívám se na váš současný web nebo Instagram a ozvu se vám s návrhem dalšího postupu.",
+    "Podívám se na web, rezervace, Google, recenze a další oblasti — a ozvu se vám s tím, co funguje, kde jsou slabá místa a co má smysl řešit.",
     "",
-    "Pokud jste poslali jen Instagram, je to naprosto v pořádku — i podle něj si dokážu udělat představu o vašem salonu a stylu.",
+    "Pokud jste poslali jen Instagram, je to v pořádku. I podle něj si dokážu udělat představu o salonu.",
     "",
     "Lukáš",
-    "Hairweb.cz",
+    "HAIRWEB",
   ].join("\n");
 
   const { error } = await resend.emails.send({
     from,
     to: lead.email,
-    subject: "Díky za zprávu – Hairweb.cz",
+    subject: "Online audit — HAIRWEB",
     text,
   });
 
   if (error) {
     console.error("[email] Customer confirmation failed", error);
     throw new Error("Customer confirmation failed");
+  }
+
+  return { skipped: false as const };
+}
+
+/** Client from audit result wants to discuss findings. */
+export async function sendAuditDiscussNotification(input: {
+  auditId: string;
+  leadId: string | null;
+  salonName: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  message: string;
+  overallScore: number | null;
+}) {
+  const resend = getResend();
+  const to = process.env.HAIRWEB_NOTIFICATION_EMAIL;
+  const from = process.env.HAIRWEB_FROM_EMAIL;
+
+  if (!resend || !to || !from) {
+    console.warn(
+      "[email] Skipping audit discuss notification — Resend env not configured",
+    );
+    return { skipped: true as const };
+  }
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://hairweb.cz";
+  const auditUrl = `${siteUrl}/audit/${input.auditId}`;
+  const adminUrl = input.leadId
+    ? `${siteUrl}/admin/leads/${input.leadId}`
+    : null;
+
+  const text = [
+    "KLIENT CHCE PROBRAT AUDIT",
+    "",
+    "Tento klient z výsledku online auditu chce domluvit konzultaci / probrat výsledek.",
+    "",
+    `Salon: ${input.salonName}`,
+    `Jméno: ${input.name}`,
+    `E-mail: ${input.email}`,
+    `Telefon: ${input.phone || "—"}`,
+    `HAIRWEB SCORE: ${input.overallScore != null ? `${input.overallScore}/100` : "—"}`,
+    `Audit: ${auditUrl}`,
+    adminUrl ? `Lead v CRM: ${adminUrl}` : null,
+    "",
+    "Zpráva od klienta:",
+    input.message.trim() ||
+      "(bez doplňující zprávy — chce probrat výsledek auditu)",
+  ]
+    .filter((line) => line !== null)
+    .join("\n");
+
+  const { error } = await resend.emails.send({
+    from,
+    to,
+    replyTo: input.email,
+    subject: `Chce probrat audit – ${input.salonName}`,
+    text,
+  });
+
+  if (error) {
+    console.error("[email] Audit discuss notification failed", error);
+    throw new Error("Audit discuss notification failed");
   }
 
   return { skipped: false as const };

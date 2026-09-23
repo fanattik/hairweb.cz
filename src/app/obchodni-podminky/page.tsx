@@ -3,25 +3,31 @@ import { LegalPage } from "@/components/LegalPage";
 import { operator } from "@/lib/legal";
 
 export const metadata: Metadata = {
-  title: "Obchodní podmínky | Hairweb.cz",
+  title: "Obchodní podmínky | HAIRWEB",
   description:
-    "Obchodní podmínky služby Hairweb.cz — tvorba webových stránek pro kadeřnictví a barbershopy.",
+    "Obchodní podmínky služby HAIRWEB — online partner pro kadeřnictví a salony.",
+  alternates: {
+    canonical: "/obchodni-podminky",
+  },
 };
 
 export default function TermsPage() {
   return (
-    <LegalPage title="Obchodní podmínky">
+    <LegalPage
+      title="Obchodní podmínky"
+      updated="6. 9. 2026"
+      currentHref="/obchodni-podminky"
+    >
       <p>
         Tyto obchodní podmínky upravují poskytování služeb značky{" "}
-        <strong className="font-medium text-ink">Hairweb.cz</strong>.
+        <strong>HAIRWEB</strong> (Hairweb.cz).
       </p>
-      <p>Poslední aktualizace: 6. 9. 2026.</p>
 
       <h2>1. Poskytovatel</h2>
       <p>
         Poskytovatelem služeb je:
         <br />
-        <strong className="font-medium text-ink">{operator.name}</strong>
+        <strong>{operator.name}</strong>
         <br />
         IČO: {operator.ico}
         <br />
@@ -35,8 +41,9 @@ export default function TermsPage() {
         (dále jen „poskytovatel“)
       </p>
       <p>
-        Hairweb.cz je specializovaná služba zaměřená na tvorbu webových
-        stránek pro kadeřnictví, hair salony a barbershopy.
+        HAIRWEB je specializovaná služba zaměřená na online fungování
+        kadeřnictví, hair salonů a barbershopů — web, rezervace, Google,
+        recenze a související dlouhodobá správa.
       </p>
 
       <h2>2. Zákazník</h2>
@@ -61,7 +68,7 @@ export default function TermsPage() {
       </p>
 
       <h2>4. Poptávka a uzavření smlouvy</h2>
-      <ol className="list-decimal space-y-2 pl-5">
+      <ol>
         <li>
           Odesláním formuláře na webu zákazník zasílá nezávaznou poptávku.
           Samotné odeslání poptávky není uzavřením smlouvy.

@@ -30,6 +30,11 @@ function clearThanksCookie() {
   document.cookie = `${LEAD_THANKS_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`;
 }
 
+/** Drop middleware cookie after thank-you page has loaded (refresh → home). */
+export function clearLeadThanksCookie() {
+  clearThanksCookie();
+}
+
 export function markLeadFormSuccess(leadId: string) {
   if (!canUseSession()) return;
   const payload: LeadThanksFlag = { leadId, at: Date.now() };

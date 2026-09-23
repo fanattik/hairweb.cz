@@ -8,6 +8,7 @@ import { LeadFollowupPanel } from "@/components/admin/LeadFollowupPanel";
 import { OpportunityActions } from "@/components/admin/discovery/OpportunityActions";
 import { LeadCrmForm } from "@/components/admin/LeadCrmForm";
 import { LeadSourceSection } from "@/components/admin/LeadSourceSection";
+import { OnlineAuditPanel } from "@/components/admin/OnlineAuditPanel";
 import { LeadsListLink } from "@/components/admin/LeadsListUrlPersistence";
 
 import {
@@ -209,6 +210,10 @@ export default async function AdminLeadDetailPage({
             )}
           </div>
         </div>
+      </div>
+
+      <div className="mt-4">
+        <OnlineAuditPanel lead={lead} />
       </div>
 
       {lead.opportunity_score != null ? (

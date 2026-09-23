@@ -6,6 +6,11 @@ import {
   resolveMapsRedirect,
 } from "@/lib/google-places/parse-url";
 
+export type GoogleOpeningHours = {
+  weekdayDescriptions: string[];
+  openNow: boolean | null;
+};
+
 export type GooglePlaceSnapshot = {
   placeId: string;
   name: string | null;
@@ -19,6 +24,11 @@ export type GooglePlaceSnapshot = {
   website: string | null;
   latitude: number | null;
   longitude: number | null;
+  businessStatus: string | null;
+  primaryType: string | null;
+  primaryTypeDisplayName: string | null;
+  types: string[];
+  openingHours: GoogleOpeningHours | null;
 };
 
 type PlacesApiPlace = {
@@ -33,6 +43,18 @@ type PlacesApiPlace = {
   internationalPhoneNumber?: string;
   websiteUri?: string;
   location?: { latitude?: number; longitude?: number };
+  businessStatus?: string;
+  primaryType?: string;
+  primaryTypeDisplayName?: { text?: string };
+  types?: string[];
+  regularOpeningHours?: {
+    openNow?: boolean;
+    weekdayDescriptions?: string[];
+  };
+  currentOpeningHours?: {
+    openNow?: boolean;
+    weekdayDescriptions?: string[];
+  };
   addressComponents?: Array<{
     longText?: string;
     shortText?: string;
@@ -66,6 +88,12 @@ const DETAILS_FIELD_MASK = [
   "websiteUri",
   "location",
   "addressComponents",
+  "businessStatus",
+  "primaryType",
+  "primaryTypeDisplayName",
+  "types",
+  "regularOpeningHours",
+  "currentOpeningHours",
 ].join(",");
 
 function cityFromComponents(
@@ -101,6 +129,21 @@ function getApiKey() {
 
 function normalizePlaceId(raw: string) {
   return raw.replace(/^places\//, "");
+}
+
+function toOpeningHours(place: PlacesApiPlace): GoogleOpeningHours | null {
+  const source = place.regularOpeningHours || place.currentOpeningHours;
+  if (!source) return null;
+  const weekdayDescriptions = (source.weekdayDescriptions || [])
+    .map((line) => line.trim())
+    .filter(Boolean);
+  if (!weekdayDescriptions.length && typeof source.openNow !== "boolean") {
+    return null;
+  }
+  return {
+    weekdayDescriptions,
+    openNow: typeof source.openNow === "boolean" ? source.openNow : null,
+  };
 }
 
 function toSnapshot(place: PlacesApiPlace): GooglePlaceSnapshot | null {
@@ -143,6 +186,11 @@ function toSnapshot(place: PlacesApiPlace): GooglePlaceSnapshot | null {
       typeof place.location?.longitude === "number"
         ? place.location.longitude
         : null,
+    businessStatus: place.businessStatus?.trim() || null,
+    primaryType: place.primaryType?.trim() || null,
+    primaryTypeDisplayName: place.primaryTypeDisplayName?.text?.trim() || null,
+    types: Array.isArray(place.types) ? place.types.filter(Boolean) : [],
+    openingHours: toOpeningHours(place),
   };
 }
 
@@ -224,6 +272,7 @@ export type ResolvePlaceInput = {
 
 /**
  * Resolve the best Google Place snapshot from URL / place id / text query.
+ * Always prefers Place Details so opening hours / phone / website are complete.
  */
 export async function resolveGooglePlace(
   input: ResolvePlaceInput,
@@ -261,5 +310,13 @@ export async function resolveGooglePlace(
     throw new Error(`Nic nenalezeno pro „${query}“.`);
   }
 
-  return { place: candidates[0], candidates };
+  try {
+    const detailed = await fetchPlaceDetails(candidates[0].placeId);
+    return {
+      place: detailed,
+      candidates: [detailed, ...candidates.slice(1)],
+    };
+  } catch {
+    return { place: candidates[0], candidates };
+  }
 }

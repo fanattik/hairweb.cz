@@ -1,48 +1,31 @@
 import type { Metadata } from "next";
-import { Fraunces, Manrope } from "next/font/google";
+import type { CSSProperties } from "react";
+import { GeistMono } from "geist/font/mono";
+import { GeistSans } from "geist/font/sans";
 import { AnalyticsScripts } from "@/components/AnalyticsScripts";
 import { ClientBootstrap } from "@/components/ClientBootstrap";
 import { site } from "@/lib/site";
 import "./globals.css";
 
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin", "latin-ext"],
-  weight: ["400"],
-  display: "swap",
-  adjustFontFallback: true,
-  preload: true,
-});
-
-const manrope = Manrope({
-  variable: "--font-manrope",
-  subsets: ["latin", "latin-ext"],
-  weight: ["400", "600"],
-  display: "swap",
-  adjustFontFallback: true,
-  // Body font can swap — don't compete with LCP image preload.
-  preload: false,
-});
-
 export const metadata: Metadata = {
-  title: "Webové stránky pro kadeřnictví a barbershopy | Hairweb.cz",
+  title: "Online partner pro kadeřnictví a salony | HAIRWEB",
   description:
-    "Moderní weby pro kadeřnictví, hair salony a barbershopy. Online rezervace, galerie, ceník a lokální SEO. Získejte nezávazný návrh nového webu.",
+    "HAIRWEB dává online svět salonu do pořádku. Zjistíme, co funguje, doplníme, co chybí, vše propojíme a dlouhodobě se o to staráme. Začněte online auditem.",
   metadataBase: new URL(site.url),
   openGraph: {
-    title: "Webové stránky pro kadeřnictví a barbershopy | Hairweb.cz",
+    title: "Online partner pro kadeřnictví a salony | HAIRWEB",
     description:
-      "Moderní weby pro kadeřnictví, hair salony a barbershopy. Online rezervace, galerie, ceník a lokální SEO.",
+      "Web, rezervace, Google, recenze a sociální sítě na jednom místě. Co funguje, necháme. Co chybí, doplníme. Dlouhodobě se staráme.",
     locale: "cs_CZ",
     type: "website",
     url: site.url,
-    siteName: "Hairweb.cz",
+    siteName: "HAIRWEB",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Webové stránky pro kadeřnictví a barbershopy | Hairweb.cz",
+    title: "Online partner pro kadeřnictví a salony | HAIRWEB",
     description:
-      "Moderní weby pro kadeřnictví, hair salony a barbershopy. Získejte nezávazný návrh.",
+      "Zjistíme, co vašemu salonu online skutečně chybí. Propojíme a dlouhodobě se staráme.",
   },
   robots: {
     index: true,
@@ -53,35 +36,21 @@ export const metadata: Metadata = {
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "ProfessionalService",
-  name: "Hairweb.cz",
+  name: "HAIRWEB",
   url: site.url,
   email: site.email,
   description:
-    "Specializovaná tvorba webových stránek pro kadeřnictví, hair salony a barbershopy.",
+    "Online partner pro kadeřnictví, salony a barbershopy. Audit, propojení a dlouhodobá správa online prostředí salonu.",
   areaServed: {
     "@type": "Country",
     name: "Czech Republic",
   },
   serviceType: [
-    "Webové stránky pro kadeřnictví",
-    "Web pro barbershop",
-    "Web pro hair salon",
-  ],
-  offers: [
-    {
-      "@type": "Offer",
-      name: "START",
-      price: "9900",
-      priceCurrency: "CZK",
-      description: "Jednostránkový web pro menší salon nebo hairstylistu.",
-    },
-    {
-      "@type": "Offer",
-      name: "PRO",
-      price: "14900",
-      priceCurrency: "CZK",
-      description: "Vícestránkový web pro salony, které chtějí získávat klienty.",
-    },
+    "Online partner pro kadeřnictví",
+    "Online audit salonu",
+    "Správa Google Business Profile",
+    "Webové stránky pro salony",
+    "Propojení rezervačních systémů",
   ],
 };
 
@@ -89,14 +58,21 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="cs"
-      className={`${fraunces.variable} ${manrope.variable} h-full antialiased`}
+      className={`${GeistSans.variable} ${GeistMono.variable} h-full antialiased`}
+      style={
+        {
+          "--font-manrope": "var(--font-geist-sans)",
+          "--font-fraunces": "var(--font-geist-sans)",
+          "--font-mono": "var(--font-geist-mono)",
+        } as CSSProperties
+      }
     >
       <head>
         <link
           rel="preload"
           as="image"
-          href="/hero/color-studio-desktop.webp"
-          type="image/webp"
+          href="/design/hero.jpg"
+          type="image/jpeg"
           fetchPriority="high"
         />
         {/* Meta Pixel Code */}

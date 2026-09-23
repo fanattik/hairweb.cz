@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { CtaButton } from "@/components/CtaButton";
-import { HairwebLogo } from "@/components/HairwebLogo";
 import { navLinks } from "@/lib/site";
 
 export function Header() {
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
@@ -15,67 +15,76 @@ export function Header() {
     };
   }, [open]);
 
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-foam">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3.5 sm:px-8">
+    <header className="sticky top-0 z-40 px-4 pt-3.5 sm:px-6 sm:pt-4 lg:px-8">
+      <div
+        className={`mx-auto flex max-w-[1400px] items-center justify-between gap-4 rounded-full border border-ink/[0.07] bg-foam/85 px-4 py-2.5 pl-6 backdrop-blur-[14px] transition-shadow duration-300 sm:px-3 sm:pl-7 ${
+          scrolled ? "shadow-[0_20px_50px_-28px_rgba(17,17,16,0.35)]" : ""
+        }`}
+      >
         <a
-          href="#top"
-          className="inline-flex items-center"
+          href="/"
+          className="inline-flex shrink-0 items-center text-xl tracking-[0.02em] text-ink"
           aria-label="HAIRWEB, domů"
         >
-          <HairwebLogo height={22} priority />
+          <span className="font-light">HAIR</span>
+          <span className="font-extrabold">WEB</span>
         </a>
 
         <nav
-          className="hidden items-center gap-7 text-sm text-ink-soft lg:flex"
+          className="hidden items-center gap-7 text-sm font-medium text-ink xl:flex"
           aria-label="Hlavní"
         >
           {navLinks.map((link) => (
             <a
               key={link.href}
               href={link.href}
-              className="transition hover:text-ink"
+              className="transition hover:text-copper"
             >
               {link.label}
             </a>
           ))}
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-2">
           <CtaButton
-            href="#poptavka"
+            href="/audit"
             variant="primary"
-            className="hidden min-h-10 px-4 py-2.5 sm:inline-flex"
+            className="hidden min-h-11 px-5 py-3 text-sm xl:inline-flex"
             data-track="hero_cta_click"
             data-source="header"
             data-track-payload='{"location":"header"}'
           >
-            Chci nový web
+            Zjistit, jak si vede můj salon
           </CtaButton>
 
           <button
             type="button"
-            className="inline-flex min-h-11 min-w-11 items-center justify-center border border-line lg:hidden"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-ink text-foam xl:hidden"
             aria-expanded={open}
             aria-controls="mobile-nav"
             aria-label={open ? "Zavřít menu" : "Otevřít menu"}
             onClick={() => setOpen((value) => !value)}
           >
-            <span className="sr-only">Menu</span>
-            <span className="relative block h-3.5 w-5" aria-hidden>
+            <span
+              className="relative flex h-[14px] w-[18px] items-center justify-center"
+              aria-hidden
+            >
               <span
-                className={`absolute left-0 h-px w-full bg-ink transition ${
-                  open ? "top-1.5 rotate-45" : "top-0"
+                className={`absolute left-0 h-[1.5px] w-full bg-foam transition ${
+                  open ? "translate-y-0 rotate-45" : "-translate-y-[3.5px]"
                 }`}
               />
               <span
-                className={`absolute left-0 top-1.5 h-px w-full bg-ink transition ${
-                  open ? "opacity-0" : "opacity-100"
-                }`}
-              />
-              <span
-                className={`absolute left-0 h-px w-full bg-ink transition ${
-                  open ? "top-1.5 -rotate-45" : "top-3"
+                className={`absolute left-0 h-[1.5px] w-full bg-foam transition ${
+                  open ? "translate-y-0 -rotate-45" : "translate-y-[3.5px]"
                 }`}
               />
             </span>
@@ -83,44 +92,45 @@ export function Header() {
         </div>
       </div>
 
-      <div
-        id="mobile-nav"
-        className={`border-t border-line bg-foam lg:hidden ${
-          open ? "block" : "hidden"
-        }`}
-      >
-        <nav
-          className="mx-auto flex max-w-6xl flex-col gap-1 px-5 py-4 sm:px-8"
-          aria-label="Mobilní"
-          onClick={(event) => {
-            if (
-              event.target instanceof Element &&
-              event.target.closest("a")
-            ) {
-              setOpen(false);
-            }
-          }}
+      {open ? (
+        <div
+          id="mobile-nav"
+          className="mx-auto mt-2 max-w-[1400px] rounded-[28px] border border-ink/[0.07] bg-foam p-6 shadow-[0_30px_60px_-30px_rgba(17,17,16,0.3)] xl:hidden"
         >
-          {navLinks.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="py-3 text-base text-ink"
-            >
-              {link.label}
-            </a>
-          ))}
-          <CtaButton
-            href="#poptavka"
-            className="mt-3 w-full"
-            data-track="hero_cta_click"
-            data-source="header"
-            data-track-payload='{"location":"mobile_nav"}'
+          <nav
+            className="flex flex-col gap-1"
+            aria-label="Mobilní"
+            onClick={(event) => {
+              if (
+                event.target instanceof Element &&
+                event.target.closest("a")
+              ) {
+                setOpen(false);
+              }
+            }}
           >
-            Chci nový web
-          </CtaButton>
-        </nav>
-      </div>
+            {navLinks.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                className="py-2 text-[28px] font-semibold tracking-[-0.04em] text-ink"
+              >
+                {link.label}
+              </a>
+            ))}
+            <CtaButton
+              href="/audit"
+              variant="accent"
+              className="mt-4 w-full"
+              data-track="hero_cta_click"
+              data-source="header"
+              data-track-payload='{"location":"mobile_nav"}'
+            >
+              Zjistit, jak si vede můj salon →
+            </CtaButton>
+          </nav>
+        </div>
+      ) : null}
     </header>
   );
 }

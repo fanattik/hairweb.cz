@@ -15,7 +15,60 @@ export type PageSignals = {
   hasReviews: boolean | null;
   looksOutdated: boolean | null;
   fetchError: string | null;
+  phones: string[];
+  emails: string[];
+  hasOpeningHours: boolean | null;
+  openingHoursSnippet: string | null;
+  hasAddressMention: boolean | null;
+  hasServicesMention: boolean | null;
+  instagramLinks: string[];
+  facebookLinks: string[];
+  /** JSON-LD @type values found on the page. */
+  jsonLdTypes: string[];
+  hasLocalBusinessSchema: boolean;
+  hasFaqSchema: boolean;
+  hasOpenGraph: boolean;
+  /** Outbound links to Czech directories, keyed by platform id. */
+  directoryLinks: Record<string, string[]>;
 };
+
+function emptySignals(
+  url: string,
+  finalUrl: string,
+  fetchError: string | null,
+): PageSignals {
+  return {
+    url,
+    finalUrl,
+    title: null,
+    metaDescription: null,
+    h1: [],
+    textSample: "",
+    linkCount: 0,
+    imageCount: 0,
+    hasViewportMeta: false,
+    clearBookingCta: null,
+    hasPrices: null,
+    hasGallery: null,
+    hasTeam: null,
+    hasReviews: null,
+    looksOutdated: null,
+    fetchError,
+    phones: [],
+    emails: [],
+    hasOpeningHours: null,
+    openingHoursSnippet: null,
+    hasAddressMention: null,
+    hasServicesMention: null,
+    instagramLinks: [],
+    facebookLinks: [],
+    jsonLdTypes: [],
+    hasLocalBusinessSchema: false,
+    hasFaqSchema: false,
+    hasOpenGraph: false,
+    directoryLinks: {},
+  };
+}
 
 function decodeEntities(value: string) {
   return value
@@ -43,6 +96,166 @@ function matchAny(text: string, patterns: RegExp[]) {
   return patterns.some((pattern) => pattern.test(text));
 }
 
+function extractPhones(html: string, text: string): string[] {
+  const found = new Set<string>();
+  for (const match of html.matchAll(/href=["']tel:([^"']+)["']/gi)) {
+    const value = decodeEntities(match[1] || "").trim();
+    if (value) found.add(value);
+  }
+  for (const match of text.matchAll(
+    /(?:\+420\s*)?(?:\d{3}[\s-]?\d{3}[\s-]?\d{3}|\d{9})/g,
+  )) {
+    const value = match[0].trim();
+    if (value.replace(/\D/g, "").length >= 9) found.add(value);
+  }
+  return [...found].slice(0, 5);
+}
+
+function extractEmails(html: string, text: string): string[] {
+  const found = new Set<string>();
+  for (const match of html.matchAll(/href=["']mailto:([^"'?]+)/gi)) {
+    const value = decodeEntities(match[1] || "").trim().toLowerCase();
+    if (value.includes("@")) found.add(value);
+  }
+  for (const match of text.matchAll(
+    /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi,
+  )) {
+    found.add(match[0].toLowerCase());
+  }
+  return [...found].slice(0, 5);
+}
+
+function extractSocialLinks(html: string) {
+  const instagram = new Set<string>();
+  const facebook = new Set<string>();
+  for (const match of html.matchAll(
+    /href=["'](https?:\/\/(?:www\.)?instagram\.com\/[^"'#?]+)/gi,
+  )) {
+    instagram.add(match[1]);
+  }
+  for (const match of html.matchAll(
+    /href=["'](https?:\/\/(?:www\.)?facebook\.com\/[^"'#?]+)/gi,
+  )) {
+    facebook.add(match[1]);
+  }
+  return {
+    instagramLinks: [...instagram].slice(0, 3),
+    facebookLinks: [...facebook].slice(0, 3),
+  };
+}
+
+function extractDirectoryLinks(html: string): Record<string, string[]> {
+  const buckets: Record<string, Set<string>> = {
+    firmy_cz: new Set(),
+    mapy_cz: new Set(),
+    kdomestriha: new Set(),
+    zlate_stranky: new Set(),
+  };
+  for (const match of html.matchAll(/href=["'](https?:\/\/[^"']+)["']/gi)) {
+    const href = match[1];
+    try {
+      const host = new URL(href).hostname.toLowerCase();
+      if (host.includes("firmy.cz")) buckets.firmy_cz.add(href);
+      else if (host.includes("mapy.cz") || host.includes("mapy.com"))
+        buckets.mapy_cz.add(href);
+      else if (host.includes("kdomestriha.cz")) buckets.kdomestriha.add(href);
+      else if (host.includes("zlatestranky.cz"))
+        buckets.zlate_stranky.add(href);
+    } catch {
+      /* ignore bad URLs */
+    }
+  }
+  const out: Record<string, string[]> = {};
+  for (const [key, set] of Object.entries(buckets)) {
+    if (set.size) out[key] = [...set].slice(0, 3);
+  }
+  return out;
+}
+
+function extractJsonLd(html: string): {
+  types: string[];
+  hasLocalBusiness: boolean;
+  hasFaq: boolean;
+} {
+  const types = new Set<string>();
+  let hasLocalBusiness = false;
+  let hasFaq = false;
+  for (const match of html.matchAll(
+    /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
+  )) {
+    const raw = (match[1] || "").trim();
+    if (!raw) continue;
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      const stack = Array.isArray(parsed) ? [...parsed] : [parsed];
+      while (stack.length) {
+        const node = stack.pop() as Record<string, unknown> | undefined;
+        if (!node || typeof node !== "object") continue;
+        const t = node["@type"];
+        const typeList = Array.isArray(t) ? t : t ? [t] : [];
+        for (const item of typeList) {
+          if (typeof item !== "string") continue;
+          types.add(item);
+          if (
+            /LocalBusiness|HairSalon|BeautySalon|HealthAndBeautyBusiness|Organization|Store/i.test(
+              item,
+            )
+          ) {
+            hasLocalBusiness = true;
+          }
+          if (/FAQPage/i.test(item)) hasFaq = true;
+        }
+        if (node["@graph"] && Array.isArray(node["@graph"])) {
+          stack.push(...(node["@graph"] as unknown[]));
+        }
+      }
+    } catch {
+      // Some sites embed invalid JSON-LD — still detect by string
+      if (/LocalBusiness|HairSalon|BeautySalon/i.test(raw)) {
+        hasLocalBusiness = true;
+      }
+      if (/FAQPage/i.test(raw)) hasFaq = true;
+    }
+  }
+  return { types: [...types].slice(0, 12), hasLocalBusiness, hasFaq };
+}
+
+export async function probeLlmsTxt(pageUrl: string): Promise<boolean | null> {
+  try {
+    const origin = new URL(pageUrl).origin;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5_000);
+    const response = await fetch(`${origin}/llms.txt`, {
+      method: "GET",
+      redirect: "follow",
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "HairwebWebAudit/1.0 (+https://www.hairweb.cz)",
+        Accept: "text/plain,*/*",
+      },
+    });
+    clearTimeout(timeout);
+    if (!response.ok) return false;
+    const text = await response.text();
+    return text.trim().length >= 40;
+  } catch {
+    return null;
+  }
+}
+
+function extractOpeningHoursSnippet(text: string): string | null {
+  const patterns = [
+    /otev[ií]rac[ií]\s+dob[ay][:\s]([^.!?]{8,120})/i,
+    /(?:po|út|st|čt|pá|so|ne|ponděl[ií]|úter[yý]|středa|čtvrtek|pátek|sobota|neděle)[^.!?]{0,40}\d{1,2}[:.]\d{2}/i,
+  ];
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) return (match[0] || "").trim().slice(0, 160);
+  }
+  return null;
+}
+
+
 export async function fetchPageSignals(url: string): Promise<PageSignals> {
   try {
     const controller = new AbortController();
@@ -58,8 +271,18 @@ export async function fetchPageSignals(url: string): Promise<PageSignals> {
     clearTimeout(timeout);
 
     const html = await response.text();
+    if (!response.ok) {
+      return emptySignals(url, response.url || url, `HTTP ${response.status}`);
+    }
+    if (html.trim().length < 80) {
+      return emptySignals(
+        url,
+        response.url || url,
+        "Server vrátil prázdnou odpověď",
+      );
+    }
     const lower = html.toLowerCase();
-    const text = stripTags(html).slice(0, 6000);
+    const text = stripTags(html).slice(0, 8000);
 
     const title =
       html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.trim() || null;
@@ -130,6 +353,40 @@ export async function fetchPageSignals(url: string): Promise<PageSignals> {
       ]) ||
       (!hasViewportMeta && imageCount < 2);
 
+    const phones = extractPhones(html, text);
+    const emails = extractEmails(html, text);
+    const social = extractSocialLinks(html);
+    const openingHoursSnippet = extractOpeningHoursSnippet(text);
+    const hasOpeningHours =
+      Boolean(openingHoursSnippet) ||
+      matchAny(text, [
+        /\botev[ií]rac[ií]\s+dob/i,
+        /\botevřeno\b/i,
+        /\bopening\s+hours\b/i,
+        /po[–-]pá|po[–-]ne|ponděl[ií].{0,20}pátek/i,
+      ]);
+    const hasAddressMention = matchAny(text, [
+      /\bulice\b/i,
+      /\bps[čc]\b/i,
+      /\b\d{3}\s?\d{2}\b/,
+      /\bpraha\b|\rbrno\b|\bostrava\b|\bplze[nň]\b/i,
+    ]);
+    const hasServicesMention =
+      hasPrices ||
+      matchAny(text, [
+        /\bslu[zž]b/i,
+        /\bstřih\b/i,
+        /\bbarven/i,
+        /\bbalayage\b/i,
+        /\bkadeř/i,
+      ]);
+
+    const jsonLd = extractJsonLd(html);
+    const hasOpenGraph =
+      /property=["']og:(title|description|image)["']/i.test(html) ||
+      /name=["']twitter:card["']/i.test(html);
+    const directoryLinks = extractDirectoryLinks(html);
+
     return {
       url,
       finalUrl: response.url || url,
@@ -148,27 +405,26 @@ export async function fetchPageSignals(url: string): Promise<PageSignals> {
       hasTeam,
       hasReviews,
       looksOutdated,
-      fetchError: response.ok ? null : `HTTP ${response.status}`,
+      fetchError: null,
+      phones,
+      emails,
+      hasOpeningHours,
+      openingHoursSnippet,
+      hasAddressMention,
+      hasServicesMention,
+      instagramLinks: social.instagramLinks,
+      facebookLinks: social.facebookLinks,
+      jsonLdTypes: jsonLd.types,
+      hasLocalBusinessSchema: jsonLd.hasLocalBusiness,
+      hasFaqSchema: jsonLd.hasFaq,
+      hasOpenGraph,
+      directoryLinks,
     };
   } catch (error) {
-    return {
+    return emptySignals(
       url,
-      finalUrl: url,
-      title: null,
-      metaDescription: null,
-      h1: [],
-      textSample: "",
-      linkCount: 0,
-      imageCount: 0,
-      hasViewportMeta: false,
-      clearBookingCta: null,
-      hasPrices: null,
-      hasGallery: null,
-      hasTeam: null,
-      hasReviews: null,
-      looksOutdated: null,
-      fetchError:
-        error instanceof Error ? error.message : "Fetch stránky selhal",
-    };
+      url,
+      error instanceof Error ? error.message : "Fetch stránky selhal",
+    );
   }
 }

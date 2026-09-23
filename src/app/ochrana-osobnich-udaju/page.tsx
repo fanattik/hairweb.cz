@@ -3,25 +3,31 @@ import { LegalPage } from "@/components/LegalPage";
 import { operator } from "@/lib/legal";
 
 export const metadata: Metadata = {
-  title: "Ochrana osobních údajů | Hairweb.cz",
+  title: "Ochrana osobních údajů | HAIRWEB",
   description:
-    "Informace o zpracování osobních údajů na webu Hairweb.cz (GDPR).",
+    "Informace o zpracování osobních údajů na webu HAIRWEB (GDPR).",
+  alternates: {
+    canonical: "/ochrana-osobnich-udaju",
+  },
 };
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title="Ochrana osobních údajů">
+    <LegalPage
+      title="Ochrana osobních údajů"
+      updated="6. 9. 2026"
+      currentHref="/ochrana-osobnich-udaju"
+    >
       <p>
         Tento dokument informuje o zpracování osobních údajů v souvislosti s
-        webem a službou <strong className="font-medium text-ink">Hairweb.cz</strong>.
+        webem a službou <strong>HAIRWEB</strong> (Hairweb.cz).
       </p>
-      <p>Poslední aktualizace: 6. 9. 2026.</p>
 
       <h2>1. Správce osobních údajů</h2>
       <p>
         Správcem je:
         <br />
-        <strong className="font-medium text-ink">{operator.name}</strong>
+        <strong>{operator.name}</strong>
         <br />
         IČO: {operator.ico}
         <br />
@@ -51,22 +57,22 @@ export default function PrivacyPage() {
       <h2>3. Účel a právní základ</h2>
       <ul>
         <li>
-          <strong className="font-medium text-ink">Vyřízení poptávky a komunikace</strong> —
-          plnění opatření před uzavřením smlouvy / oprávněný zájem (čl. 6
-          odst. 1 písm. b) a f) GDPR).
+          <strong>Vyřízení poptávky a komunikace</strong> — plnění opatření
+          před uzavřením smlouvy / oprávněný zájem (čl. 6 odst. 1 písm. b) a
+          f) GDPR).
         </li>
         <li>
-          <strong className="font-medium text-ink">Plnění smlouvy</strong> —
-          pokud dojde k objednávce služeb (čl. 6 odst. 1 písm. b) GDPR).
+          <strong>Plnění smlouvy</strong> — pokud dojde k objednávce služeb
+          (čl. 6 odst. 1 písm. b) GDPR).
         </li>
         <li>
-          <strong className="font-medium text-ink">Evidence a účetnictví</strong> —
-          právní povinnost (čl. 6 odst. 1 písm. c) GDPR), pokud vznikne.
+          <strong>Evidence a účetnictví</strong> — právní povinnost (čl. 6
+          odst. 1 písm. c) GDPR), pokud vznikne.
         </li>
         <li>
-          <strong className="font-medium text-ink">Analytika webu</strong> —
-          souhlas nebo oprávněný zájem dle konkrétního nastavení cookies
-          (viz <a href="/cookies">Cookies</a>).
+          <strong>Analytika webu</strong> — souhlas nebo oprávněný zájem dle
+          konkrétního nastavení cookies (viz{" "}
+          <a href="/cookies">Cookies</a>).
         </li>
       </ul>
       <p>

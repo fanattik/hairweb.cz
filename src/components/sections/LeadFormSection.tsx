@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -17,11 +18,10 @@ import {
 import { site } from "@/lib/site";
 
 type FieldErrors = Partial<
-  Record<"name" | "email" | "website" | "consent" | "form", string>
+  Record<"name" | "email" | "website" | "salonName" | "consent" | "form", string>
 >;
 
 function isRealLeadId(id: unknown): id is string {
-  // Any CRM id except honeypot placeholder — UUIDs may vary by generator.
   return typeof id === "string" && id.length >= 8 && id !== "ignored";
 }
 
@@ -38,8 +38,8 @@ function LeadFormFields() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [website, setWebsite] = useState("");
-  const [message, setMessage] = useState("");
-  const [pkg, setPkg] = useState(() =>
+  const [instagram, setInstagram] = useState("");
+  const [pkg] = useState(() =>
     initialPlan === "start" || initialPlan === "pro" ? initialPlan : "",
   );
   const [honeypot, setHoneypot] = useState("");
@@ -53,7 +53,16 @@ function LeadFormFields() {
     formStartedAt.current = Date.now();
     if (initialPlan === "start") setSourceDetail("pricing_start");
     else if (initialPlan === "pro") setSourceDetail("pricing_pro");
-  }, [initialPlan]);
+    else if (searchParams.get("audit")) setSourceDetail("online_audit");
+    else setSourceDetail("audit");
+
+    const prefillName = searchParams.get("name");
+    const prefillEmail = searchParams.get("email");
+    const prefillSalon = searchParams.get("salon");
+    if (prefillName) setName(prefillName);
+    if (prefillEmail) setEmail(prefillEmail);
+    if (prefillSalon) setSalonName(prefillSalon);
+  }, [initialPlan, searchParams]);
 
   function markStarted() {
     if (started.current) return;
@@ -61,14 +70,27 @@ function LeadFormFields() {
     trackEvent("lead_form_start");
   }
 
+  function resolveWebsite(): string {
+    const web = website.trim();
+    if (web.length >= 2) return web;
+    const ig = instagram.trim();
+    if (ig.length >= 2) {
+      return ig.startsWith("@") ? ig : `@${ig.replace(/^@/, "")}`;
+    }
+    return "";
+  }
+
   function validateClient(): boolean {
     const next: FieldErrors = {};
+    if (salonName.trim().length < 2) {
+      next.salonName = "Vyplňte název salonu.";
+    }
     if (name.trim().length < 2) next.name = "Vyplňte jméno (min. 2 znaky).";
     if (!email.trim()) next.email = "Vyplňte e-mail.";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       next.email = "Zadejte platný e-mail.";
     }
-    if (website.trim().length < 2) {
+    if (resolveWebsite().length < 2) {
       next.website = "Přidejte web nebo Instagram.";
     }
     if (!consent) next.consent = "Pro odeslání je potřeba souhlas.";
@@ -85,52 +107,67 @@ function LeadFormFields() {
     setStatus("loading");
     setErrors({});
 
-    const sourceDetail = (getSourceDetail() || undefined) as
-      | SourceDetail
-      | undefined;
+    const sourceDetail = (getSourceDetail() || "audit") as SourceDetail;
     const attribution = getStoredAttribution();
+    const resolvedWebsite = resolveWebsite();
+    const messageNote =
+      instagram.trim() && website.trim()
+        ? `Instagram: ${instagram.trim()}`
+        : undefined;
+
+    const buildBody = (trap: string) => ({
+      name,
+      salonName,
+      email,
+      phone,
+      website: resolvedWebsite,
+      message: messageNote,
+      package: pkg || undefined,
+      sourceDetail,
+      utm: attribution.utm,
+      referrer: attribution.referrer,
+      landingPage: attribution.landingPage,
+      fbclid: attribution.fbclid,
+      attribution: {
+        firstTouchAt: attribution.firstTouchAt,
+        lastTouchAt: attribution.lastTouchAt,
+        first: attribution.first,
+        last: attribution.last,
+      },
+      companyWebsite: trap,
+      formStartedAt: formStartedAt.current,
+    });
 
     try {
-      const response = await fetch("/api/leads", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          salonName,
-          email,
-          phone,
-          website,
-          message,
-          package: pkg || undefined,
-          sourceDetail,
-          utm: attribution.utm,
-          referrer: attribution.referrer,
-          landingPage: attribution.landingPage,
-          fbclid: attribution.fbclid,
-          attribution: {
-            firstTouchAt: attribution.firstTouchAt,
-            lastTouchAt: attribution.lastTouchAt,
-            first: attribution.first,
-            last: attribution.last,
-          },
-          companyWebsite: honeypot,
-          formStartedAt: formStartedAt.current,
-        }),
-      });
-
-      const data = (await response.json()) as {
-        error?: string;
-        fieldErrors?: Record<string, string>;
-        ok?: boolean;
-        id?: string;
-        package?: string | null;
-        sourceDetail?: string | null;
-        utm?: {
-          utm_source?: string | null;
-          utm_medium?: string | null;
-          utm_campaign?: string | null;
+      const post = async (trap: string) => {
+        const response = await fetch("/api/leads", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(buildBody(trap)),
+        });
+        const data = (await response.json()) as {
+          error?: string;
+          fieldErrors?: Record<string, string>;
+          ok?: boolean;
+          id?: string;
+          package?: string | null;
+          sourceDetail?: string | null;
+          utm?: {
+            utm_source?: string | null;
+            utm_medium?: string | null;
+            utm_campaign?: string | null;
+          };
         };
+        return { response, data };
       };
+
+      let { response, data } = await post(honeypot);
+
+      // Autofill sometimes fills the honeypot — retry once without it.
+      if (response.ok && data.id === "ignored" && honeypot) {
+        setHoneypot("");
+        ({ response, data } = await post(""));
+      }
 
       if (!response.ok) {
         if (data.fieldErrors) {
@@ -148,7 +185,6 @@ function LeadFormFields() {
         return;
       }
 
-      // Honeypot soft-success — do not thank / redirect / Meta convert.
       if (!data.ok || !isRealLeadId(data.id)) {
         submitLock.current = false;
         setStatus("error");
@@ -171,8 +207,6 @@ function LeadFormFields() {
         utm_campaign: data.utm?.utm_campaign,
       });
 
-      // Attribution already persisted with the lead above — then hard navigate
-      // so Meta Pixel PageView runs on /poptavka-odeslana (Custom Conversion).
       markLeadFormSuccess(data.id);
       window.location.assign(LEAD_THANKS_PATH);
     } catch {
@@ -185,7 +219,7 @@ function LeadFormFields() {
   }
 
   const fieldClass =
-    "border border-line bg-mist px-3 py-2.5 text-ink outline-none transition focus:border-copper disabled:opacity-60";
+    "w-full border-0 border-b border-ink/18 bg-transparent px-0 py-2 text-[17px] text-ink outline-none transition placeholder:text-ink-faint focus:border-copper disabled:opacity-60";
   const errorClass = "border-copper-deep";
   const disabled = status === "loading";
 
@@ -193,43 +227,75 @@ function LeadFormFields() {
     <form
       onSubmit={handleSubmit}
       onFocusCapture={markStarted}
-      className="border border-line bg-foam p-6 sm:p-8"
+      className="relative flex flex-col gap-6 rounded-[26px] bg-foam p-6 sm:gap-7 sm:p-8 lg:p-12"
       noValidate
     >
-      {pkg ? (
-        <p className="mb-5 text-sm text-ink-soft">
-          Vybraný balíček:{" "}
-          <span className="font-medium text-ink">
-            {pkg === "pro" ? "PRO" : "START"}
-          </span>
-          <button
-            type="button"
-            className="ml-2 underline decoration-copper/40 underline-offset-2 hover:decoration-copper"
-            onClick={() => setPkg("")}
-          >
-            změnit
-          </button>
-        </p>
-      ) : null}
-
-      {/* Honeypot — hidden from users */}
-      <div className="absolute -left-[9999px] top-auto h-px w-px overflow-hidden" aria-hidden>
+      <div
+        className="pointer-events-none absolute -left-[9999px] h-0 w-0 overflow-hidden opacity-0"
+        aria-hidden
+      >
         <label>
-          Company website
+          Fax number
           <input
             type="text"
-            name="companyWebsite"
+            name="fax_number_hp"
             tabIndex={-1}
             autoComplete="off"
+            data-1p-ignore
+            data-lpignore="true"
+            data-form-type="other"
             value={honeypot}
             onChange={(e) => setHoneypot(e.target.value)}
           />
         </label>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
-        <label className="grid gap-2 text-sm">
-          <span className="font-medium text-ink">Jméno</span>
+      <div className="grid gap-6 sm:grid-cols-2">
+        <label className="grid gap-1.5 text-sm sm:col-span-2">
+          <span className="font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.12em] text-ink-soft">
+            Název salonu
+          </span>
+          <input
+            required
+            name="salonName"
+            value={salonName}
+            onChange={(e) => setSalonName(e.target.value)}
+            className={`${fieldClass} ${errors.salonName ? errorClass : ""}`}
+            autoComplete="organization"
+            aria-invalid={Boolean(errors.salonName)}
+            disabled={disabled}
+          />
+          {errors.salonName ? (
+            <span className="text-xs text-copper-deep">{errors.salonName}</span>
+          ) : null}
+        </label>
+
+        <label className="grid gap-1.5 text-sm sm:col-span-2">
+          <span className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-ink-soft">
+            Web
+          </span>
+          <input
+            name="website"
+            value={website}
+            onChange={(e) => setWebsite(e.target.value)}
+            placeholder="www.vas-salon.cz"
+            className={`${fieldClass} ${errors.website ? errorClass : ""}`}
+            aria-invalid={Boolean(errors.website)}
+            disabled={disabled}
+          />
+          {errors.website ? (
+            <span className="text-xs text-copper-deep">{errors.website}</span>
+          ) : (
+            <span className="text-xs text-ink-soft">
+              Pokud web nemáte, stačí Instagram.
+            </span>
+          )}
+        </label>
+
+        <label className="grid gap-1.5 text-sm">
+          <span className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-ink-soft">
+            Jméno
+          </span>
           <input
             required
             name="name"
@@ -245,23 +311,10 @@ function LeadFormFields() {
           ) : null}
         </label>
 
-        <label className="grid gap-2 text-sm">
-          <span className="font-medium text-ink">
-            Název salonu{" "}
-            <span className="font-normal text-ink-soft">(nepovinné)</span>
+        <label className="grid gap-1.5 text-sm">
+          <span className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-ink-soft">
+            E-mail
           </span>
-          <input
-            name="salonName"
-            value={salonName}
-            onChange={(e) => setSalonName(e.target.value)}
-            className={fieldClass}
-            autoComplete="organization"
-            disabled={disabled}
-          />
-        </label>
-
-        <label className="grid gap-2 text-sm">
-          <span className="font-medium text-ink">E-mail</span>
           <input
             required
             type="email"
@@ -278,9 +331,9 @@ function LeadFormFields() {
           ) : null}
         </label>
 
-        <label className="grid gap-2 text-sm">
-          <span className="font-medium text-ink">
-            Telefon <span className="font-normal text-ink-soft">(nepovinné)</span>
+        <label className="grid gap-1.5 text-sm">
+          <span className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-ink-soft">
+            Telefon <span className="font-normal normal-case tracking-normal">(volitelné)</span>
           </span>
           <input
             type="tel"
@@ -293,58 +346,22 @@ function LeadFormFields() {
           />
         </label>
 
-        <label className="grid gap-2 text-sm sm:col-span-2">
-          <span className="font-medium text-ink">Web nebo Instagram</span>
+        <label className="grid gap-1.5 text-sm">
+          <span className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-ink-soft">
+            Instagram <span className="font-normal normal-case tracking-normal">(volitelné)</span>
+          </span>
           <input
-            required
-            name="website"
-            value={website}
-            onChange={(e) => setWebsite(e.target.value)}
-            placeholder="odkaz nebo @handle"
-            className={`${fieldClass} ${errors.website ? errorClass : ""}`}
-            aria-invalid={Boolean(errors.website)}
-            disabled={disabled}
-          />
-          {errors.website ? (
-            <span className="text-xs text-copper-deep">{errors.website}</span>
-          ) : null}
-        </label>
-
-        <label className="grid gap-2 text-sm sm:col-span-2">
-          <span className="font-medium text-ink">
-            Varianta{" "}
-            <span className="font-normal text-ink-soft">(nepovinné)</span>
-          </span>
-          <select
-            name="package"
-            value={pkg}
-            onChange={(e) => setPkg(e.target.value)}
+            name="instagram"
+            value={instagram}
+            onChange={(e) => setInstagram(e.target.value)}
+            placeholder="@vas_salon"
             className={fieldClass}
-            disabled={disabled}
-          >
-            <option value="">Ještě nevím</option>
-            <option value="start">START</option>
-            <option value="pro">PRO</option>
-          </select>
-        </label>
-
-        <label className="grid gap-2 text-sm sm:col-span-2">
-          <span className="font-medium text-ink">
-            Co byste chtěli změnit?{" "}
-            <span className="font-normal text-ink-soft">(nepovinné)</span>
-          </span>
-          <textarea
-            name="message"
-            rows={3}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            className={`resize-y ${fieldClass}`}
             disabled={disabled}
           />
         </label>
       </div>
 
-      <label className="mt-5 flex items-start gap-3 text-sm text-ink-soft">
+      <label className="mt-6 flex items-start gap-3 text-sm text-ink-soft">
         <input
           required
           type="checkbox"
@@ -355,8 +372,7 @@ function LeadFormFields() {
           aria-invalid={Boolean(errors.consent)}
         />
         <span>
-          Odesláním formuláře souhlasíte se zpracováním údajů za účelem
-          vyřízení vaší poptávky.{" "}
+          Souhlasím se zpracováním údajů za účelem online auditu.{" "}
           <Link
             href="/ochrana-osobnich-udaju"
             className="underline decoration-copper/40 underline-offset-2 hover:decoration-copper"
@@ -372,9 +388,18 @@ function LeadFormFields() {
       <button
         type="submit"
         disabled={disabled}
-        className="mt-7 inline-flex min-h-12 w-full items-center justify-center bg-copper px-6 py-3.5 text-sm font-medium tracking-wide text-foam transition hover:bg-copper-deep disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+        className="mt-2 inline-flex min-h-[60px] w-full items-center justify-center rounded-full bg-copper px-7 py-5 text-base font-medium tracking-tight text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {status === "loading" ? "Odesílám…" : "Chci nezávazný návrh"}
+        {status === "loading" ? (
+          "Odesílám…"
+        ) : (
+          <>
+            Prověřit můj salon{" "}
+            <span className="cta-arrow ml-1.5" aria-hidden>
+              →
+            </span>
+          </>
+        )}
       </button>
 
       {errors.form ? (
@@ -392,35 +417,52 @@ function LeadFormFields() {
 export function LeadFormSection() {
   return (
     <section
-      id="poptavka"
-      className="scroll-mt-24 border-t border-line bg-[linear-gradient(165deg,#f4f5f3_0%,#e8ebe8_100%)] px-5 py-16 sm:px-8 sm:py-20 lg:py-24"
+      id="audit"
+      className="scroll-mt-24 px-[clamp(1.25rem,4vw,3rem)] pb-[clamp(5rem,10vw,8.75rem)]"
     >
-      <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1fr_1.05fr] lg:gap-14">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-copper">
-            Poptávka
-          </p>
-          <h2 className="mt-4 font-[family-name:var(--font-fraunces)] text-3xl tracking-tight text-ink sm:text-4xl">
-            Nezávazný návrh webu
+      <div id="poptavka" className="sr-only" aria-hidden tabIndex={-1} />
+
+      <div className="mx-auto grid max-w-[1360px] gap-[clamp(1.5rem,4vw,3.5rem)] rounded-[36px] bg-sand p-[clamp(1.25rem,3vw,2.5rem)] lg:grid-cols-2">
+        <div className="flex flex-col gap-7 p-[clamp(0.5rem,2vw,1.5rem)]">
+          <div className="relative aspect-[16/11] overflow-hidden rounded-[22px]">
+            <Image
+              src="/design/barber.jpg"
+              alt="Barber při práci"
+              fill
+              className="object-cover object-[center_30%]"
+              sizes="(max-width: 1024px) 100vw, 560px"
+              quality={75}
+            />
+          </div>
+          <p className="eyebrow">Začněte tím nejdůležitějším</p>
+          <h2 className="display-title text-[clamp(2.5rem,5vw,4.5rem)]">
+            Jak si vede váš salon online?
           </h2>
-          <p className="mt-5 max-w-md text-base leading-relaxed text-ink-soft">
-            Pošlete mi odkaz na váš současný web nebo Instagram. Ozvu se vám s
-            návrhem dalšího postupu.
+          <p className="max-w-[520px] text-lg leading-relaxed text-[#3d3b37]">
+            Podíváme se na web, rezervace, Google, recenze, sociální sítě a
+            další důležité oblasti. Zjistíme, co funguje, kde jsou slabá místa a
+            co má skutečně smysl řešit.
           </p>
-          <a
-            href={`mailto:${site.email}`}
-            className="mt-7 inline-block font-[family-name:var(--font-fraunces)] text-xl text-ink underline decoration-copper/40 underline-offset-4 transition hover:decoration-copper"
-          >
-            {site.email}
-          </a>
+          <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-ink-soft">
+            {["Nezávazně", "Individuální doporučení", "Žádné zbytečnosti"].map(
+              (item) => (
+                <li key={item} className="flex gap-2">
+                  <span className="text-copper" aria-hidden>
+                    ✓
+                  </span>
+                  {item}
+                </li>
+              ),
+            )}
+          </ul>
         </div>
 
         <Suspense
           fallback={
-            <div className="min-h-[26rem] border border-line bg-foam p-6 sm:p-8" />
+            <div className="min-h-[26rem] rounded-[26px] bg-foam p-6 sm:p-8" />
           }
         >
-          <div className="relative">
+          <div className="self-start overflow-hidden rounded-[26px] bg-foam shadow-[var(--shadow-soft)]">
             <LeadFormFields />
           </div>
         </Suspense>

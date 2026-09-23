@@ -15,7 +15,13 @@ export type SourceDetail =
   | "reservation"
   | "final_cta"
   | "mobile_sticky"
-  | "header";
+  | "header"
+  | "audit"
+  | "managed"
+  | "philosophy"
+  | "one_change"
+  | "service_page"
+  | "online_audit";
 
 const STORAGE_KEY = "hairweb_attribution_v2";
 const SOURCE_KEY = "hairweb_source_detail";

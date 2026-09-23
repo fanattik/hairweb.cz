@@ -25,6 +25,12 @@ export const LEAD_SOURCE_DETAILS = [
   "final_cta",
   "mobile_sticky",
   "header",
+  "audit",
+  "managed",
+  "philosophy",
+  "one_change",
+  "service_page",
+  "online_audit",
 ] as const;
 export type LeadSourceDetail = (typeof LEAD_SOURCE_DETAILS)[number];
 
@@ -256,6 +262,21 @@ export type Lead = {
   recommended_channel: string | null;
   suggested_service: string | null;
   opportunity_reasons: Array<{ label: string; points: number }> | null;
+
+  /** HAIRWEB Online Audit (self-serve) */
+  online_audit_id?: string | null;
+  audit_score?: number | null;
+  audit_completed_at?: string | null;
+  audit_web_score?: number | null;
+  audit_google_score?: number | null;
+  audit_directories_score?: number | null;
+  audit_ai_score?: number | null;
+  audit_reviews_score?: number | null;
+  audit_social_score?: number | null;
+  audit_booking_score?: number | null;
+  audit_customers_score?: number | null;
+  audit_marketing_score?: number | null;
+  audit_result?: Record<string, unknown> | null;
 };
 
 export const STATUS_LABELS: Record<LeadStatus, string> = {

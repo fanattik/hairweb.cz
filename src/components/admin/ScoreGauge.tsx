@@ -79,7 +79,7 @@ export function ScoreGauge({
           />
         </svg>
         <div
-          className={`absolute inset-0 flex items-center justify-center font-[family-name:var(--font-fraunces)] ${dims.font} ${tone.text}`}
+          className={`absolute inset-0 flex items-center justify-center font-semibold tabular-nums ${dims.font} ${tone.text}`}
         >
           {display}
         </div>

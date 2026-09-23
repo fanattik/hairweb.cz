@@ -64,6 +64,14 @@ describe("google enrich merge", () => {
     region: "Hlavní město Praha",
     latitude: null,
     longitude: null,
+    businessStatus: "OPERATIONAL",
+    primaryType: "hair_salon",
+    primaryTypeDisplayName: "Kadeřnictví",
+    types: ["hair_salon"],
+    openingHours: {
+      weekdayDescriptions: ["pondělí: 09:00–18:00"],
+      openNow: true,
+    },
   };
 
   it("always updates rating fields and fills blanks", () => {

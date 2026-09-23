@@ -3,25 +3,30 @@ import { LegalPage } from "@/components/LegalPage";
 import { operator } from "@/lib/legal";
 
 export const metadata: Metadata = {
-  title: "Cookies | Hairweb.cz",
+  title: "Cookies | HAIRWEB",
   description:
-    "Informace o používání cookies a podobných technologií na webu Hairweb.cz.",
+    "Informace o používání cookies a podobných technologií na webu HAIRWEB.",
+  alternates: {
+    canonical: "/cookies",
+  },
 };
 
 export default function CookiesPage() {
   return (
-    <LegalPage title="Zásady používání cookies">
+    <LegalPage
+      title="Zásady používání cookies"
+      updated="6. 9. 2026"
+      currentHref="/cookies"
+    >
       <p>
-        Tyto zásady popisují, jak web{" "}
-        <strong className="font-medium text-ink">Hairweb.cz</strong> používá
-        cookies a podobné technologie.
+        Tyto zásady popisují, jak web <strong>HAIRWEB</strong> (Hairweb.cz)
+        používá cookies a podobné technologie.
       </p>
       <p>
-        Provozovatel webu: <strong className="font-medium text-ink">{operator.name}</strong>,
-        IČO: {operator.ico}, sídlo: {operator.address}, e-mail:{" "}
+        Provozovatel webu: <strong>{operator.name}</strong>, IČO:{" "}
+        {operator.ico}, sídlo: {operator.address}, e-mail:{" "}
         <a href={`mailto:${operator.email}`}>{operator.email}</a>.
       </p>
-      <p>Poslední aktualizace: 6. 9. 2026.</p>
 
       <h2>1. Co jsou cookies</h2>
       <p>
@@ -49,12 +54,12 @@ export default function CookiesPage() {
       <h3>2.2 Preferenční / funkční údaje v prohlížeči</h3>
       <p>
         Pro správné fungování poptávkového formuláře ukládáme v{" "}
-        <code className="text-ink">localStorage</code> first-touch a last-touch
-        marketingové parametry (UTM, případně <code className="text-ink">fbclid</code>
-        ), referrer a vstupní stránku — typicky po dobu 90 dní. First-touch se
-        při dalších návštěvách nepřepisuje. Tyto údaje slouží výhradně k
-        vyhodnocení, odkud poptávka přišla, a nejsou marketingovými cookies
-        třetích stran (Meta Pixel / Google Analytics se řeší samostatně).
+        <code>localStorage</code> first-touch a last-touch marketingové
+        parametry (UTM, případně <code>fbclid</code>), referrer a vstupní
+        stránku — typicky po dobu 90 dní. First-touch se při dalších návštěvách
+        nepřepisuje. Tyto údaje slouží výhradně k vyhodnocení, odkud poptávka
+        přišla, a nejsou marketingovými cookies třetích stran (Meta Pixel /
+        Google Analytics se řeší samostatně).
       </p>
 
       <h3>2.3 Analytické cookies (volitelné)</h3>
@@ -84,13 +89,12 @@ export default function CookiesPage() {
       <h2>3. Právní základ</h2>
       <ul>
         <li>
-          <strong className="font-medium text-ink">Nezbytné cookies</strong> —
-          oprávněný zájem na provozu webu (čl. 6 odst. 1 písm. f) GDPR).
+          <strong>Nezbytné cookies</strong> — oprávněný zájem na provozu webu
+          (čl. 6 odst. 1 písm. f) GDPR).
         </li>
         <li>
-          <strong className="font-medium text-ink">Analytické cookies</strong> —
-          souhlas (čl. 6 odst. 1 písm. a) GDPR), pokud je vyžadován a
-          udělen.
+          <strong>Analytické cookies</strong> — souhlas (čl. 6 odst. 1 písm.
+          a) GDPR), pokud je vyžadován a udělen.
         </li>
       </ul>
 

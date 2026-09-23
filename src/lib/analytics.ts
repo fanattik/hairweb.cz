@@ -10,7 +10,14 @@ export type AnalyticsEvent =
   | "mobile_cta_click"
   | "lead_form_start"
   | "generate_lead"
-  | "reservation_section_view";
+  | "reservation_section_view"
+  | "audit_started"
+  | "audit_business_selected"
+  | "audit_step_completed"
+  | "audit_contact_reached"
+  | "audit_completed"
+  | "audit_result_viewed"
+  | "audit_cta_clicked";
 
 type AnalyticsPayload = Record<string, string | number | boolean | undefined | null>;
 
