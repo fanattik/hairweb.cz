@@ -246,13 +246,65 @@ export async function probeLlmsTxt(pageUrl: string): Promise<boolean | null> {
 function extractOpeningHoursSnippet(text: string): string | null {
   const patterns = [
     /otev[ií]rac[ií]\s+dob[ay][:\s]([^.!?]{8,120})/i,
+    /opening\s+hours[:\s]([^.!?]{8,120})/i,
     /(?:po|út|st|čt|pá|so|ne|ponděl[ií]|úter[yý]|středa|čtvrtek|pátek|sobota|neděle)[^.!?]{0,40}\d{1,2}[:.]\d{2}/i,
+    /(?:mon(?:day)?|tue(?:sday)?|wed(?:nesday)?|thu(?:rsday)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?)[^.!?]{0,40}\d{1,2}[:.]\d{2}/i,
+    /(?:mon(?:day)?|tue(?:sday)?|wed(?:nesday)?|thu(?:rsday)?|fri(?:day)?)\s*[-–—to]+\s*(?:fri(?:day)?|sun(?:day)?|sat(?:urday)?)[^.!?]{0,40}\d{1,2}[:.]\d{2}/i,
+    /(?:po|út|st|čt|pá)\s*[-–—]\s*(?:pá|ne|so)[^.!?]{0,40}\d{1,2}[:.]\d{2}/i,
   ];
   for (const pattern of patterns) {
     const match = text.match(pattern);
     if (match) return (match[0] || "").trim().slice(0, 160);
   }
   return null;
+}
+
+function hasJsonLdOpeningHours(html: string): boolean {
+  for (const match of html.matchAll(
+    /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
+  )) {
+    const raw = (match[1] || "").trim();
+    if (!raw) continue;
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      const stack = Array.isArray(parsed) ? [...parsed] : [parsed];
+      while (stack.length) {
+        const node = stack.pop() as Record<string, unknown> | undefined;
+        if (!node || typeof node !== "object") continue;
+        const hours = node.openingHours ?? node.openingHoursSpecification;
+        if (typeof hours === "string" && hours.trim().length >= 4) return true;
+        if (Array.isArray(hours) && hours.length > 0) return true;
+        if (hours && typeof hours === "object") return true;
+        if (node["@graph"] && Array.isArray(node["@graph"])) {
+          stack.push(...(node["@graph"] as unknown[]));
+        }
+      }
+    } catch {
+      /* ignore bad JSON-LD */
+    }
+  }
+  return false;
+}
+
+/** Exported for unit tests — detects visible / structured opening hours. */
+export function detectOpeningHours(
+  text: string,
+  html = "",
+): { hasOpeningHours: boolean; snippet: string | null } {
+  const snippet = extractOpeningHoursSnippet(text);
+  const hasOpeningHours =
+    Boolean(snippet) ||
+    matchAny(text, [
+      /\botev[ií]rac[ií]\s+dob/i,
+      /\botevřeno\b/i,
+      /\bopening\s+hours\b/i,
+      /\bbusiness\s+hours\b/i,
+      /po[–-]pá|po[–-]ne|ponděl[ií].{0,20}pátek/i,
+      /\bmon(?:day)?\s*[-–—to]+\s*fri(?:day)?\b/i,
+      /\bmon(?:day)?\s*[-–—to]+\s*sun(?:day)?\b/i,
+    ]) ||
+    hasJsonLdOpeningHours(html);
+  return { hasOpeningHours, snippet };
 }
 
 
@@ -356,15 +408,8 @@ export async function fetchPageSignals(url: string): Promise<PageSignals> {
     const phones = extractPhones(html, text);
     const emails = extractEmails(html, text);
     const social = extractSocialLinks(html);
-    const openingHoursSnippet = extractOpeningHoursSnippet(text);
-    const hasOpeningHours =
-      Boolean(openingHoursSnippet) ||
-      matchAny(text, [
-        /\botev[ií]rac[ií]\s+dob/i,
-        /\botevřeno\b/i,
-        /\bopening\s+hours\b/i,
-        /po[–-]pá|po[–-]ne|ponděl[ií].{0,20}pátek/i,
-      ]);
+    const { hasOpeningHours, snippet: openingHoursSnippet } =
+      detectOpeningHours(text, html);
     const hasAddressMention = matchAny(text, [
       /\bulice\b/i,
       /\bps[čc]\b/i,

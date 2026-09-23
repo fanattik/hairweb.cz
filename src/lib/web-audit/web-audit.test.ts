@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { buildWebAuditEnrichPatch } from "@/lib/web-audit/apply";
 import { normalizeAuditUrl } from "@/lib/web-audit/normalize-url";
+import { detectOpeningHours } from "@/lib/web-audit/fetch-page";
 import {
   detectMobileProblem,
   mapMobileFromLighthouse,
@@ -107,5 +108,38 @@ describe("buildWebAuditEnrichPatch", () => {
     assert.equal(patch.has_online_booking, undefined);
     assert.match(patch.opportunity_note, /Původní poznámka/);
     assert.match(patch.opportunity_note, /\[Web audit\]/);
+  });
+});
+
+describe("detectOpeningHours", () => {
+  it("detects English Monday–Friday ranges (Kamikiri-style)", () => {
+    const { hasOpeningHours, snippet } = detectOpeningHours(
+      "Monday - Friday, 08:00 - 18:00 Book Your Cut",
+    );
+    assert.equal(hasOpeningHours, true);
+    assert.match(snippet || "", /Monday/i);
+  });
+
+  it("detects Czech opening hours", () => {
+    const { hasOpeningHours } = detectOpeningHours(
+      "Otevírací doba: Po–Pá 9:00–18:00",
+    );
+    assert.equal(hasOpeningHours, true);
+  });
+
+  it("ignores empty JSON-LD openingHours", () => {
+    const { hasOpeningHours } = detectOpeningHours(
+      "Welcome to our salon",
+      `<script type="application/ld+json">{"@type":"LocalBusiness","openingHours":""}</script>`,
+    );
+    assert.equal(hasOpeningHours, false);
+  });
+
+  it("accepts non-empty JSON-LD openingHours", () => {
+    const { hasOpeningHours } = detectOpeningHours(
+      "Welcome",
+      `<script type="application/ld+json">{"@type":"LocalBusiness","openingHours":"Mo-Fr 09:00-18:00"}</script>`,
+    );
+    assert.equal(hasOpeningHours, true);
   });
 });
