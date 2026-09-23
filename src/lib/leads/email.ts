@@ -1,4 +1,9 @@
 import { Resend } from "resend";
+import {
+  getMailFrom,
+  getMailNotifyTo,
+  getMailReplyTo,
+} from "@/lib/leads/mail-config";
 import type { Lead } from "@/lib/leads/types";
 
 function getResend() {
@@ -15,8 +20,8 @@ function packageLabel(value: Lead["package"]) {
 
 export async function sendAdminNotification(lead: Lead) {
   const resend = getResend();
-  const to = process.env.HAIRWEB_NOTIFICATION_EMAIL;
-  const from = process.env.HAIRWEB_FROM_EMAIL;
+  const to = getMailNotifyTo();
+  const from = getMailFrom();
 
   if (!resend || !to || !from) {
     console.warn("[email] Skipping admin notification — Resend env not configured");
@@ -49,6 +54,7 @@ export async function sendAdminNotification(lead: Lead) {
   const { error } = await resend.emails.send({
     from,
     to,
+    replyTo: lead.email || getMailReplyTo(),
     subject: `Nový audit – HAIRWEB – ${subjectName}`,
     text,
   });
@@ -63,7 +69,8 @@ export async function sendAdminNotification(lead: Lead) {
 
 export async function sendCustomerConfirmation(lead: Lead) {
   const resend = getResend();
-  const from = process.env.HAIRWEB_FROM_EMAIL;
+  const from = getMailFrom();
+  const replyTo = getMailReplyTo();
 
   if (!lead.email) {
     return { skipped: true as const };
@@ -83,13 +90,16 @@ export async function sendCustomerConfirmation(lead: Lead) {
     "",
     "Pokud jste poslali jen Instagram, je to v pořádku. I podle něj si dokážu udělat představu o salonu.",
     "",
-    "Lukáš",
-    "HAIRWEB",
+    "S pozdravem",
+    "",
+    "Lukáš Ptáčník",
+    "HAIRWEB.cz",
   ].join("\n");
 
   const { error } = await resend.emails.send({
     from,
     to: lead.email,
+    replyTo,
     subject: "Online audit — HAIRWEB",
     text,
   });
@@ -114,8 +124,8 @@ export async function sendAuditDiscussNotification(input: {
   overallScore: number | null;
 }) {
   const resend = getResend();
-  const to = process.env.HAIRWEB_NOTIFICATION_EMAIL;
-  const from = process.env.HAIRWEB_FROM_EMAIL;
+  const to = getMailNotifyTo();
+  const from = getMailFrom();
 
   if (!resend || !to || !from) {
     console.warn(

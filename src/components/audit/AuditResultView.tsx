@@ -94,16 +94,21 @@ function PrioritySectionCta({
 }) {
   return (
     <div
-      className={`mt-6 flex flex-col gap-4 rounded-[22px] border border-ink/8 bg-mist px-[clamp(1.25rem,2.5vw,1.75rem)] py-5 sm:flex-row sm:items-center sm:justify-between ${className}`}
+      className={`mt-8 flex flex-col gap-5 rounded-[24px] bg-copper px-[clamp(1.35rem,3vw,2rem)] py-6 text-white sm:flex-row sm:items-center sm:justify-between sm:gap-8 ${className}`}
     >
-      <p className="max-w-[540px] text-[15px] leading-relaxed text-ink-soft">
-        {nedostatkyPhrase(count)}
-      </p>
+      <div className="max-w-[560px]">
+        <p className="font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.12em] text-white/70 uppercase">
+          Další krok
+        </p>
+        <p className="mt-2 text-[17px] font-semibold leading-snug tracking-tight sm:text-[18px]">
+          {nedostatkyPhrase(count)}
+        </p>
+      </div>
       <AuditDiscussCta
         audit={audit}
         location={location}
         label="Nechte to na nás"
-        className="min-h-11 shrink-0 px-6 py-3 text-[15px]"
+        className="min-h-12 shrink-0 bg-ink px-7 py-3.5 text-[15px] text-foam hover:bg-ink/90"
       />
     </div>
   );

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { getMailFrom } from "@/lib/leads/mail-config";
 import { generatePersonalizedOutreach } from "@/lib/leads/outreach-ai";
 import {
   HAIRWEB_PACKAGES,
@@ -115,8 +116,7 @@ export async function GET(
     suggestedPackage,
     aiAvailable: Boolean(process.env.OPENAI_API_KEY?.trim()),
     emailConfigured: Boolean(
-      process.env.RESEND_API_KEY?.trim() &&
-        process.env.HAIRWEB_FROM_EMAIL?.trim(),
+      process.env.RESEND_API_KEY?.trim() && getMailFrom(),
     ),
   });
 }

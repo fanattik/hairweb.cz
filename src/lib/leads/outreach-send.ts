@@ -2,6 +2,7 @@ import { Resend } from "resend";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildPatchAfterOutreachEmail } from "@/lib/leads/followup-actions";
 import { formatPragueDate } from "@/lib/leads/followup";
+import { getMailFrom, getMailReplyTo } from "@/lib/leads/mail-config";
 import type { Lead } from "@/lib/leads/types";
 
 function getResend() {
@@ -20,11 +21,8 @@ export async function sendLeadOutreachEmail(input: {
   userId?: string | null;
 }): Promise<{ resendId: string | null }> {
   const resend = getResend();
-  const from = process.env.HAIRWEB_FROM_EMAIL?.trim();
-  const replyTo =
-    process.env.HAIRWEB_REPLY_TO_EMAIL?.trim() ||
-    process.env.HAIRWEB_NOTIFICATION_EMAIL?.trim() ||
-    undefined;
+  const from = getMailFrom();
+  const replyTo = getMailReplyTo();
 
   if (!resend || !from) {
     throw new Error(
