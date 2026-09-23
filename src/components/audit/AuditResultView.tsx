@@ -81,25 +81,29 @@ function nedostatkyPhrase(count: number): string {
   return `${count} nedostatků, které si můžete opravit sami — nebo to nechte na nás.`;
 }
 
-function PriorityCardCta({
+function PrioritySectionCta({
   audit,
   count,
   location,
+  className = "",
 }: {
   audit: SalonAuditRow;
   count: number;
   location: string;
+  className?: string;
 }) {
   return (
-    <div className="mt-5 border-t border-ink/8 pt-4">
-      <p className="text-[13px] leading-relaxed text-ink-muted">
+    <div
+      className={`mt-6 flex flex-col gap-4 rounded-[22px] border border-ink/8 bg-mist px-[clamp(1.25rem,2.5vw,1.75rem)] py-5 sm:flex-row sm:items-center sm:justify-between ${className}`}
+    >
+      <p className="max-w-[540px] text-[15px] leading-relaxed text-ink-soft">
         {nedostatkyPhrase(count)}
       </p>
       <AuditDiscussCta
         audit={audit}
         location={location}
         label="Nechte to na nás"
-        className="mt-3 min-h-10 px-5 py-2.5 text-[14px]"
+        className="min-h-11 shrink-0 px-6 py-3 text-[15px]"
       />
     </div>
   );
@@ -675,7 +679,7 @@ export function AuditResultView({ audit }: { audit: SalonAuditRow }) {
                       {highRecs.length === 1 ? "položka" : "položky"}
                     </span>
                   </div>
-                  <div className="mb-12 grid gap-3 md:grid-cols-2">
+                  <div className="grid gap-3 md:grid-cols-2">
                     {highRecs.map((rec) => {
                       const badge = metricBadgeForRec(rec, checks);
                       return (
@@ -712,15 +716,16 @@ export function AuditResultView({ audit }: { audit: SalonAuditRow }) {
                               </p>
                             </div>
                           </div>
-                          <PriorityCardCta
-                            audit={audit}
-                            count={highRecs.length}
-                            location="result_priority_high"
-                          />
                         </Reveal>
                       );
                     })}
                   </div>
+                  <PrioritySectionCta
+                    audit={audit}
+                    count={highRecs.length}
+                    location="result_priority_high"
+                    className={midRecs.length > 0 ? "mb-12" : undefined}
+                  />
                 </>
               ) : null}
 
@@ -769,15 +774,15 @@ export function AuditResultView({ audit }: { audit: SalonAuditRow }) {
                               </p>
                             </div>
                           </div>
-                          <PriorityCardCta
-                            audit={audit}
-                            count={midRecs.length}
-                            location="result_priority_mid"
-                          />
                         </Reveal>
                       );
                     })}
                   </div>
+                  <PrioritySectionCta
+                    audit={audit}
+                    count={midRecs.length}
+                    location="result_priority_mid"
+                  />
                 </>
               ) : null}
             </>
