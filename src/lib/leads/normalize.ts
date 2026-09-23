@@ -19,6 +19,7 @@ function sanitizeTouch(
         referrer?: string | null;
         at?: string | null;
       }
+    | null
     | undefined,
 ) {
   if (!touch) return null;
