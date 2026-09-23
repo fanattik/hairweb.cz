@@ -3,6 +3,7 @@ import {
   getMailFrom,
   getMailNotifyTo,
   getMailReplyTo,
+  getMailSiteUrl,
 } from "@/lib/leads/mail-config";
 import type { Lead } from "@/lib/leads/types";
 
@@ -28,7 +29,7 @@ export async function sendAdminNotification(lead: Lead) {
     return { skipped: true as const };
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://hairweb.cz";
+  const siteUrl = getMailSiteUrl();
   const adminUrl = `${siteUrl}/admin/leads/${lead.id}`;
   const subjectName = lead.salon_name || lead.name;
 
@@ -134,7 +135,7 @@ export async function sendAuditDiscussNotification(input: {
     return { skipped: true as const };
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://hairweb.cz";
+  const siteUrl = getMailSiteUrl();
   const auditUrl = `${siteUrl}/audit/${input.auditId}`;
   const adminUrl = input.leadId
     ? `${siteUrl}/admin/leads/${input.leadId}`

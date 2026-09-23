@@ -1,3 +1,5 @@
+import { site } from "@/lib/site";
+
 const MAIL_FROM_NAME = "Lukáš z HAIRWEB";
 
 /**
@@ -25,4 +27,35 @@ export function getMailReplyTo(): string | undefined {
 
 export function getMailNotifyTo(): string | null {
   return process.env.HAIRWEB_NOTIFICATION_EMAIL?.trim() || null;
+}
+
+/** Public site URL for links in outbound emails — never localhost. */
+export function getMailSiteUrl(): string {
+  const candidates = [
+    process.env.HAIRWEB_PUBLIC_SITE_URL,
+    process.env.NEXT_PUBLIC_SITE_URL,
+    site.url,
+  ];
+
+  for (const raw of candidates) {
+    const value = raw?.trim().replace(/\/$/, "");
+    if (!value) continue;
+    try {
+      const url = new URL(value);
+      if (url.protocol !== "http:" && url.protocol !== "https:") continue;
+      const host = url.hostname.toLowerCase();
+      if (
+        host === "localhost" ||
+        host === "127.0.0.1" ||
+        host.endsWith(".local")
+      ) {
+        continue;
+      }
+      return url.origin;
+    } catch {
+      continue;
+    }
+  }
+
+  return site.url;
 }
